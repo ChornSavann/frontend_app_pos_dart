@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 
+import '../constants/baseurl/base_url_api.dart';
+
 class ApiCategory {
-  final String baseUrl = 'http://10.0.2.2:8000/api';
+
+  final String baseUrl = BaseUrlApi.baseurl;
   Future<List<dynamic>> fetchCategory() async {
     final response = await http.get(Uri.parse('$baseUrl/categories'));
     if (response.statusCode == 200) {

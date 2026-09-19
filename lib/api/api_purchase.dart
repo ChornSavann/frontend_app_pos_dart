@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../constants/baseurl/base_url_api.dart';
 import '../models/Product.dart';
 import '../models/purchase.dart';
 import '../models/supplier.dart';
 
 class ApiPurchase {
-  final String baseUrl = 'http://10.0.2.2:8000/api';
+
+  final String baseUrl = BaseUrlApi.baseurl;
 
   Future<bool> createPurchase(PurchaseModel purchase, {String? token}) async {
     try {

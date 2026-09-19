@@ -8,6 +8,7 @@ import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
 
 import '../order/card_manager.dart';
+import '../stores/store_header_widget.dart';
 
 class AppBarScreen extends StatefulWidget implements PreferredSizeWidget {
   final int cartItemCount; // ទទួលតម្លៃចំនួនទំនិញពីខាងក្រៅមកបង្ហាញ
@@ -207,7 +208,7 @@ class LanguageSwitcherButton extends StatefulWidget {
 
 class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
   bool isKhmer = true;
-  // មុខងារសម្រាប់ប្តូរភាសាជាមួយ GetX
+
   void onChangeLanguage() {
     print(Get.locale?.languageCode??"");
     setState(() {

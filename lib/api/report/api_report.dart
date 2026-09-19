@@ -1,11 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../../constants/baseurl/base_url_api.dart';
 import '../../models/customer.dart';
 import '../../models/reports/report_daily.dart';
 
 class ApiReport {
-  final String baseUrl = "http://10.0.2.2:8000/api";
+  final BaseUrlApi baseUrlApi = BaseUrlApi();
+  final String baseUrl = BaseUrlApi.baseurl;
 
   Future<List<ReportDaily>> fetchDailyReports() async {
     try {
@@ -150,10 +152,10 @@ class ApiReport {
   }
 
   Future<List<Map<String, dynamic>>> fetchCustomerHistory(
-      dynamic customerId, {
-        String? startDate,
-        String? endDate,
-      }) async {
+    dynamic customerId, {
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
       Map<String, String> queryParams = {};
       if (startDate != null && endDate != null) {
@@ -184,11 +186,21 @@ class ApiReport {
           for (var detail in rawDetails) {
             var product = detail['product'] ?? {};
             itemsList.add({
-              'product_name': product['name'] ?? detail['product_name'] ?? 'Unknown Product',
-              'quantity': double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
-              'price': double.tryParse(
-                  (detail['price'] ?? detail['selling_price'] ?? detail['unit_price'] ?? '0').toString()
-              ) ?? 0.0,
+              'product_name':
+                  product['name'] ??
+                  detail['product_name'] ??
+                  'Unknown Product',
+              'quantity':
+                  double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
+              'price':
+                  double.tryParse(
+                    (detail['price'] ??
+                            detail['selling_price'] ??
+                            detail['unit_price'] ??
+                            '0')
+                        .toString(),
+                  ) ??
+                  0.0,
               'image': product['image'] ?? detail['image'] ?? '',
             });
           }
@@ -196,7 +208,13 @@ class ApiReport {
           return {
             'id': item['id'],
             'order_number': item['order_number'] ?? 'INV-${item['id']}',
-            'total': double.tryParse(item['total']?.toString() ?? item['total_amount']?.toString() ?? '0') ?? 0.0,
+            'total':
+                double.tryParse(
+                  item['total']?.toString() ??
+                      item['total_amount']?.toString() ??
+                      '0',
+                ) ??
+                0.0,
             'status': item['status'] ?? 'completed',
             'payment_method': item['payment_method'] ?? 'cash',
             'date': item['created_at']?.toString().substring(0, 10) ?? '',
@@ -221,26 +239,36 @@ class ApiReport {
 
         if (decodedData is List) {
           listData = decodedData;
-        } else if (decodedData is Map<String, dynamic> && decodedData['data'] is List) {
+        } else if (decodedData is Map<String, dynamic> &&
+            decodedData['data'] is List) {
           listData = decodedData['data'];
         }
 
         return listData.map((item) {
           final name = item['name'] ?? 'Unknown';
-          double totalSpent = double.tryParse(
-              (item['orders_sum_total_amount'] ?? item['orders_sum_total'] ?? item['total_spent'] ?? '0').toString()
-          ) ?? 0.0;
+          double totalSpent =
+              double.tryParse(
+                (item['orders_sum_total_amount'] ??
+                        item['orders_sum_total'] ??
+                        item['total_spent'] ??
+                        '0')
+                    .toString(),
+              ) ??
+              0.0;
 
-          int points = int.tryParse(item['points']?.toString() ?? '') ?? (totalSpent / 10).toInt();
+          int points =
+              int.tryParse(item['points']?.toString() ?? '') ??
+              (totalSpent / 10).toInt();
 
           String avatar = 'CS';
           List<String> nameParts = name.trim().split(' ');
           if (nameParts.length >= 2) {
             avatar = '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase();
           } else if (nameParts.isNotEmpty && nameParts[0].isNotEmpty) {
-            avatar = nameParts[0].substring(0, nameParts[0].length >= 2 ? 2 : 1).toUpperCase();
+            avatar = nameParts[0]
+                .substring(0, nameParts[0].length >= 2 ? 2 : 1)
+                .toUpperCase();
           }
-
 
           String tier = 'Member';
           if (totalSpent > 300) {
@@ -267,8 +295,10 @@ class ApiReport {
     }
   }
 
-
-  Future<List<Map<String, dynamic>>> fetchWeeklyReport({String? startDate, String? endDate}) async {
+  Future<List<Map<String, dynamic>>> fetchWeeklyReport({
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
       Map<String, String> queryParams = {};
       if (startDate != null && endDate != null) {
@@ -276,7 +306,9 @@ class ApiReport {
         queryParams['end_date'] = endDate;
       }
 
-      final uri = Uri.parse("$baseUrl/reports/weekly").replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        "$baseUrl/reports/weekly",
+      ).replace(queryParameters: queryParams);
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -285,7 +317,8 @@ class ApiReport {
 
         if (decodedData is List) {
           listData = decodedData;
-        } else if (decodedData is Map<String, dynamic> && decodedData['data'] is List) {
+        } else if (decodedData is Map<String, dynamic> &&
+            decodedData['data'] is List) {
           listData = decodedData['data'];
         }
 
@@ -299,11 +332,21 @@ class ApiReport {
           for (var detail in rawDetails) {
             var product = detail['product'] ?? {};
             itemsList.add({
-              'product_name': product['name'] ?? detail['product_name'] ?? 'Unknown Product',
-              'quantity': double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
-              'price': double.tryParse(
-                  (detail['price'] ?? detail['selling_price'] ?? detail['unit_price'] ?? '0').toString()
-              ) ?? 0.0,
+              'product_name':
+                  product['name'] ??
+                  detail['product_name'] ??
+                  'Unknown Product',
+              'quantity':
+                  double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
+              'price':
+                  double.tryParse(
+                    (detail['price'] ??
+                            detail['selling_price'] ??
+                            detail['unit_price'] ??
+                            '0')
+                        .toString(),
+                  ) ??
+                  0.0,
               'image': product['image'] ?? '',
             });
           }
@@ -313,11 +356,18 @@ class ApiReport {
             'order_number': item['order_number'] ?? 'INV-${item['id']}',
             'customer_name': customer['name'] ?? 'Walk-in Customer',
             'customer_phone': customer['phone'] ?? '',
-            'total': double.tryParse(
-                (item['total'] ?? item['grand_total'] ?? item['total_amount'] ?? '0').toString()
-            ) ?? 0.0,
+            'total':
+                double.tryParse(
+                  (item['total'] ??
+                          item['grand_total'] ??
+                          item['total_amount'] ??
+                          '0')
+                      .toString(),
+                ) ??
+                0.0,
             'status': item['status'] ?? 'completed',
-            'payment_method': item['payment']?['method'] ?? item['payment_method'] ?? 'cash',
+            'payment_method':
+                item['payment']?['method'] ?? item['payment_method'] ?? 'cash',
             'date': item['created_at']?.toString().substring(0, 10) ?? '',
             'items': itemsList,
           };
@@ -329,7 +379,6 @@ class ApiReport {
       return [];
     }
   }
-
 
   Future<List<Map<String, dynamic>>> fetchPurchaseReport({
     String? startDate,
@@ -346,7 +395,9 @@ class ApiReport {
         queryParams['supplier_id'] = supplierId.toString();
       }
 
-      final uri = Uri.parse("$baseUrl/reports/purchases").replace(queryParameters: queryParams);
+      final uri = Uri.parse(
+        "$baseUrl/reports/purchases",
+      ).replace(queryParameters: queryParams);
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -355,7 +406,8 @@ class ApiReport {
 
         if (decodedData is List) {
           listData = decodedData;
-        } else if (decodedData is Map<String, dynamic> && decodedData['data'] is List) {
+        } else if (decodedData is Map<String, dynamic> &&
+            decodedData['data'] is List) {
           listData = decodedData['data'];
         }
 
@@ -369,23 +421,38 @@ class ApiReport {
           for (var detail in rawItems) {
             var product = detail['product'] ?? {};
             itemsList.add({
-              'product_name': product['name'] ?? detail['product_name'] ?? 'Unknown Product',
-              'quantity': double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
-              'cost_price': double.tryParse(
-                  (detail['cost_price'] ?? detail['price'] ?? '0').toString()
-              ) ?? 0.0,
+              'product_name':
+                  product['name'] ??
+                  detail['product_name'] ??
+                  'Unknown Product',
+              'quantity':
+                  double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
+              'cost_price':
+                  double.tryParse(
+                    (detail['cost_price'] ?? detail['price'] ?? '0').toString(),
+                  ) ??
+                  0.0,
               'image': product['image'] ?? '',
             });
           }
 
           return {
             'id': item['id'],
-            'reference_no': item['reference_no'] ?? item['invoice_no'] ?? 'PO-${item['id']}',
+            'reference_no':
+                item['reference_no'] ??
+                item['invoice_no'] ??
+                'PO-${item['id']}',
             'supplier_name': supplier['name'] ?? 'General Supplier',
             'supplier_phone': supplier['phone'] ?? '',
-            'total': double.tryParse(
-                (item['total'] ?? item['grand_total'] ?? item['total_amount'] ?? '0').toString()
-            ) ?? 0.0,
+            'total':
+                double.tryParse(
+                  (item['total'] ??
+                          item['grand_total'] ??
+                          item['total_amount'] ??
+                          '0')
+                      .toString(),
+                ) ??
+                0.0,
             'status': item['status'] ?? 'received',
             'date': item['created_at']?.toString().substring(0, 10) ?? '',
             'items': itemsList,
@@ -398,7 +465,6 @@ class ApiReport {
       return [];
     }
   }
-
 
   Future<Map<String, dynamic>> fetchPurchaseDetail(dynamic purchaseId) async {
     try {
@@ -419,23 +485,39 @@ class ApiReport {
         for (var detail in rawItems) {
           var product = detail['product'] ?? {};
           itemsList.add({
-            'product_name': product['name'] ?? detail['product_name'] ?? 'Unknown Product',
-            'quantity': double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
-            'cost_price': double.tryParse(
-                (detail['unit_cost'] ?? detail['cost_price'] ?? detail['price'] ?? '0').toString()
-            ) ?? 0.0,
+            'product_name':
+                product['name'] ?? detail['product_name'] ?? 'Unknown Product',
+            'quantity':
+                double.tryParse(detail['quantity']?.toString() ?? '0') ?? 0.0,
+            'cost_price':
+                double.tryParse(
+                  (detail['unit_cost'] ??
+                          detail['cost_price'] ??
+                          detail['price'] ??
+                          '0')
+                      .toString(),
+                ) ??
+                0.0,
             'image': product['image'] ?? detail['image'] ?? '',
           });
         }
 
         return {
           'id': item['id'],
-          'reference_no': item['reference_no'] ?? item['invoice_no'] ?? 'PO-${item['id']}',
-          'supplier_name': supplier['name'] ?? item['supplier_name'] ?? 'General Supplier',
+          'reference_no':
+              item['reference_no'] ?? item['invoice_no'] ?? 'PO-${item['id']}',
+          'supplier_name':
+              supplier['name'] ?? item['supplier_name'] ?? 'General Supplier',
           'supplier_phone': supplier['phone'] ?? '',
-          'total': double.tryParse(
-              (item['total'] ?? item['grand_total'] ?? item['total_amount'] ?? '0').toString()
-          ) ?? 0.0,
+          'total':
+              double.tryParse(
+                (item['total'] ??
+                        item['grand_total'] ??
+                        item['total_amount'] ??
+                        '0')
+                    .toString(),
+              ) ??
+              0.0,
           'status': item['status'] ?? 'Received',
           'date': item['created_at']?.toString().substring(0, 10) ?? '',
           'items': itemsList,
@@ -461,9 +543,12 @@ class ApiReport {
             : {};
 
         return {
-          'total_sales': double.tryParse(data['total_sales']?.toString() ?? '0') ?? 0.0,
-          'total_orders': int.tryParse(data['total_orders']?.toString() ?? '0') ?? 0,
-          'total_customers': int.tryParse(data['total_customers']?.toString() ?? '0') ?? 0,
+          'total_sales':
+              double.tryParse(data['total_sales']?.toString() ?? '0') ?? 0.0,
+          'total_orders':
+              int.tryParse(data['total_orders']?.toString() ?? '0') ?? 0,
+          'total_customers':
+              int.tryParse(data['total_customers']?.toString() ?? '0') ?? 0,
         };
       }
       return {'total_sales': 0.0, 'total_orders': 0, 'total_customers': 0};
@@ -473,4 +558,35 @@ class ApiReport {
     }
   }
 
+  Future<Map<String, dynamic>> fetchFinancialReport({
+    String? startDate,
+    String? endDate,
+  }) async {
+    try {
+      String url = '$baseUrl/reports/financial';
+      if (startDate != null && endDate != null) {
+        url += '?start_date=$startDate&end_date=$endDate';
+      }
+
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(response.body);
+        if (decodedData['success'] == true) {
+          return decodedData['data'];
+        }
+      }
+    } catch (e) {
+      debugPrint("Error fetching financial report: $e");
+    }
+    return {
+      'total_income': 0.0,
+      'total_expense': 0.0,
+      'general_expenses': 0.0,
+      'purchase_expenses': 0.0,
+      'net_profit': 0.0,
+      'expense_breakdown': [],
+      'income_breakdown': [],
+      'expense_by_category': [],
+    };
+  }
 }

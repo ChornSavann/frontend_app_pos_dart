@@ -2,9 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:pos_inventory/models/customer.dart';
 
+import '../constants/baseurl/base_url_api.dart';
+
 class ApiCustomer {
 
-  final String baseUrl = "http://10.0.2.2:8000/api";
+
+  final String baseUrl = BaseUrlApi.baseurl;
   Future<List<Customer>> getAllCustomers() async {
     final response = await http.get(
       Uri.parse('$baseUrl/customers'),

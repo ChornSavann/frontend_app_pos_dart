@@ -76,7 +76,7 @@ class _SettingScreenState extends State<SettingScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: textColor, // 👈 ប្រែពណ៌តាម Mode
+            color: textColor,
           ),
         ),
       ),

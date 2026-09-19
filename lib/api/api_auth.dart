@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import 'package:pos_inventory/login/plash_screnn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../main.dart';
 
 class ApiAuth {
-  final String baseUrl = "http://10.0.2.2:8000/api";
 
+
+  final String baseUrl = BaseUrlApi.baseurl;
   static Future<void> handleSessionExpired() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
@@ -125,14 +127,12 @@ class ApiAuth {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-
         if (data == null) {
           return {'success': false, 'message': 'Data representation is null'};
         }
 
         final userData = data['data']?['user'] ?? data['user'] ?? data;
         final token = data['data']?['token'] ?? data['token'] ?? '';
-
 
         if (userData == null || userData is! Map) {
           return {'success': false, 'message': 'User profile data missing.'};
@@ -173,9 +173,16 @@ class ApiAuth {
         await prefs.setString('role', userRole);
         await prefs.setString('image', userAvatar);
 
+        // // 🔍 យកទិន្នន័យ store ពី Response មក Save ទុក
+        // final storeData = data['store']; // យោងតាម JSON ថ្មីខាង Laravel ផ្ញើមកមាន 'store' ផ្ទាល់
+        // if (storeData != null && storeData is Map) {
+        //   await prefs.setInt('store_id', storeData['id'] ?? 1);
+        //   await prefs.setString('store_name', storeData['name'] ?? "ហាងខ្មែរ");
+        //   await prefs.setString('store_logo', storeData['logo'] ?? ""); // 👈 ឥឡូវ Logo នឹងត្រូវ Save ចូល SharedPreferences ហើយ
+        // }
+
         return {'success': true, 'data': data};
       } else {
-
         String errorMessage = 'Invalid credentials';
         if (data != null && data is Map) {
           if (data['message'] != null) {

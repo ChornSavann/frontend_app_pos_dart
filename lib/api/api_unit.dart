@@ -3,8 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:pos_inventory/models/Unit.dart';
 
+import '../constants/baseurl/base_url_api.dart';
+
 class ApiUnit {
-  final String baseUrl = "http://10.0.2.2:8000/api";
+
+  final String baseUrl = BaseUrlApi.baseurl;
 
   Future<List<UnitModel>> fetchUnits() async {
     try {

@@ -43,6 +43,12 @@ class Messages extends Translations {
       TranslateConstants.manageLanguage: 'Khmer/English',
       TranslateConstants.updateProfileInfo: 'Update Profile Information',
       TranslateConstants.settings:'Settings',
+      TranslateConstants.store:'Store',
+      TranslateConstants.manageStore:'Manage Store',
+      TranslateConstants.manage_exp:'Manage Expense',
+      TranslateConstants.expense_type:'Expense Type',
+      TranslateConstants.expense:'Expense',
+      TranslateConstants.manage_expense:'Manage Expense',
     },
     'km_KH': {
       TranslateConstants.khmerApp: 'ហាងខ្មែរ',
@@ -82,7 +88,14 @@ class Messages extends Translations {
       TranslateConstants.securitySetting: 'ការកំណត់សុវត្ថិភាព',
       TranslateConstants.manageLanguage: 'ខ្មែរ/អង់គ្លេស',
       TranslateConstants.updateProfileInfo: 'ធ្វើបច្ចុប្បន្នភាពព័ត៌មានប្រវត្តិរូប',
-      TranslateConstants.settings:'ការកំណត់'
+      TranslateConstants.settings:'ការកំណត់',
+      TranslateConstants.store:'ហាង',
+      TranslateConstants.manageStore:'ការគ្រប់គ្រងហាង',
+      TranslateConstants.manage_exp:'គ្របគ្រងប្រភេទចំណាយ',
+      TranslateConstants.expense_type:'ប្រភេទចំនាយ',
+      TranslateConstants.expense:'ការចំណាយ',
+      TranslateConstants.manage_expense:'គ្របគ្រងចំណាយ',
+
     }
   };
 }

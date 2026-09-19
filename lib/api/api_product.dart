@@ -6,38 +6,15 @@ import 'package:pos_inventory/models/Product.dart';
 
 import 'dart:io';
 
+import '../constants/baseurl/base_url_api.dart';
 import '../helpers/shared_preferences_helper.dart';
 import '../models/brand.dart';
 import '../models/category.dart';
 
 class ApiProduct {
-  final String baseUrl = 'http://10.0.2.2:8000/api';
 
+  final String baseUrl = BaseUrlApi.baseurl;
 
-  // Future<List<Product>> fetchProducts({int? categoryId}) async {
-  //   try {
-  //     String url = (categoryId == null || categoryId == 0)
-  //         ? '$baseUrl/products'
-  //         : '$baseUrl/products/category/$categoryId';
-  //
-  //     final response = await http.get(Uri.parse(url));
-  //
-  //     if (response.statusCode == 200) {
-  //       final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-  //       final List<dynamic> decodedData = jsonResponse['data'];
-  //
-  //       return decodedData.map((dynamic item) {
-  //         return Product.fromJson(item as Map<String, dynamic>);
-  //       }).toList();
-  //     } else {
-  //       throw Exception(
-  //         "Failed to load products. Status: ${response.statusCode}",
-  //       );
-  //     }
-  //   } catch (e) {
-  //     throw Exception("Error fetching products: $e");
-  //   }
-  // }
 
   Future<List<Product>> fetchProducts({int? categoryId, int? brandId}) async {
     try {

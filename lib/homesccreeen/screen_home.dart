@@ -9,9 +9,14 @@ import 'package:pos_inventory/api/report/api_report.dart';
 import 'package:pos_inventory/brand/brand_index_screen.dart';
 import 'package:pos_inventory/brand/create_brand_screen.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
+import 'package:pos_inventory/expenses/create_expense_screen.dart';
+import 'package:pos_inventory/expenses/index_expense_screen.dart';
+import 'package:pos_inventory/expensetype/index_expensetype_sreen.dart';
 import 'package:pos_inventory/purchase/create_purchase_screen.dart';
 import 'package:pos_inventory/purchase/index_purchase_screen.dart';
 import 'package:pos_inventory/report/report_dashboard_screen.dart';
+import 'package:pos_inventory/stores/create_store_screen.dart';
+import 'package:pos_inventory/stores/index_store_screen.dart';
 import 'package:pos_inventory/supplier/index_supplier_screen.dart';
 import 'package:pos_inventory/unit/create_unit_screen.dart';
 import 'package:pos_inventory/unit/unit_index_screen.dart';
@@ -21,6 +26,7 @@ import 'package:pos_inventory/users/create_user_screen.dart';
 import 'package:pos_inventory/users/user_index_screen.dart';
 
 import '../banner/banner_screen.dart';
+import '../expensetype/create_expens_type_screen.dart';
 
 class ScreenHome extends StatefulWidget {
   const ScreenHome({super.key});
@@ -117,69 +123,84 @@ class _ScreenHomeState extends State<ScreenHome> {
                   // 📝 Content Section
                   Row(
                     children: [
+                      // 📝 ផ្នែកអត្ថបទខាងឆ្វេង
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Welcome Text with Accent
                             Row(
                               children: [
-                                Text(
-                                  TranslateConstants.hello.tr,
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: -0.3,
+                                Flexible(
+                                  child: Text(
+                                    TranslateConstants.hello.tr,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
-                                // Emoji Animation/Display style
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: const Text(
-                                    "👋",
-                                    style: TextStyle(fontSize: 14),
-                                  ),
+                                const Text(
+                                  "👋",
+                                  style: TextStyle(fontSize: 15),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 6),
                             Text(
                               "គ្រប់គ្រងស្តុក និងការលក់របស់អ្នកយ៉ាងងាយស្រួល និងរហ័សនៅទីនេះ។",
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
-                                fontSize: 13,
-                                height: 1.4,
+                                fontSize: 12.5,
+                                height: 1.3,
                               ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      // 🛒 Icon Badge ខាងស្តាំ
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
+                      const SizedBox(width: 14),
+
+                      // 🛒 រូបភាព Logo ខាងស្តាំ (មួយជាន់ ស្អាតដាច់គេ មិនបាច់មាន Container ក្រៅទ្រុប)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(
+                          'https://i.pinimg.com/1200x/f8/08/b4/f808b4bc1f3d6b03d8070994a3638d7f.jpg',
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const SizedBox(
+                              width: 52,
+                              height: 52,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: 52,
+                            height: 52,
                             color: Colors.white.withOpacity(0.2),
-                            width: 1,
+                            child: const Icon(
+                              Icons.storefront_rounded,
+                              color: Colors.white,
+                              size: 26,
+                            ),
                           ),
-                        ),
-                        child: const Icon(
-                          Icons.storefront_rounded,
-                          color: Colors.white,
-                          size: 30,
                         ),
                       ),
                     ],
-                  ),
+                  )
                 ],
               ),
             ),
@@ -218,7 +239,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                     title: TranslateConstants.totalSale.tr,
                     value: isStatLoading
                         ? "Loading..."
-                        : "\$${totalSalesValue.toStringAsFixed(2)}", // 🟢 ប្រើប្រាស់តម្លៃទាញបានពី API
+                        : "\$${totalSalesValue.toStringAsFixed(2)}",
                     icon: Icons.trending_up_rounded,
                     primaryColor: Colors.green,
                   ),
@@ -264,7 +285,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               height: 90,
               child: ListView(
                 scrollDirection:
-                    Axis.horizontal, // កំណត់ឱ្យរំកិលទៅខាងស្តាំ/ឆ្វេង
+                    Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 children: [
                   _buildQuickActionItem(
@@ -350,6 +371,43 @@ class _ScreenHomeState extends State<ScreenHome> {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  _buildQuickActionItem(
+                    title: TranslateConstants.store.tr,
+                    icon: Icons.store_sharp,
+                    color: Colors.indigo,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const CreateStoreScreen(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  _buildQuickActionItem(
+                    title: TranslateConstants.expense_type.tr,
+                    icon: Icons.category_rounded,
+                    color: Colors.indigo,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  CreateExpensTypeScreen(),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+                  _buildQuickActionItem(
+                    title: TranslateConstants.expense.tr,
+                    icon: Icons.payments_rounded,
+                    color: Colors.indigo,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>  CreateExpenseScreen(),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -372,7 +430,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               mainAxisSpacing: 10,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.9, // 💡 សមាមាត្រកម្ពស់និងទទឹងកាតតូចល្មមស្អាត
+              childAspectRatio: 1.9,
               children: [
                 _buildModernActionCard(
                   title: TranslateConstants.product.tr,
@@ -435,6 +493,18 @@ class _ScreenHomeState extends State<ScreenHome> {
                   ),
                 ),
                 _buildModernActionCard(
+                  title: TranslateConstants.store.tr,
+                  subtitle: TranslateConstants.manageStore.tr,
+                  icon: Icons.storefront_outlined,
+                  color: Colors.blueGrey,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const IndexStoreScreen(),
+                    ),
+                  ),
+                ),
+                _buildModernActionCard(
                   title: TranslateConstants.purchase.tr,
                   subtitle: TranslateConstants.managePurchase.tr,
                   icon: Icons.receipt_long_rounded,
@@ -459,9 +529,33 @@ class _ScreenHomeState extends State<ScreenHome> {
                   ),
                 ),
                 _buildModernActionCard(
+                  title: TranslateConstants.expense_type.tr,
+                  subtitle: TranslateConstants.manage_exp.tr,
+                  icon:  Icons.folder_open_rounded,
+                  color: Colors.indigo,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => IndexExpensetypeSreen(),
+                    ),
+                  ),
+                ),
+                _buildModernActionCard(
+                  title: TranslateConstants.expense.tr,
+                  subtitle: TranslateConstants.manage_expense.tr,
+                  icon: Icons.payments_rounded,
+                  color: Colors.indigo,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => IndexExpenseScreen(),
+                    ),
+                  ),
+                ),
+                _buildModernActionCard(
                   title: TranslateConstants.report.tr,
                   subtitle: TranslateConstants.manageReport.tr,
-                  icon: Icons.report_sharp,
+                  icon: Icons.bar_chart_rounded,
                   color: Colors.indigo,
                   onTap: () => Navigator.push(
                     context,
@@ -657,7 +751,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 10, // 💡 បន្ថយទំហំអក្សរ Subtitle
+                  fontSize: 10,
                   color: Colors.grey.shade500,
                   fontWeight: FontWeight.w500,
                 ),

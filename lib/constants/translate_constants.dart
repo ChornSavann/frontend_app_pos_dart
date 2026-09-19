@@ -44,6 +44,12 @@ class TranslateConstants {
   static const String securitySetting='security_set';
   static const String manageLanguage='mg_language';
   static const String settings='settings';
+  static const String store='store';
+  static const String manageStore='mg_store';
+  static const String expense_type='expense_type';
+  static const String manage_exp='mg_expense_type';
+  static const String expense='expense';
+  static const String manage_expense='mg_expense';
 
 
 

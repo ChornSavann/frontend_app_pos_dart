@@ -1,9 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:pos_inventory/api/report/api_report.dart'; // 🟢 Import ApiReport របស់អ្នក
+import 'package:pos_inventory/api/report/api_report.dart';
 import 'package:pos_inventory/report/customer_report_screen.dart';
 import 'package:pos_inventory/report/daily_report_screen.dart';
 import 'package:pos_inventory/report/low_stock_screen.dart';
+import 'package:pos_inventory/report/profit_lose/finance_chart_screen.dart';
+import 'package:pos_inventory/report/profit_lose/finance_report_screen.dart';
 import 'package:pos_inventory/report/purchase_report_screen.dart';
 import 'package:pos_inventory/report/top_selling_screen.dart';
 
@@ -51,36 +53,44 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FC),
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70.0),
-        child: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.white,
-          iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
-          title: const Text(
-            'Analytics & Reports',
-            style: TextStyle(
-              color: Color(0xFF1E293B),
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+        title: const Text(
+          'Analytics & Reports',
+          style: TextStyle(
+            color: Color(0xFF1E293B),
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
           ),
-          centerTitle: false,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh_rounded, color: Color(0xFF1E293B)),
+        ),
+        centerTitle: true,
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2563EB).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.refresh_rounded,
+                color: Color(0xFF2563EB),
+                size: 20,
+              ),
               onPressed: fetchDashboardData,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
             )
           : RefreshIndicator(
-              color: const Color(0xFF4F46E5),
+              color: const Color(0xFF2563EB),
               onRefresh: fetchDashboardData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
@@ -97,7 +107,7 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildChartCard(),
+                    _buildChartCard(), // 📊 Modern Bar Chart
                     const SizedBox(height: 24),
 
                     const Text(
@@ -160,7 +170,6 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // 👥 6. Low Stock & Customer Cards (Side by Side)
                     Row(
                       children: [
                         Expanded(
@@ -198,6 +207,45 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSmallCard(
+                            title: 'Expenses',
+                            subtitle: 'Track spending',
+                            icon: Icons.account_balance_wallet_rounded,
+                            color: const Color(0xFFEF4444),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FinancialReportScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildSmallCard(
+                            title: 'Analytics Chart',
+                            subtitle: 'Visual reports',
+                            icon: Icons.pie_chart_rounded,
+                            color: const Color(0xFF06B6D4),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => FinancialChartScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 30),
                   ],
                 ),
@@ -206,23 +254,25 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
     );
   }
 
-  // 📊 Chart Card UI Design (Dynamic API Integration)
+  // 📊 Chart Card UI Design (Modern Professional Bar Chart)
   Widget _buildChartCard() {
-    // 🟢 គណនាតម្លៃទឹកប្រាក់តាមថ្ងៃនីមួយៗក្នុងសប្តាហ៍ (0 = Mon, ..., 6 = Sun)
     List<double> dailyRevenue = List.filled(7, 0.0);
+    double totalWeeklyRevenue = 0.0;
+
     for (var order in weeklyOrders) {
       try {
         DateTime date = DateTime.parse(order['date']);
         int dayIndex = date.weekday - 1;
+        double amount = (order['total'] ?? 0.0) as double;
         if (dayIndex >= 0 && dayIndex < 7) {
-          dailyRevenue[dayIndex] += order['total'] as double;
+          dailyRevenue[dayIndex] += amount;
         }
+        totalWeeklyRevenue += amount;
       } catch (e) {
         debugPrint('Error parsing date: $e');
       }
     }
 
-    // 🟢 រកមើលតម្លៃទឹកប្រាក់ច្រើនជាងគេដើម្បីធ្វើ Scale ឱ្យ Chart
     double maxRevenue = dailyRevenue.isNotEmpty
         ? dailyRevenue.reduce((a, b) => a > b ? a : b)
         : 1.0;
@@ -232,16 +282,17 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
         .map((val) => val / maxRevenue)
         .toList();
 
+    const List<String> days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
     return Container(
-      height: 220,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -252,10 +303,10 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Column(
+              Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Weekly Revenue',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -263,17 +314,21 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'Real-time API Data',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    'Total: \$${totalWeeklyRevenue.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2563EB),
+                    ),
                   ),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 10,
-                  vertical: 6,
+                  vertical: 5,
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.1),
@@ -281,12 +336,8 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(
-                      Icons.arrow_upward,
-                      size: 12,
-                      color: Color(0xFF10B981),
-                    ),
-                    SizedBox(width: 4),
+                    Icon(Icons.circle, size: 7, color: Color(0xFF10B981)),
+                    SizedBox(width: 5),
                     Text(
                       'Live',
                       style: TextStyle(
@@ -300,54 +351,44 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 15),
-          Expanded(
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 160,
             child: isChartLoading
                 ? const Center(
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFF2563EB),
+                      ),
                     ),
                   )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                : Stack(
                     children: [
-                      _buildChartBar(
-                        'Mon',
-                        chartHeights[0],
-                        const Color(0xFF3B82F6),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: List.generate(
+                          4,
+                          (index) =>
+                              Container(height: 1, color: Colors.grey.shade100),
+                        ),
                       ),
-                      _buildChartBar(
-                        'Tue',
-                        chartHeights[1],
-                        const Color(0xFF3B82F6),
-                      ),
-                      _buildChartBar(
-                        'Wed',
-                        chartHeights[2],
-                        const Color(0xFF3B82F6),
-                      ),
-                      _buildChartBar(
-                        'Thu',
-                        chartHeights[3],
-                        const Color(0xFF3B82F6),
-                      ),
-                      _buildChartBar(
-                        'Fri',
-                        chartHeights[4],
-                        const Color(0xFF3B82F6),
-                      ),
-                      _buildChartBar(
-                        'Sat',
-                        chartHeights[5],
-                        const Color(0xFFF97316),
-                      ),
-                      _buildChartBar(
-                        'Sun',
-                        chartHeights[6],
-                        const Color(0xFFF97316),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: List.generate(7, (index) {
+                          bool isHigh = chartHeights[index] > 0.5;
+                          return _buildEnhancedBar(
+                            days[index],
+                            chartHeights[index],
+                            dailyRevenue[index],
+                            isHigh
+                                ? const Color(0xFF2563EB)
+                                : const Color(0xFF93C5FD),
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -357,32 +398,50 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
     );
   }
 
-  Widget _buildChartBar(String day, double heightFactor, Color color) {
+  Widget _buildEnhancedBar(
+    String day,
+    double heightFactor,
+    double amount,
+    Color barColor,
+  ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
+        if (amount > 0)
+          Text(
+            '\$${amount.toStringAsFixed(0)}',
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+        const SizedBox(height: 4),
         Container(
-          width: 14,
-          height: 75 * heightFactor,
+          width: 22,
+          height: 110 * heightFactor > 10 ? 110 * heightFactor : 10,
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(8),
+            gradient: LinearGradient(
+              colors: [barColor, barColor.withOpacity(0.7)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           day,
           style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-            fontWeight: FontWeight.w500,
+            fontSize: 12,
+            color: Color(0xFF64748B),
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
   }
 
-  // 🧱 Modern Report Card Widget
   Widget _buildReportCard({
     required String title,
     required String subtitle,
@@ -393,10 +452,10 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -404,10 +463,10 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -416,9 +475,9 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(icon, color: color, size: 26),
+                  child: Icon(icon, color: color, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -436,15 +495,22 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Colors.grey,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 12,
+                    color: Colors.grey,
+                  ),
                 ),
               ],
             ),
@@ -454,7 +520,6 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
     );
   }
 
-  // 🧱 Modern Small Card Widget
   Widget _buildSmallCard({
     required String title,
     required String subtitle,
@@ -462,53 +527,61 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+            border: Border.all(color: Colors.grey.shade100, width: 1),
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(icon, color: color, size: 22),
                   ),
-                  child: Icon(icon, color: color, size: 24),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
+                  Icon(
+                    Icons.arrow_outward_rounded,
+                    size: 16,
+                    color: Colors.grey.shade400,
                   ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              ),
+            ],
           ),
         ),
       ),
