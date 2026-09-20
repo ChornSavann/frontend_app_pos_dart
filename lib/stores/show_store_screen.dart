@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pos_inventory/api/stores/api_store.dart';
 import 'package:pos_inventory/stores/update_store_screen.dart';
 import '../msg/appSnackBar.dart';
@@ -90,6 +91,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
               Navigator.pop(dialogContext);
 
               bool success = await apiStore.deleteStore(storeId);
+              if (!currentContext.mounted) return;
 
               if (success) {
                 AppSnackBar.showSuccess(
@@ -116,14 +118,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String logoName = storeData?['logo']?.toString() ?? '';
-    if (logoName.startsWith('stores/')) {
-      logoName = logoName.replaceFirst('stores/', '');
-    }
-    String logoUrl = logoName.isNotEmpty
-        ? "http://10.0.2.2:8000/stores/$logoName"
-        : "";
-
+    String? logoUrl = storeData?['image_url'] ?? storeData?['logo'];
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -144,7 +139,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
             Container(
               margin: const EdgeInsets.only(right: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withOpacity(0.1),
+                color: const Color(0xFF2563EB).withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: IconButton(
@@ -215,7 +210,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2563EB).withOpacity(0.3),
+                          color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                           blurRadius: 15,
                           offset: const Offset(0, 8),
                         ),
@@ -229,27 +224,42 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
-                            image: logoUrl.isNotEmpty
-                                ? DecorationImage(
-                                    image: NetworkImage(logoUrl),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.15),
+                                color: Colors.black.withValues(alpha: 0.15),
                                 blurRadius: 8,
                                 offset: const Offset(0, 4),
                               ),
                             ],
                           ),
-                          child: logoUrl.isEmpty
-                              ? const Icon(
-                                  Icons.storefront_rounded,
-                                  color: Color(0xFF2563EB),
-                                  size: 42,
-                                )
-                              : null,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(44),
+                            child: logoUrl != null && logoUrl.isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: logoUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        const Icon(
+                                          Icons.storefront_rounded,
+                                          color: Color(0xFF2563EB),
+                                          size: 42,
+                                        ),
+                                  )
+                                : const Icon(
+                                    Icons.storefront_rounded,
+                                    color: Color(0xFF2563EB),
+                                    size: 42,
+                                  ),
+                          ),
                         ),
                         const SizedBox(height: 16),
                         Text(
@@ -269,7 +279,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: const Row(
@@ -304,7 +314,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -410,7 +420,7 @@ class _ShowStoreScreenState extends State<ShowStoreScreen> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
+              color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(icon, color: iconColor, size: 20),

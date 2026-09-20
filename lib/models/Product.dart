@@ -39,13 +39,10 @@ class Product {
     this.categoryName,
     this.brandName,
     this.unitName,
-    this.isFavorite=false,
+    this.isFavorite = false,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
-    const String serverUrl = "http://10.0.2.2:8000/";
-    String? rawImagePath = json['image'] as String?;
-
     return Product(
       id: json['id'] as int,
       categoryId: json['category_id'] is String ? int.parse(json['category_id']) : json['category_id'] as int,
@@ -73,15 +70,16 @@ class Product {
           ? (json['alert_quantity'] is String ? double.parse(json['alert_quantity']) : (json['alert_quantity'] as num).toDouble())
           : null,
 
-      imageUrl: (rawImagePath != null && rawImagePath.isNotEmpty) ? "$serverUrl$rawImagePath" : null,
+      // 🟢 ទាញយក image_url ផ្ទាល់ពី Backend ដោយមិនបាច់ต่อ URL ក្នុង Flutter ទៀតទេ
+      imageUrl: json['image_url'] as String?,
 
       isActive: json['is_active'] is String ? int.parse(json['is_active']) : (json['is_active'] as int? ?? 1),
 
-      // 🔍 ទាញយកឈ្មោះពី Relation មកប្រើប្រាស់បានយ៉ាងស្រួល
+      // 🔍 ទាញយកឈ្មោះពី Relation មកប្រើប្រាស់ได้យ៉ាងស្រួល
       categoryName: json['category'] != null ? json['category']['name'] : null,
       brandName: json['brand'] != null ? json['brand']['name'] : null,
       unitName: json['unit'] != null ? json['unit']['name'] : null,
-      isFavorite: json['is_favorite'] ?? false, // បើទិន្នន័យមកពី Database
+      isFavorite: json['is_favorite'] ?? false,
     );
   }
 

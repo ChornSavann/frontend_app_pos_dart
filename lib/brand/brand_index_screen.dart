@@ -1,8 +1,10 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/api/api_brand.dart';
 import 'package:pos_inventory/brand/update_brand_screen.dart';
 import 'package:pos_inventory/homesccreeen/screen_home.dart';
 import 'package:pos_inventory/models/brand.dart';
+import '../constants/baseurl/base_url_api.dart';
 import 'create_brand_screen.dart';
 
 class BrandIndexScreen extends StatefulWidget {
@@ -17,8 +19,6 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
   List<BrandModel> _filteredBrands = [];
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
-
-  final String imageUrlPrefix = "http://10.0.2.2:8000/";
 
   @override
   void initState() {
@@ -56,7 +56,9 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           elevation: 0,
           backgroundColor: Colors.white,
           child: Padding(
@@ -70,12 +72,20 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                     color: Colors.green.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 48),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.green,
+                    size: 48,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 const Text(
                   "Success!",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -91,11 +101,19 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: () => Navigator.pop(context),
-                    child: const Text("OK", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                    child: const Text(
+                      "OK",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -111,7 +129,9 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
       context: context,
       builder: (BuildContext dialogContext) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           elevation: 0,
           backgroundColor: Colors.white,
           child: Padding(
@@ -125,18 +145,30 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                     color: Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 44),
+                  child: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: Colors.redAccent,
+                    size: 44,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 const Text(
                   "Delete Brand",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "Are you sure you want to delete this brand? This action cannot be undone.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey.shade600,
+                    height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -148,10 +180,18 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                           style: TextButton.styleFrom(
                             backgroundColor: Colors.grey.shade100,
                             foregroundColor: Colors.grey.shade700,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           onPressed: () => Navigator.pop(dialogContext),
-                          child: const Text("Cancel", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            "Cancel",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -164,7 +204,9 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                             backgroundColor: Colors.redAccent,
                             foregroundColor: Colors.white,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                           ),
                           onPressed: () async {
                             Navigator.pop(dialogContext);
@@ -188,7 +230,13 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                               );
                             }
                           },
-                          child: const Text("Delete", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            "Delete",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -223,7 +271,6 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-
             ),
           ),
 
@@ -234,14 +281,19 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.home_outlined, color: Colors.white, size: 20),
+              icon: const Icon(
+                Icons.home_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
               onPressed: () async {
                 await Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>  ScreenHome(), // ប្រាកដថាបាន Import DashboardScreen រួចរាល់
+                    builder: (context) =>
+                        ScreenHome(), // ប្រាកដថាបាន Import DashboardScreen រួចរាល់
                   ),
-                      (route) => false,
+                  (route) => false,
                 );
               },
             ),
@@ -285,7 +337,11 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
               decoration: InputDecoration(
                 hintText: 'Search brands...',
                 hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF4F46E5), size: 22),
+                prefixIcon: const Icon(
+                  Icons.search,
+                  color: Color(0xFF4F46E5),
+                  size: 22,
+                ),
                 filled: true,
                 fillColor: Colors.white,
                 enabledBorder: OutlineInputBorder(
@@ -294,9 +350,15 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF4F46E5),
+                    width: 1.5,
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
               ),
               onChanged: _filterBrands,
             ),
@@ -308,141 +370,181 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : _filteredBrands.isEmpty
                 ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.branding_watermark_outlined, size: 64, color: Colors.grey.shade400),
-                  const SizedBox(height: 12),
-                  Text(
-                    "No brands found.",
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-                  ),
-                ],
-              ),
-            )
-                : ListView.builder(
-              itemCount: _filteredBrands.length,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemBuilder: (context, index) {
-                final brand = _filteredBrands[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // 🖼️ Brand Logo
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: (brand.logo != null && brand.logo!.isNotEmpty)
-                              ? Image.network(
-                            brand.logo!.startsWith('http')
-                                ? brand.logo!
-                                : '$imageUrlPrefix${brand.logo!}',
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 60,
-                                height: 60,
-                                color: Colors.grey.shade100,
-                                child: const Icon(Icons.image_not_supported_outlined, color: Colors.grey),
-                              );
-                            },
-                          )
-                              : Container(
-                            width: 60,
-                            height: 60,
-                            color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
-                            child: const Icon(Icons.branding_watermark_outlined, color: Color(0xFF4F46E5), size: 28),
-                          ),
+                        Icon(
+                          Icons.branding_watermark_outlined,
+                          size: 64,
+                          color: Colors.grey.shade400,
                         ),
-                        const SizedBox(width: 14),
-
-                        // 🏷️ Brand Name & Description
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                brand.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              if (brand.description != null && brand.description!.isNotEmpty) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  brand.description!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                                ),
-                              ],
-                            ],
+                        const SizedBox(height: 12),
+                        Text(
+                          "No brands found.",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 16,
                           ),
-                        ),
-
-                        // ⚙️ Action Buttons (Edit & Delete)
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            InkWell(
-                              onTap: () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => UpdateBrandScreen(brand: brand),
-                                  ),
-                                );
-                                if (result == true) {
-                                  _loadBrands();
-                                }
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(6),
-                                child: Icon(Icons.edit_outlined, color: Colors.blue.shade600, size: 20),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            InkWell(
-                              onTap: () {
-                                if (brand.id != null) {
-                                  _deleteBrand(brand.id!);
-                                }
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(6),
-                                child: Icon(Icons.delete_outline, color: Colors.red.shade400, size: 20),
-                              ),
-                            ),
-                          ],
                         ),
                       ],
                     ),
+                  )
+                : ListView.builder(
+                    itemCount: _filteredBrands.length,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    itemBuilder: (context, index) {
+                      final brand = _filteredBrands[index];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // 🖼️ Brand Logo
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: (brand.logo != null && brand.logo!.isNotEmpty)
+                                    ? CachedNetworkImage(
+                                  imageUrl: brand.logo!,
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    width: 60,
+                                    height: 60,
+                                    color: Colors.grey.shade100,
+                                    child: const Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    width: 60,
+                                    height: 60,
+                                    color: Colors.grey.shade100,
+                                    child: const Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                                    : Container(
+                                  width: 60,
+                                  height: 60,
+                                  color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                                  child: const Icon(
+                                    Icons.branding_watermark_outlined,
+                                    color: Color(0xFF4F46E5),
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+
+                              // 🏷️ Brand Name & Description
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      brand.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    if (brand.description != null &&
+                                        brand.description!.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        brand.description!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+
+                              // ⚙️ Action Buttons (Edit & Delete)
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  InkWell(
+                                    onTap: () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              UpdateBrandScreen(brand: brand),
+                                        ),
+                                      );
+                                      if (result == true) {
+                                        _loadBrands();
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.blue.shade600,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  InkWell(
+                                    onTap: () {
+                                      if (brand.id != null) {
+                                        _deleteBrand(brand.id!);
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red.shade400,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -459,7 +561,10 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
         backgroundColor: const Color(0xFF4F46E5),
         elevation: 4,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text("Add Brand", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: const Text(
+          "Add Brand",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
     );
   }

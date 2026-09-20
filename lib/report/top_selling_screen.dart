@@ -33,7 +33,6 @@ class _TopSellingScreenState extends State<TopSellingScreen>
     _loadTopSellingData();
   }
 
-  // 🟢 ហៅ API ទាញយកទិន្នន័យពិតប្រាកដ
   Future<void> _loadTopSellingData() async {
     setState(() {
       isLoading = true;
@@ -41,6 +40,8 @@ class _TopSellingScreenState extends State<TopSellingScreen>
 
     try {
       final fetchedData = await apiReport.fetchTopSellingProducts();
+      debugPrint('📦 FETCHED PRODUCTS DATA: $fetchedData');
+
       setState(() {
         topProducts = fetchedData;
       });
@@ -195,8 +196,6 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                                         ),
                                       ),
                                       const SizedBox(width: 14),
-                                      // 🟢 ពិនិត្យមើលថាតើ image ជា Path រូបភាព ឬជា Emoji ('📦')
-                                      // 🟢 ប្រើប្រាស់ Image.network ជាមួយ URL ត្រឹមត្រូវ និងការពារ Overflow
                                       Container(
                                         width: 48,
                                         height: 48,
@@ -210,13 +209,16 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          child:
-                                              product['image'] != '📦' &&
-                                                  product['image']
+                                          child: Builder(
+                                            builder: (context) {
+                                              final imageUrl =
+                                                  product['image_url'];
+                                              if (imageUrl != null &&
+                                                  imageUrl
                                                       .toString()
-                                                      .isNotEmpty
-                                              ? Image.network(
-                                                  "http://10.0.2.2:8000/${product['image']}",
+                                                      .isNotEmpty) {
+                                                return Image.network(
+                                                  imageUrl.toString(),
                                                   fit: BoxFit.cover,
                                                   errorBuilder:
                                                       (
@@ -233,15 +235,19 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                                                           ),
                                                         );
                                                       },
-                                                )
-                                              : const Center(
+                                                );
+                                              } else {
+                                                return const Center(
                                                   child: Text(
                                                     '📦',
                                                     style: TextStyle(
                                                       fontSize: 20,
                                                     ),
                                                   ),
-                                                ),
+                                                );
+                                              }
+                                            },
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 14),

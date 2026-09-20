@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pos_inventory/api/stores/api_store.dart';
 import 'package:pos_inventory/stores/create_store_screen.dart';
 import 'package:pos_inventory/stores/show_store_screen.dart';
+
 import 'package:pos_inventory/stores/update_store_screen.dart';
 
 import '../msg/appSnackBar.dart';
@@ -18,7 +20,7 @@ class IndexStoreScreen extends StatefulWidget {
 class _IndexStoreScreenState extends State<IndexStoreScreen> {
   final ApiStore apiStore = ApiStore();
   bool isLoading = true;
-  List<Map<String, dynamic>> stores = [];
+  List<Store> stores = [];
 
   @override
   void initState() {
@@ -31,7 +33,7 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
     try {
       final List<Store> storeObjects = await apiStore.fetchStoreInfo();
       setState(() {
-        stores = storeObjects.map((store) => store.toJson()).toList();
+        stores = storeObjects;
         isLoading = false;
       });
     } catch (e) {
@@ -67,6 +69,8 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
 
               Navigator.pop(dialogContext);
               bool success = await apiStore.deleteStore(storeId);
+              if (!currentContext.mounted) return;
+
               if (success) {
                 _loadStores();
                 AppSnackBar.showSuccess(
@@ -144,14 +148,8 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                 padding: const EdgeInsets.all(16),
                 itemCount: stores.length,
                 itemBuilder: (context, index) {
-                  final store = stores[index];
-                  String logoName = store['logo']?.toString() ?? '';
-                  if (logoName.startsWith('stores/')) {
-                    logoName = logoName.replaceFirst('stores/', '');
-                  }
-                  String logoUrl = logoName.isNotEmpty
-                      ? "http://10.0.2.2:8000/stores/$logoName"
-                      : "";
+                  final Store store =
+                      stores[index]; // 🟢 ពេលនេះស្គាល់ជា Store Object ហ្មង
 
                   return Container(
                     margin: const EdgeInsets.only(bottom: 14),
@@ -160,7 +158,7 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
@@ -175,13 +173,11 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ShowStoreScreen(
-                                storeId:
-                                    store['id'],
-                              ),
+                              builder: (context) =>
+                                  ShowStoreScreen(storeId: store.id),
                             ),
                           ).then((value) {
-                            // ប្រសិនបើមានការលុប ឬកែប្រែពី ShowStoreScreen វានឹង Refresh ទិន្នន័យមកវិញ
+                            if (!context.mounted) return;
                             if (value == true) {
                               _loadStores();
                             }
@@ -191,27 +187,46 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                           padding: const EdgeInsets.all(16.0),
                           child: Row(
                             children: [
-                              // 🖼️ Logo Store
+                              // 🖼️ Logo Store using CachedNetworkImage
                               Container(
                                 width: 56,
                                 height: 56,
                                 decoration: BoxDecoration(
                                   color: Colors.blue.shade50,
                                   borderRadius: BorderRadius.circular(14),
-                                  image: logoUrl.isNotEmpty
-                                      ? DecorationImage(
-                                          image: NetworkImage(logoUrl),
-                                          fit: BoxFit.cover,
-                                        )
-                                      : null,
                                 ),
-                                child: logoUrl.isEmpty
-                                    ? const Icon(
-                                        Icons.storefront_rounded,
-                                        color: Color(0xFF2563EB),
-                                        size: 26,
-                                      )
-                                    : null,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child:
+                                      store.imageUrl != null &&
+                                          store.imageUrl!.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: store.imageUrl!,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              const Center(
+                                                child: SizedBox(
+                                                  width: 15,
+                                                  height: 15,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
+                                              ),
+                                          errorWidget: (context, url, error) =>
+                                              const Icon(
+                                                Icons.storefront_rounded,
+                                                color: Color(0xFF2563EB),
+                                                size: 26,
+                                              ),
+                                        )
+                                      : const Icon(
+                                          Icons.storefront_rounded,
+                                          color: Color(0xFF2563EB),
+                                          size: 26,
+                                        ),
+                                ),
                               ),
                               const SizedBox(width: 14),
 
@@ -221,7 +236,7 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      store['name'] ?? 'Unknown Store',
+                                      store.name,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 16,
@@ -229,8 +244,8 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                       ),
                                     ),
                                     const SizedBox(height: 4),
-                                    if (store['phone'] != null &&
-                                        store['phone'].toString().isNotEmpty)
+                                    if (store.phone != null &&
+                                        store.phone!.isNotEmpty)
                                       Row(
                                         children: [
                                           const Icon(
@@ -240,7 +255,7 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
-                                            store['phone'],
+                                            store.phone!,
                                             style: TextStyle(
                                               color: Colors.grey.shade600,
                                               fontSize: 12,
@@ -248,10 +263,8 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                           ),
                                         ],
                                       ),
-                                    if (store['address'] != null &&
-                                        store['address']
-                                            .toString()
-                                            .isNotEmpty) ...[
+                                    if (store.address != null &&
+                                        store.address!.isNotEmpty) ...[
                                       const SizedBox(height: 2),
                                       Row(
                                         children: [
@@ -263,7 +276,7 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                           const SizedBox(width: 4),
                                           Expanded(
                                             child: Text(
-                                              store['address'],
+                                              store.address!,
                                               style: TextStyle(
                                                 color: Colors.grey.shade500,
                                                 fontSize: 11,
@@ -274,7 +287,6 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                           ),
                                         ],
                                       ),
-
                                     ],
                                   ],
                                 ),
@@ -286,24 +298,20 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
                                   Icons.more_vert_rounded,
                                   color: Colors.grey,
                                 ),
-                                onSelected: (value) {
+                                onSelected: (value) async {
                                   if (value == 'edit') {
-                                    Navigator.push(
+                                    final result = await Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => UpdateStoreScreen(
-                                          storeId: store['id'],
-                                          storeData: store,
+                                          storeId: store.id,
                                         ),
                                       ),
-                                    ).then((value) {
-                                      if (value == true) _loadStores();
-                                    });
-                                  } else if (value == 'delete') {
-                                    _confirmDeleteStore(
-                                      store['id'],
-                                      store['name'] ?? 'Store',
                                     );
+                                    if (!context.mounted) return;
+                                    if (result == true) _loadStores();
+                                  } else if (value == 'delete') {
+                                    _confirmDeleteStore(store.id, store.name);
                                   }
                                 },
                                 itemBuilder: (context) => [
@@ -352,13 +360,13 @@ class _IndexStoreScreenState extends State<IndexStoreScreen> {
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CreateStoreScreen()),
-          ).then((value) {
-            if (value == true) _loadStores();
-          });
+          );
+          if (!context.mounted) return;
+          if (result == true) _loadStores();
         },
         backgroundColor: const Color(0xFF2563EB),
         foregroundColor: Colors.white,

@@ -2,6 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_inventory/api/api_category.dart';
+import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
+
+import '../msg/appSnackBar.dart';
 
 class UpdateCategoryScreen extends StatefulWidget {
   final int id;
@@ -30,7 +33,7 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
   bool _isLoading = false;
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
-  final String baseUrl = 'http://10.0.2.2:8000';
+  final String baseUrl = BaseImageUrl.BaseimageUrl;
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -63,8 +66,6 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
 
       String name = _nameController.text.trim();
       String description = _descController.text.trim();
-
-      // បញ្ជូនតម្លៃទាំងអស់រួមទាំង _imageFile ទៅកាន់ API Update
       bool success = await _apiCategory.updateCategory(
         widget.id,
         name,
@@ -77,20 +78,11 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
       });
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("ធ្វើបច្ចុប្បន្នភាពជោគជ័យ!"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        AppSnackBar.showSuccess(context, "ធ្វើបច្ចុប្បន្នភាពជោគជ័យ!");
+
         Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("ការកែប្រែបរាជ័យ!"),
-            backgroundColor: Colors.red,
-          ),
-        );
+        AppSnackBar.showError(context, "ការកែប្រែបរាជ័យ!");
       }
     }
   }

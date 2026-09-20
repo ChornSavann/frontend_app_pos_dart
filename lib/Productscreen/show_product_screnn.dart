@@ -17,7 +17,7 @@ class ShowProductScreen extends StatefulWidget {
 class _ShowProductScreenState extends State<ShowProductScreen> {
   bool _isLoading = true;
   Product? _product;
-  int _quantity = 1; // 🛒 ចំនួនសម្រាប់បញ្ជាទិញ
+  int _quantity = 1;
   final ApiProduct apiProduct = ApiProduct();
 
   @override

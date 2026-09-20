@@ -208,17 +208,14 @@ class _UserIndexScreenState extends State<UserIndexScreen> {
                       horizontal: 16,
                       vertical: 8,
                     ),
+
                     leading: CircleAvatar(
                       radius: 28,
-                      backgroundColor: const Color(
-                        0xFF4F46E5,
-                      ).withOpacity(0.1),
-                      backgroundImage: user.image != null
-                          ? NetworkImage(
-                        'http://10.0.2.2:8000/${user.image}',
-                      )
+                      backgroundColor: const Color(0xFF4F46E5).withOpacity(0.1),
+                      backgroundImage: (user.image != null && user.image!.isNotEmpty)
+                          ? NetworkImage(user.image!)
                           : null,
-                      child: user.image == null
+                      child: (user.image == null || user.image!.isEmpty)
                           ? const Icon(
                         Icons.person,
                         color: Color(0xFF4F46E5),

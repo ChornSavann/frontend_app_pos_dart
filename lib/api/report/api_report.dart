@@ -58,7 +58,7 @@ class ApiReport {
         return listData.map((item) {
           final product = item['product'] ?? {};
 
-          final productImage = product['image'] ?? item['image'] ?? '';
+          final productImage = product['image_url'] ?? item['image_url'] ?? '';
           final productName =
               product['name'] ?? item['product_name'] ?? 'Unknown Product';
 
@@ -72,7 +72,7 @@ class ApiReport {
             'category': product['category']?['name'] ?? 'General',
             'sold_qty': double.parse(totalSold.toString()).toInt(),
             'revenue': double.parse(totalRevenue.toString()),
-            'image': productImage.isNotEmpty ? productImage : '📦',
+            'image_url': productImage.isNotEmpty ? productImage : '📦',
           };
         }).toList();
       }
@@ -117,7 +117,7 @@ class ApiReport {
             'stock_left': stockLeft.toInt(),
             'min_alert': minAlert.toInt(),
             'status': status,
-            'image': item['image'] ?? '',
+            'image_url': item['image_url'] ?? '',
           };
         }).toList();
       }
@@ -498,7 +498,7 @@ class ApiReport {
                       .toString(),
                 ) ??
                 0.0,
-            'image': product['image'] ?? detail['image'] ?? '',
+            'image_url': product['image_url'] ?? detail['image_url'] ?? '',
           });
         }
 

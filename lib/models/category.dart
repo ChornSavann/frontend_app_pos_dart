@@ -17,7 +17,7 @@ class CategoryModel {
     return CategoryModel(
       id: json['id'],
       name: json['name'],
-      image: json['image'],
+      image: json['image_url'],
       iconName: json['icon'],
       // ទទួលតម្លៃ products_count ពី Laravel (បើមានប្រើ withCount('products'))
       productsCount: json['products_count'] ?? (json['products'] != null ? (json['products'] as List).length : 0),

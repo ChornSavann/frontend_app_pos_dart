@@ -5,7 +5,7 @@ import '../models/supplier.dart';
 import '../models/Product.dart';
 
 class EditPurchaseScreen extends StatefulWidget {
-  final PurchaseModel purchase; // 👈 ទទួលទិន្នន័យចាស់មក edit
+  final PurchaseModel purchase;
 
   const EditPurchaseScreen({super.key, required this.purchase});
 
@@ -46,7 +46,6 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
   void initState() {
     super.initState();
 
-    // 📥 ផ្ដល់តម្លៃចាស់ចូលទៅក្នុង Controllers
     _purchaseNumberController = TextEditingController(text: widget.purchase.purchaseNumber ?? '');
     _selectedSupplierId = widget.purchase.supplierId?.toString();
     _paymentMethod = widget.purchase.paymentMethod;
@@ -58,7 +57,7 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
     _taxController = TextEditingController(text: widget.purchase.tax.toString());
     _noteController = TextEditingController(text: widget.purchase.notes ?? '');
 
-    // ប្រសិនបើមាន items ចាស់ យកមកទាញដាក់ក្នុង form (ឧទាហរណ៍យក item ដំបូង)
+
     if (widget.purchase.items != null && widget.purchase.items!.isNotEmpty) {
       final firstItem = widget.purchase.items![0];
       _selectedProductId = firstItem['product_id']?.toString();

@@ -2,10 +2,11 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_inventory/api/api_brand.dart';
+
 import 'package:pos_inventory/models/brand.dart';
 
 class UpdateBrandScreen extends StatefulWidget {
-  final BrandModel brand; // 👈 ទទួលយក Brand Object ដែលត្រូវកែប្រែ
+  final BrandModel brand;
 
   const UpdateBrandScreen({super.key, required this.brand});
 
@@ -23,8 +24,6 @@ class _UpdateBrandScreenState extends State<UpdateBrandScreen> {
   File? _selectedImage;
   bool _isLoading = false;
 
-  final String imageUrlPrefix = "http://10.0.2.2:8000/";
-
   @override
   void initState() {
     super.initState();
@@ -41,7 +40,7 @@ class _UpdateBrandScreenState extends State<UpdateBrandScreen> {
     super.dispose();
   }
 
-  // 📸 Function ជ្រើសរើស Logo ថ្មីពីរូបថតក្នុងទូរសព្ទ
+
   Future<void> _pickLogo() async {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -124,13 +123,10 @@ class _UpdateBrandScreenState extends State<UpdateBrandScreen> {
     );
   }
 
-  // 💾 Function សម្រាប់ Update ទិន្នន័យទៅកាន់ API
   Future<void> _updateBrand() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-
-    // 🚀 ហៅ API Update Brand
     final result = await ApiBrand().updateBrand(
       id: widget.brand.id!,
       name: _nameController.text.trim(),
@@ -146,7 +142,7 @@ class _UpdateBrandScreenState extends State<UpdateBrandScreen> {
       _showSuccessDialog(
         result['message'] ?? 'Brand updated successfully!',
         () {
-          Navigator.pop(context, true); // ត្រឡប់ក្រោយនិង Refresh ទិន្នន័យ
+          Navigator.pop(context, true);
         },
       );
     } else {
@@ -210,30 +206,28 @@ class _UpdateBrandScreenState extends State<UpdateBrandScreen> {
                                 ),
                                 image: _selectedImage != null
                                     ? DecorationImage(
-                                        image: FileImage(_selectedImage!),
-                                        fit: BoxFit.cover,
-                                      )
+                                  image: FileImage(_selectedImage!),
+                                  fit: BoxFit.cover,
+                                )
                                     : (widget.brand.logo != null &&
-                                          widget.brand.logo!.isNotEmpty)
+                                    widget.brand.logo!.isNotEmpty)
                                     ? DecorationImage(
-                                        image: NetworkImage(
-                                          widget.brand.logo!.startsWith('http')
-                                              ? widget.brand.logo!
-                                              : '$imageUrlPrefix${widget.brand.logo!}',
-                                        ),
-                                        fit: BoxFit.cover,
-                                      )
+                                  image: NetworkImage(
+                                    widget.brand.logo!,
+                                  ),
+                                  fit: BoxFit.cover,
+                                )
                                     : null,
                               ),
                               child:
-                                  (_selectedImage == null &&
-                                      (widget.brand.logo == null ||
-                                          widget.brand.logo!.isEmpty))
+                              (_selectedImage == null &&
+                                  (widget.brand.logo == null ||
+                                      widget.brand.logo!.isEmpty))
                                   ? const Icon(
-                                      Icons.camera_alt_rounded,
-                                      size: 40,
-                                      color: Colors.grey,
-                                    )
+                                Icons.camera_alt_rounded,
+                                size: 40,
+                                color: Colors.grey,
+                              )
                                   : null,
                             ),
                             Positioned(

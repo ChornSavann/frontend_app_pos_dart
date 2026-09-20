@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_inventory/api/api_category.dart';
 
+import '../msg/appSnackBar.dart';
+
 class CreateCategoryScreen extends StatefulWidget {
   const CreateCategoryScreen({super.key});
 
@@ -18,11 +20,9 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
   final ApiCategory _apiService = ApiCategory();
   bool _isLoading = false;
 
-  // 📁 ប្រែសម្រាប់เก็บឯកសាររូបភាពដែលបានជ្រើសរើស
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
 
-  // 📸 មុខងារជ្រើសរើសរូបភាពពី Gallery ឬ Camera
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
@@ -44,22 +44,19 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
 
       String name = _nameController.text.trim();
       String description = _descController.text.trim();
-
-      // បញ្ជូនតម្លៃទាំងអស់រួមទាំង _imageFile ទៅកាន់ API
-      bool success = await _apiService.createCategory(name, description, _imageFile);
+      bool success = await _apiService.createCategory(
+        name,
+        description,
+        _imageFile,
+      );
 
       setState(() {
         _isLoading = false;
       });
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("រក្សាទុកជោគជ័យ!"),
-            backgroundColor: Colors.green,
-          ),
-        );
 
+        AppSnackBar.showSuccess(context, "រក្សាទុកជោគជ័យ!");
         _nameController.clear();
         _descController.clear();
         setState(() {
@@ -68,11 +65,9 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
 
         Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("ការបង្កើតបរាជ័យ! សូមពិនិត្យមើល Server ឡើងវិញ"),
-            backgroundColor: Colors.red,
-          ),
+        AppSnackBar.showError(
+          context,
+          "ការបង្កើតបរាជ័យ! សូមពិនិត្យមើល Server ឡើងវិញ",
         );
       }
     }
@@ -117,10 +112,7 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                 const SizedBox(height: 4),
                 Text(
                   "Fill in the details below to create a new category.",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 25),
 
@@ -150,20 +142,22 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.grey[200],
                                 borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.cyan.withOpacity(0.3)),
+                                border: Border.all(
+                                  color: Colors.cyan.withOpacity(0.3),
+                                ),
                                 image: _imageFile != null
                                     ? DecorationImage(
-                                  image: FileImage(_imageFile!),
-                                  fit: BoxFit.cover,
-                                )
+                                        image: FileImage(_imageFile!),
+                                        fit: BoxFit.cover,
+                                      )
                                     : null,
                               ),
                               child: _imageFile == null
                                   ? const Icon(
-                                Icons.image_outlined,
-                                size: 40,
-                                color: Colors.grey,
-                              )
+                                      Icons.image_outlined,
+                                      size: 40,
+                                      color: Colors.grey,
+                                    )
                                   : null,
                             ),
                             Positioned(
@@ -176,7 +170,10 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                                   decoration: BoxDecoration(
                                     color: Colors.cyan[700],
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
                                   ),
                                   child: const Icon(
                                     Icons.camera_alt,
@@ -199,8 +196,14 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                           labelText: "Category Name *",
                           labelStyle: TextStyle(color: Colors.grey[600]),
                           hintText: "e.g. Electronics, Clothing",
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                          prefixIcon: const Icon(Icons.category_rounded, color: Colors.cyan),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.category_rounded,
+                            color: Colors.cyan,
+                          ),
                           filled: true,
                           fillColor: Colors.grey[50],
                           border: OutlineInputBorder(
@@ -209,15 +212,24 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+                            borderSide: BorderSide(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.cyan, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Colors.cyan,
+                              width: 1.5,
+                            ),
                           ),
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.redAccent, width: 1),
+                            borderSide: const BorderSide(
+                              color: Colors.redAccent,
+                              width: 1,
+                            ),
                           ),
                         ),
                         validator: (value) {
@@ -238,10 +250,16 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                           labelText: "Description",
                           labelStyle: TextStyle(color: Colors.grey[600]),
                           hintText: "Enter some details about this category...",
-                          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                          hintStyle: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 14,
+                          ),
                           prefixIcon: const Padding(
                             padding: EdgeInsets.only(bottom: 60),
-                            child: Icon(Icons.description_rounded, color: Colors.cyan),
+                            child: Icon(
+                              Icons.description_rounded,
+                              color: Colors.cyan,
+                            ),
                           ),
                           filled: true,
                           fillColor: Colors.grey[50],
@@ -251,11 +269,17 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[200]!, width: 1),
+                            borderSide: BorderSide(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.cyan, width: 1.5),
+                            borderSide: const BorderSide(
+                              color: Colors.cyan,
+                              width: 1.5,
+                            ),
                           ),
                         ),
                       ),
@@ -281,21 +305,21 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                      height: 24,
-                      width: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2.5,
-                      ),
-                    )
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
                         : const Text(
-                      "Save Category",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                            "Save Category",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          ),
                   ),
                 ),
               ],

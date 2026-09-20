@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../stores/models/store.dart';
 
 class ApiStore {
-  final String baseUrl = "http://10.0.2.2:8000/api";
-  // final header='Accept': 'application/json;
+  final String baseUrl = BaseUrlApi.baseurl;
+
   Future<List<Store>> fetchStoreInfo() async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/store'));
@@ -63,10 +64,11 @@ class ApiStore {
     }
   }
 
-
   Future<Map<String, dynamic>?> fetchStoreDetails(int storeId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/store/edit/$storeId'));
+      final response = await http.get(
+        Uri.parse('$baseUrl/store/edit/$storeId'),
+      );
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         return decoded['data'] ?? decoded;
@@ -77,7 +79,7 @@ class ApiStore {
     return null;
   }
 
-  // 🚀 2. Function Update Store (รองรับการอัปโหลด Logo រូបភាពថ្មី)
+
   Future<bool> updateStore({
     required int storeId,
     required String name,
@@ -91,7 +93,10 @@ class ApiStore {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token') ?? '';
-      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/store/update/$storeId'));
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/store/update/$storeId'),
+      );
 
       request.headers.addAll({
         'Accept': 'application/json',
@@ -106,14 +111,8 @@ class ApiStore {
       request.fields['address'] = address;
       if (description != null) request.fields['description'] = description;
 
-
       if (logoPath != null && logoPath.isNotEmpty) {
-        request.files.add(
-          await http.MultipartFile.fromPath(
-            'logo',
-            logoPath,
-          ),
-        );
+        request.files.add(await http.MultipartFile.fromPath('logo', logoPath));
       }
 
       var streamedResponse = await request.send();
@@ -133,7 +132,7 @@ class ApiStore {
     }
   }
 
-  // 🗑️ Delete Store API
+
   Future<bool> deleteStore(int storeId) async {
     try {
       final prefs = await SharedPreferences.getInstance();

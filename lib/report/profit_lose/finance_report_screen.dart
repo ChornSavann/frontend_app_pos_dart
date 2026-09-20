@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
 import '../../api/report/api_report.dart';
 
 class FinancialReportScreen extends StatefulWidget {
@@ -400,7 +401,20 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> {
     required Color bgColor,
     String? imageUrl,
   }) {
-    const String baseServerUrl = "http://10.0.2.2:8000/";
+    const String baseServerUrl = BaseImageUrl.BaseimageUrl;
+
+    String? finalImageUrl;
+    if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        finalImageUrl = imageUrl;
+      } else {
+        String cleanPath = imageUrl.startsWith('/')
+            ? imageUrl.substring(1)
+            : imageUrl;
+        finalImageUrl = '$baseServerUrl/$cleanPath';
+      }
+    }
+    print('FINAL IMAGE URL: $finalImageUrl');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -418,23 +432,29 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> {
       ),
       child: Row(
         children: [
-          // 🖼️ Rounded Avatar Image or Icon
           Container(
             width: 48,
             height: 48,
             decoration: BoxDecoration(
               color: bgColor,
               borderRadius: BorderRadius.circular(14),
-              image: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? DecorationImage(
-                image: NetworkImage(imageUrl.startsWith('http') ? imageUrl : '$baseServerUrl$imageUrl'),
-                fit: BoxFit.cover,
-              )
-                  : null,
             ),
-            child: (imageUrl == null || imageUrl.isEmpty)
-                ? Icon(fallbackIcon, color: color, size: 22)
-                : null,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: (finalImageUrl != null)
+                  ? Image.network(
+                finalImageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  // បើទាញមិនចេញ ឬខុស Format (.avif) វានឹងលោតមកបង្ហាញ Icon នេះ
+                  print('IMAGE ERROR: $error');
+                  return Center(
+                    child: Icon(fallbackIcon, color: color, size: 22),
+                  );
+                },
+              )
+                  : Center(child: Icon(fallbackIcon, color: color, size: 22)),
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(

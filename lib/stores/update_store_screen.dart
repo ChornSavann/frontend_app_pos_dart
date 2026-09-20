@@ -1,18 +1,15 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_inventory/api/stores/api_store.dart';
 import '../msg/appSnackBar.dart';
 
 class UpdateStoreScreen extends StatefulWidget {
-  final int storeId; // 🟢 ត្រូវស្គាល់ ID របស់ Store ដើម្បី Update
+  final int storeId;
   final Map<String, dynamic>? storeData;
-  const UpdateStoreScreen({
-    super.key,
-    required this.storeId,
-    this.storeData,
-  });
+  const UpdateStoreScreen({super.key, required this.storeId, this.storeData});
 
   @override
   State<UpdateStoreScreen> createState() => _UpdateStoreScreenState();
@@ -40,7 +37,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     _loadStoreDetails();
   }
 
-
   Future<void> _loadStoreDetails() async {
     setState(() => isFetching = true);
     try {
@@ -52,7 +48,8 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
         _websiteController.text = storeData['website'] ?? '';
         _addressController.text = storeData['address'] ?? '';
         _descriptionController.text = storeData['description'] ?? '';
-        existingLogoUrl = storeData['logo'];
+
+        existingLogoUrl = storeData['image_url'] ?? storeData['logo'];
       }
     } catch (e) {
       debugPrint('Error loading store details: $e');
@@ -62,7 +59,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     }
   }
 
-  // 🖼️ ជ្រើសរើស Logo ថ្មី
   Future<void> _pickLogo() async {
     final pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
@@ -74,7 +70,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     }
   }
 
-  // 🚀 Function Update Store ទៅកាន់ API
   Future<void> _submitUpdate() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -96,6 +91,8 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
     );
 
     setState(() => isLoading = false);
+
+    if (!mounted) return;
 
     if (success) {
       AppSnackBar.showSuccess(context, 'Store updated successfully! 🎉');
@@ -153,31 +150,47 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                                   color: Colors.blue.shade200,
                                   width: 1.5,
                                 ),
-                                image: _selectedLogo != null
-                                    ? DecorationImage(
-                                        image: FileImage(_selectedLogo!),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: _selectedLogo != null
+                                    ? Image.file(
+                                        _selectedLogo!,
                                         fit: BoxFit.cover,
                                       )
                                     : (existingLogoUrl != null &&
                                               existingLogoUrl!.isNotEmpty
-                                          ? DecorationImage(
-                                              image: NetworkImage(
-                                                "http://10.0.2.2:8000/$existingLogoUrl",
-                                              ),
+                                          ? CachedNetworkImage(
+                                              imageUrl: existingLogoUrl!,
                                               fit: BoxFit.cover,
+                                              placeholder: (context, url) =>
+                                                  const Center(
+                                                    child: SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                            strokeWidth: 2,
+                                                          ),
+                                                    ),
+                                                  ),
+                                              errorWidget:
+                                                  (
+                                                    context,
+                                                    url,
+                                                    error,
+                                                  ) => const Icon(
+                                                    Icons.storefront_rounded,
+                                                    size: 45,
+                                                    color: Color(0xFF2563EB),
+                                                  ),
                                             )
-                                          : null),
+                                          : const Icon(
+                                              Icons.storefront_rounded,
+                                              size: 45,
+                                              color: Color(0xFF2563EB),
+                                            )),
                               ),
-                              child:
-                                  (_selectedLogo == null &&
-                                      (existingLogoUrl == null ||
-                                          existingLogoUrl!.isEmpty))
-                                  ? const Icon(
-                                      Icons.storefront_rounded,
-                                      size: 45,
-                                      color: Color(0xFF2563EB),
-                                    )
-                                  : null,
                             ),
                             Positioned(
                               bottom: 0,
@@ -209,7 +222,7 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withValues(alpha: 0.03),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -231,7 +244,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                             keyboardType: TextInputType.phone,
                           ),
                           const SizedBox(height: 16),
-                          // 🟢 Email Field with Validator
                           _buildTextField(
                             controller: _emailController,
                             label: 'Email Address',
@@ -250,7 +262,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                             },
                           ),
                           const SizedBox(height: 16),
-                          // 🟢 Website Field with Validator
                           _buildTextField(
                             controller: _websiteController,
                             label: 'Website',
@@ -291,7 +302,6 @@ class _UpdateStoreScreenState extends State<UpdateStoreScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-
 
                     SizedBox(
                       width: double.infinity,

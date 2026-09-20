@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
 import '../../api/report/api_report.dart';
 
 class FinancialChartScreen extends StatefulWidget {
@@ -293,7 +294,24 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                             imageUrl = item['image'];
                           }
 
-                          const String baseServerUrl = "http://10.0.2.2:8000/";
+                          // 🟢 ប្រើប្រាស់ BaseImageUrl.BaseimageUrl ជំនួសវិញដើម្បីភាពបត់បែនពេល Deploy
+                          const String baseServerUrl =
+                              BaseImageUrl.BaseimageUrl;
+
+                          // 🟢 រៀបចំល្វែងលิงក៍រូបភាពឱ្យស្អាតស្អំ (Dynamic Handling)
+                          String? finalImageUrl;
+                          if (imageUrl != null && imageUrl.trim().isNotEmpty) {
+                            if (imageUrl.startsWith('http://') ||
+                                imageUrl.startsWith('https://')) {
+                              finalImageUrl = imageUrl;
+                            } else {
+                              String cleanPath = imageUrl.startsWith('/')
+                                  ? imageUrl.substring(1)
+                                  : imageUrl;
+                              finalImageUrl = '$baseServerUrl/$cleanPath';
+                            }
+                          }
+
                           double percentage = currentTotal > 0
                               ? (amount / currentTotal) * 100
                               : 0;
@@ -323,29 +341,44 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                                       decoration: BoxDecoration(
                                         color: itemColor.withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(14),
-                                        image:
-                                            (imageUrl != null &&
-                                                imageUrl.isNotEmpty)
-                                            ? DecorationImage(
-                                                image: NetworkImage(
-                                                  imageUrl.startsWith('http')
-                                                      ? imageUrl
-                                                      : '$baseServerUrl$imageUrl',
-                                                ),
-                                                fit: BoxFit.cover,
-                                              )
-                                            : null,
                                       ),
-                                      child:
-                                          (imageUrl == null || imageUrl.isEmpty)
-                                          ? Icon(
-                                              selectedTab == 0
-                                                  ? Icons.arrow_upward_rounded
-                                                  : Icons.receipt_long_rounded,
-                                              color: itemColor,
-                                              size: 20,
-                                            )
-                                          : null,
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(14),
+                                        child: (finalImageUrl != null)
+                                            ? Image.network(
+                                                finalImageUrl,
+                                                fit: BoxFit.cover,
+                                                errorBuilder:
+                                                    (
+                                                      context,
+                                                      error,
+                                                      stackTrace,
+                                                    ) {
+                                                      return Center(
+                                                        child: Icon(
+                                                          selectedTab == 0
+                                                              ? Icons
+                                                                    .arrow_upward_rounded
+                                                              : Icons
+                                                                    .receipt_long_rounded,
+                                                          color: itemColor,
+                                                          size: 20,
+                                                        ),
+                                                      );
+                                                    },
+                                              )
+                                            : Center(
+                                                child: Icon(
+                                                  selectedTab == 0
+                                                      ? Icons
+                                                            .arrow_upward_rounded
+                                                      : Icons
+                                                            .receipt_long_rounded,
+                                                  color: itemColor,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                      ),
                                     ),
                                     const SizedBox(width: 14),
                                     Expanded(

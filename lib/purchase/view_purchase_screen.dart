@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart'; // 🟢 Import BaseUrlApi របស់អ្នក
 
 import '../api/api_purchase.dart';
 import '../msg/appSnackBar.dart';
@@ -14,8 +15,7 @@ class ViewPurchaseScreen extends StatefulWidget {
 }
 
 class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
-  // 🌐 កំណត់ URL របស់ Backend Server របស់អ្នកនៅទីនេះ
-  final String baseUrl = 'http://10.0.2.2:8000/api';
+  final String baseUrl = BaseUrlApi.baseurl;
 
   bool _isLoading = true;
   Map<String, dynamic>? _purchaseData;
@@ -215,14 +215,13 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                           ) ??
                           (qty * price);
 
-                      // 🖼️ ទាញយក Link រូបភាព និងបញ្ចូល /storage/ ឱ្យបានត្រឹមត្រូវ
+
                       String? imageUrl;
                       if (item['product'] is Map) {
                         String? img =
                             item['product']['image'] ??
                             item['product']['image_url'];
                         if (img != null && img.isNotEmpty) {
-                          // 🧹 បើ baseUrl មានពាក្យ /api គឺត្រូវកាត់ចេញ ព្រោះរូបភាពមិនស្ថិតក្នុង api route ទេ
                           String baseWithoutApi = baseUrl.endsWith('/api')
                               ? baseUrl.substring(0, baseUrl.length - 4)
                               : (baseUrl.endsWith('/api/')
@@ -242,11 +241,8 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                           imageUrl = cleanImg.startsWith('http')
                               ? cleanImg
                               : "$cleanBaseUrl/$cleanImg";
-
-                          print('🔥 CORRECTED IMAGE URL: $imageUrl');
                         }
                       }
-                      print('PRINT ITEM DEBUG: $item');
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
@@ -270,9 +266,7 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                                 borderRadius: BorderRadius.circular(8),
                                 child: imageUrl != null && imageUrl.isNotEmpty
                                     ? CachedNetworkImage(
-                                        imageUrl: imageUrl.startsWith('http')
-                                            ? imageUrl
-                                            : "$baseUrl$imageUrl",
+                                        imageUrl: imageUrl,
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) =>
                                             const Center(

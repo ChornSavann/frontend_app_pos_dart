@@ -16,7 +16,6 @@ class ProductIndexScreen extends StatefulWidget {
 class _ProductIndexScreenState extends State<ProductIndexScreen> {
   final ApiProduct apiProduct = ApiProduct();
   late Future<List<Product>> _futureProducts;
-  final String baseUrl = "http://10.0.2.2:8000/";
   bool isLoading = false;
 
   @override
@@ -69,10 +68,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -95,10 +91,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   },
                   child: const Text(
                     "OK",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -109,14 +102,12 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
     );
   }
 
-// 🗑️ Dialog បញ្ជាក់ការលុបផលិតផល (រចនាពណ៌ស្អាត និងមានសុវត្ថិភាព)
+  // 🗑️ Dialog បញ្ជាក់ការលុបផលិតផល
   void _confirmDelete(Product product) {
     showDialog(
       context: context,
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         elevation: 0,
         backgroundColor: Colors.white,
         child: Padding(
@@ -125,7 +116,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // 🛑 Warning / Delete Icon with Soft Red Background
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -139,8 +129,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 ),
               ),
               const SizedBox(height: 18),
-
-              // ⚠️ Title
               const Text(
                 'លុបផលិតផល',
                 style: TextStyle(
@@ -150,8 +138,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-
-              // 📝 Subtitle / Message
               Text(
                 'តើអ្នកពិតជាចង់លុប "${product.name}" មែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។',
                 textAlign: TextAlign.center,
@@ -162,8 +148,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // 🔘 Action Buttons (Cancel & Confirm Delete)
               Row(
                 children: [
                   Expanded(
@@ -202,10 +186,12 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                           ),
                         ),
                         onPressed: () async {
-                          Navigator.pop(ctx); // បិទ Dialog ភ្លាមៗ
+                          Navigator.pop(ctx);
                           setState(() => isLoading = true);
 
-                          bool success = await apiProduct.deleteProduct(product.id);
+                          bool success = await apiProduct.deleteProduct(
+                            product.id,
+                          );
 
                           setState(() => isLoading = false);
 
@@ -243,7 +229,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
     );
   }
 
-// 🔍 Dialog បង្ហាញព័ត៌មានលម្អិតផលិតផលតាម ID (ស្អាត និងទាន់សម័យ)
+  // 🔍 Dialog បង្ហាញព័ត៌មានលម្អិតផលិតផលតាម ID
   void _showProductDetailDialog(Product product) {
     showDialog(
       context: context,
@@ -260,9 +246,8 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // 🖼️ Rounded Product Image with Gradient Border
                 Container(
-                  padding: const EdgeInsets.all(3), // ំហំស៊ុម Gradient
+                  padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
@@ -279,42 +264,54 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     ],
                   ),
                   child: ClipOval(
-                    child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                    child:
+                        product.imageUrl != null && product.imageUrl!.isNotEmpty
                         ? CachedNetworkImage(
-                      imageUrl: product.imageUrl!.startsWith('http')
-                          ? product.imageUrl!
-                          : "$baseUrl${product.imageUrl!}",
-                      width: 105,
-                      height: 105,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => const SizedBox(
-                        width: 105,
-                        height: 105,
-                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        width: 105,
-                        height: 105,
-                        color: Colors.indigo.shade50,
-                        child: const Icon(Icons.image_not_supported_outlined, size: 40, color: Colors.indigo),
-                      ),
-                    )
+                            imageUrl: product.imageUrl!,
+                            width: 105,
+                            height: 105,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const SizedBox(
+                              width: 105,
+                              height: 105,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              width: 105,
+                              height: 105,
+                              color: Colors.indigo.shade50,
+                              child: const Icon(
+                                Icons.image_not_supported_outlined,
+                                size: 40,
+                                color: Colors.indigo,
+                              ),
+                            ),
+                          )
                         : Container(
-                      width: 105,
-                      height: 105,
-                      color: Colors.indigo.shade50,
-                      child: const Icon(Icons.shopping_bag_outlined, size: 45, color: Color(0xFF4F46E5)),
-                    ),
+                            width: 105,
+                            height: 105,
+                            color: Colors.indigo.shade50,
+                            child: const Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 45,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 18),
-
-                // 🆔 ID & SKU Badge (លេងពណ៌ស្អាត)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -330,7 +327,10 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
@@ -347,8 +347,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-
-                // 🏷️ Product Name
                 Text(
                   product.name,
                   textAlign: TextAlign.center,
@@ -359,10 +357,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   ),
                 ),
                 const SizedBox(height: 6),
-
-                // 💰 Price (ពណ៌បៃតងលាយផ្ទៃខាងក្រោយស្អាត)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
@@ -377,24 +376,35 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // 📦 Stock Quantity Info Row (លេងពណ៌ផ្ទៃខៀវខ្ចី)
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.blue.withValues(alpha: 0.1)),
+                    border: Border.all(
+                      color: Colors.blue.withValues(alpha: 0.1),
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.inventory_2_outlined, size: 18, color: Color(0xFF4F46E5)),
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 18,
+                        color: Color(0xFF4F46E5),
+                      ),
                       const SizedBox(width: 8),
                       Text(
                         "Stock Available: ",
-                        style: TextStyle(color: Colors.grey.shade700, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          color: Colors.grey.shade700,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       Text(
                         "${product.stockQuantity}",
@@ -407,24 +417,18 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     ],
                   ),
                 ),
-
-                // 📝 Description (if available)
-                if (product.description != null && product.description!.isNotEmpty) ...[
+                if (product.description != null &&
+                    product.description!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Text(
                     product.description!,
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
                 const SizedBox(height: 20),
-
-                // 🔘 Close Button with Gradient Background
                 Container(
                   width: double.infinity,
                   height: 48,
@@ -485,7 +489,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-
             ),
           ),
           leading: Container(
@@ -495,14 +498,18 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              icon: const Icon(Icons.home_outlined, color: Colors.white, size: 20),
+              icon: const Icon(
+                Icons.home_outlined,
+                color: Colors.white,
+                size: 20,
+              ),
               onPressed: () async {
                 await Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
                     builder: (context) => const DashboardScreen(),
                   ),
-                      (route) => false,
+                  (route) => false,
                 );
               },
             ),
@@ -537,7 +544,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     context: context,
                     delegate: ProductSearchDelegate(
                       products,
-                      baseUrl,
                       _refreshProductList,
                       _showProductDetailDialog,
                     ),
@@ -555,7 +561,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 shape: BoxShape.circle,
               ),
               child: IconButton(
-                icon: const Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                icon: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
                 onPressed: () async {
                   final isChanged = await Navigator.push(
                     context,
@@ -592,11 +602,18 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey.shade400),
+                      Icon(
+                        Icons.inventory_2_outlined,
+                        size: 60,
+                        color: Colors.grey.shade400,
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         "No products found.",
-                        style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -606,7 +623,10 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
 
                 return ListView.builder(
                   itemCount: products.length,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   itemBuilder: (context, index) {
                     final product = products[index];
 
@@ -633,46 +653,50 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: product.imageUrl != null &&
-                                    product.imageUrl!.isNotEmpty
+                                child:
+                                    product.imageUrl != null &&
+                                        product.imageUrl!.isNotEmpty
                                     ? CachedNetworkImage(
-                                  imageUrl: product.imageUrl!.startsWith('http')
-                                      ? product.imageUrl!
-                                      : "$baseUrl${product.imageUrl!}",
-                                  width: 70,
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                  const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Center(
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) {
-                                    return Container(
-                                      width: 70,
-                                      height: 70,
-                                      color: Colors.grey.shade100,
-                                      child: const Icon(
-                                        Icons.image_not_supported_outlined,
-                                        color: Colors.grey,
-                                      ),
-                                    );
-                                  },
-                                )
+                                        imageUrl: product.imageUrl!,
+                                        width: 70,
+                                        height: 70,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) {
+                                          return Container(
+                                            width: 70,
+                                            height: 70,
+                                            color: Colors.grey.shade100,
+                                            child: const Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              color: Colors.grey,
+                                            ),
+                                          );
+                                        },
+                                      )
                                     : Container(
-                                  width: 70,
-                                  height: 70,
-                                  color: Colors.blue.withValues(alpha: 0.1),
-                                  child: const Icon(
-                                    Icons.shopping_bag_outlined,
-                                    color: Colors.blueAccent,
-                                    size: 32,
-                                  ),
-                                ),
+                                        width: 70,
+                                        height: 70,
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        child: const Icon(
+                                          Icons.shopping_bag_outlined,
+                                          color: Colors.blueAccent,
+                                          size: 32,
+                                        ),
+                                      ),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -703,10 +727,14 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 2),
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: Colors.grey.shade100,
-                                            borderRadius: BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             "SKU: ${product.sku}",
@@ -720,12 +748,20 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                         const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 2),
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: product.stockQuantity > 0
-                                                ? Colors.blue.withValues(alpha: 0.1)
-                                                : Colors.red.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(6),
+                                                ? Colors.blue.withValues(
+                                                    alpha: 0.1,
+                                                  )
+                                                : Colors.red.withValues(
+                                                    alpha: 0.1,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                           ),
                                           child: Text(
                                             "Stock: ${product.stockQuantity}",
@@ -752,7 +788,9 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
-                                              ProductUpdateScreen(product: product),
+                                              ProductUpdateScreen(
+                                                product: product,
+                                              ),
                                         ),
                                       );
                                       if (isChanged == true) {
@@ -762,8 +800,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
                                       padding: const EdgeInsets.all(6),
-                                      child: Icon(Icons.edit_outlined,
-                                          color: Colors.blue.shade600, size: 20),
+                                      child: Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.blue.shade600,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -772,8 +813,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
                                       padding: const EdgeInsets.all(6),
-                                      child: Icon(Icons.delete_outline,
-                                          color: Colors.red.shade400, size: 20),
+                                      child: Icon(
+                                        Icons.delete_outline,
+                                        color: Colors.red.shade400,
+                                        size: 20,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -791,9 +835,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
           if (isLoading)
             Container(
               color: Colors.black.withValues(alpha: 0.3),
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
         ],
       ),
@@ -801,28 +843,19 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
   }
 }
 
-// 🔎 Search Delegate
+// 🔎 Search Delegate (បានកែសម្រួលដក baseUrl ចចេញ និងប្រើ product.imageUrl! ផ្ទាល់)
 class ProductSearchDelegate extends SearchDelegate<Product?> {
   final List<Product> products;
-  final String baseUrl;
   final VoidCallback onRefresh;
   final Function(Product) onShowDetail;
 
-  ProductSearchDelegate(
-      this.products,
-      this.baseUrl,
-      this.onRefresh,
-      this.onShowDetail,
-      );
+  ProductSearchDelegate(this.products, this.onRefresh, this.onShowDetail);
 
   @override
   List<Widget>? buildActions(BuildContext context) {
     return [
       if (query.isNotEmpty)
-        IconButton(
-          icon: const Icon(Icons.clear),
-          onPressed: () => query = '',
-        ),
+        IconButton(icon: const Icon(Icons.clear), onPressed: () => query = ''),
     ];
   }
 
@@ -854,7 +887,10 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
 
     if (filteredList.isEmpty) {
       return const Center(
-        child: Text("រកមិនឃើញផលិតផលនេះទេ", style: TextStyle(color: Colors.grey, fontSize: 16)),
+        child: Text(
+          "រកមិនឃើញផលិតផលនេះទេ",
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
       );
     }
 
@@ -880,8 +916,8 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
-              close(context, null); // បិទផ្ទាំង Search មុន
-              onShowDetail(product); // 👈 បន្ទាប់មកហៅ Dialog បង្ហាញព័ត៌មានទំនិញ
+              close(context, null);
+              onShowDetail(product);
             },
             child: Padding(
               padding: const EdgeInsets.all(12),
@@ -890,22 +926,25 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                    child:
+                        product.imageUrl != null && product.imageUrl!.isNotEmpty
                         ? CachedNetworkImage(
-                      imageUrl: product.imageUrl!.startsWith('http')
-                          ? product.imageUrl!
-                          : "$baseUrl${product.imageUrl!}",
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) => const Icon(Icons.image_not_supported),
-                    )
+                            imageUrl: product.imageUrl!,
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.image_not_supported),
+                          )
                         : Container(
-                      width: 70,
-                      height: 70,
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      child: const Icon(Icons.shopping_bag_outlined, color: Colors.blueAccent),
-                    ),
+                            width: 70,
+                            height: 70,
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            child: const Icon(
+                              Icons.shopping_bag_outlined,
+                              color: Colors.blueAccent,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -916,16 +955,27 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                           product.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           "\$${product.sellingPrice.toStringAsFixed(2)}",
-                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 6),
-                        Text("SKU: ${product.sku} | Stock: ${product.stockQuantity}",
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+                        Text(
+                          "SKU: ${product.sku} | Stock: ${product.stockQuantity}",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
                     ),
                   ),

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:pos_inventory/Productscreen/models/product_model_banner.dart';
 import 'package:pos_inventory/models/Product.dart';
 
 import 'dart:io';
@@ -330,5 +331,29 @@ class ApiProduct {
     }
   }
 
+  Future<List<ProductModelBanner>> fetchProductsandcategory({int? categoryId}) async {
+    try {
+      String url = (categoryId == null || categoryId == 0)
+          ? '$baseUrl/products'
+          : '$baseUrl/products/category/$categoryId';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final List<dynamic> decodedData = jsonResponse['data'] ?? [];
+
+        return decodedData.map((dynamic item) {
+          return ProductModelBanner.fromJson(item as Map<String, dynamic>);
+        }).toList();
+      } else {
+        throw Exception(
+          "Failed to load products. Status: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("Error fetching products: $e");
+    }
+  }
 
 }

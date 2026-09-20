@@ -125,7 +125,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
       Map<String, dynamic> result = await apiProduct.createProduct(productData);
 
-      if (mounted) Navigator.pop(context); // Close loading dialog
+      if (mounted) Navigator.pop(context);
 
       if (result['success'] == true) {
         _showSuccessDialog(

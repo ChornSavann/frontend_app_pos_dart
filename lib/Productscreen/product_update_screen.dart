@@ -6,6 +6,8 @@ import 'package:pos_inventory/api/api_category.dart';
 import 'package:pos_inventory/api/api_product.dart';
 import 'package:pos_inventory/models/Product.dart';
 
+import '../msg/appSnackBar.dart';
+
 class ProductUpdateScreen extends StatefulWidget {
   final Product product;
 
@@ -21,8 +23,6 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
   final ApiProduct apiProduct = ApiProduct();
   final ApiCategory apiCategory = ApiCategory();
   final ApiBrand apiBrand = ApiBrand();
-
-  final String baseUrl = "http://10.0.2.2:8000/";
 
   late TextEditingController _nameController;
   late TextEditingController _skuController;
@@ -65,7 +65,6 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
       text: widget.product.categoryId.toString(),
     );
 
-    // ✅ បន្ថែមការកំណត់តម្លៃដើមឱ្យ _unitIdController
     _unitIdController = TextEditingController(
       text: (widget.product.unitId ?? 1).toString(),
     );
@@ -103,15 +102,10 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
     }
   }
 
-
   Future<void> _fetchUnits() async {
     try {
-      try {
-        final data = await apiProduct.fetchUnits();
-        setState(() => _units = data);
-      } catch (e) {
-        debugPrint("Error fetching categories: $e");
-      }
+      final data = await apiProduct.fetchUnits();
+      setState(() => _units = data);
     } catch (e) {
       debugPrint("Error fetching units: $e");
     }
@@ -163,100 +157,17 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
 
     Map<String, dynamic> result = await apiProduct.updateProduct(productData);
 
-    void _showSuccessDialog(String message, {VoidCallback? onDeleteOrClose}) {
-      showDialog(
-        context: context,
-        barrierDismissible:
-            false, // មិនឱ្យចុចបិទផ្ទាំងខាងក្រៅបានទេ ទាល់តែចុច OK
-        builder: (BuildContext context) {
-          return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_rounded,
-                    color: Colors.green,
-                    size: 50,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  "Success!",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  message,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context); // បិទ Dialog សិន
-                      if (onDeleteOrClose != null) {
-                        onDeleteOrClose(); // បន្ទាប់មកបញ្ជូនត្រឡប់ក្រោយនិង Refresh
-                      }
-                    },
-                    child: const Text(
-                      "OK",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    }
-
     if (mounted) {
       setState(() => _isLoading = false);
+
       if (result['success'] == true) {
-        _showSuccessDialog(
-          result['message'],
-          onDeleteOrClose: () {
-            Navigator.pop(context, true); // ត្រឡប់ក្រោយនិង Refresh
-          },
+        AppSnackBar.showSuccess(
+          context,
+          result['message'] ?? 'Updated successfully!',
         );
+        Navigator.pop(context, true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message']),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 4),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showError(context, result['message'] ?? 'Update failed!');
       }
     }
   }
@@ -282,7 +193,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // 🖼️ Image Picker Section (ស្អាតបែបទំនើប មានកន្លែងចុចថតរូបពីលើ)
+                    // 🖼️ Image Picker Section
                     Center(
                       child: Stack(
                         children: [
@@ -315,11 +226,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                                   : (widget.product.imageUrl != null &&
                                             widget.product.imageUrl!.isNotEmpty
                                         ? Image.network(
-                                            widget.product.imageUrl!.startsWith(
-                                                  'http',
-                                                )
-                                                ? widget.product.imageUrl!
-                                                : "$baseUrl${widget.product.imageUrl!}",
+                                            widget.product.imageUrl!,
                                             fit: BoxFit.cover,
                                             errorBuilder:
                                                 (context, error, stackTrace) =>
@@ -372,7 +279,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Input Fields (ទម្រង់ដើម តែរៀបចំ Border និង Padding ឱ្យស្អាត)
+                    // Input Fields
                     TextFormField(
                       controller: _nameController,
                       decoration: _inputDecoration(
@@ -474,13 +381,12 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Brand Dropdown (Updated for BrandModel)
+                    // Brand Dropdown
                     DropdownButtonFormField<String>(
                       value:
                           _brand.any(
                             (cat) =>
-                                cat.id.toString() ==
-                                _brandIdController.text, // 🟢 ប្រើ cat.id
+                                cat.id.toString() == _brandIdController.text,
                           )
                           ? _brandIdController.text
                           : null,
@@ -490,8 +396,8 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                       ),
                       items: _brand.map((cat) {
                         return DropdownMenuItem<String>(
-                          value: cat.id.toString(), // 🟢 ប្រើ cat.id
-                          child: Text(cat.name.toString()), // 🟢 ប្រើ cat.name
+                          value: cat.id.toString(),
+                          child: Text(cat.name.toString()),
                         );
                       }).toList(),
                       onChanged: (value) =>
@@ -539,7 +445,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                     ),
                     const SizedBox(height: 30),
 
-                    // Save Button (ស្អាត មាន Shadow ស្រទន់)
+                    // Save Button
                     SizedBox(
                       width: double.infinity,
                       height: 52,
@@ -578,7 +484,6 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
     );
   }
 
-  // 🛠️ Helper function សម្រាប់ Input Decoration ឱ្យស្អាតស្អំ
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,

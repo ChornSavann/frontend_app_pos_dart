@@ -28,13 +28,12 @@ class CartManager {
   static void updateQuantity(int index, int delta) {
     cartItems[index].quantity += delta;
     if (cartItems[index].quantity <= 0) {
-      cartItems.removeAt(index); // បើថយដល់ 0 លុបចេញពី Cart តែម្ដង
+      cartItems.removeAt(index);
     }
     _updateCount();
   }
 
   static void _updateCount() {
-    // គណនាចំនួនសរុប (Total items count)
     int totalCount = cartItems.fold(0, (sum, item) => sum + item.quantity);
     cartItemCount.value = totalCount;
   }

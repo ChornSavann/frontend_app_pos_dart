@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pos_inventory/CategoryScreen/create_categrory_screen.dart';
 import 'package:pos_inventory/CategoryScreen/update_categpry_screen.dart';
 import 'package:pos_inventory/api/api_category.dart';
+import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
 
@@ -16,6 +17,7 @@ class CategoryIndexScreen extends StatefulWidget {
 
 class _CategoryIndexScreenState extends State<CategoryIndexScreen> {
   final ApiCategory apiCategory = ApiCategory();
+  final urlImage = BaseImageUrl.BaseimageUrl;
   late Future<List<dynamic>> _categoryFuture;
 
   @override
@@ -292,48 +294,50 @@ class _CategoryIndexScreenState extends State<CategoryIndexScreen> {
                     padding: const EdgeInsets.all(12.0),
                     child: Row(
                       children: [
-                        // --- ផ្នែកខាងឆ្វេង: រូបតំណាង Category Icon ---
-                        // --- ផ្នែកខាងឆ្វេង: រូបភាព Category ---
-                        // --- ផ្នែកខាងឆ្វេង: រូបភាព Category ---
                         ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: Container(
                             width: 50,
                             height: 50,
-                            color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
-                            child: item["image"] != null && item["image"].toString().isNotEmpty
-                                ? Builder(
-                              builder: (context) {
-                                String indexImageUrl = item["image"].toString().startsWith('http')
-                                    ? item["image"].toString()
-                                    : 'http://10.0.2.2:8000/${item["image"].toString().startsWith('/') ? item["image"].toString().substring(1) : item["image"]}';
-
-                                print("INDEX DEBUG IMAGE URL: $indexImageUrl");
-
-                                return Image.network(
-                                  indexImageUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    print("INDEX IMAGE ERROR: $error");
-                                    return const Icon(
-                                      Icons.broken_image_rounded,
-                                      color: Colors.grey,
-                                      size: 24,
-                                    );
-                                  },
-                                );
-                              },
-                            )
+                            color: const Color(
+                              0xFF4F46E5,
+                            ).withValues(alpha: 0.1),
+                            child:
+                                item["image_url"] != null &&
+                                    item["image_url"].toString().isNotEmpty
+                                ? Image.network(
+                                    item["image_url"],
+                                    fit: BoxFit.cover,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                          if (loadingProgress == null)
+                                            return child;
+                                          return const Center(
+                                            child: SizedBox(
+                                              width: 15,
+                                              height: 15,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.broken_image_rounded,
+                                        color: Colors.grey,
+                                        size: 24,
+                                      );
+                                    },
+                                  )
                                 : const Icon(
-                              Icons.folder_open_rounded,
-                              color: Color(0xFF4F46E5),
-                              size: 24,
-                            ),
+                                    Icons.folder_open_rounded,
+                                    color: Color(0xFF4F46E5),
+                                    size: 24,
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 14),
-
-                        // --- ផ្នែកកណ្តាល: ឈ្មោះ និងការពិពណ៌នា ---
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

@@ -251,18 +251,16 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                               itemBuilder: (context, index) {
                                 final prod = purchaseItems[index];
 
-                                // จัดการรูปภาพផលិតផល
+
                                 String imageName =
-                                    prod['image']?.toString() ?? '';
+                                    prod['image_url']?.toString() ?? '';
                                 if (imageName.startsWith('products/')) {
                                   imageName = imageName.replaceFirst(
                                     'products/',
                                     '',
                                   );
                                 }
-                                String imageUrl = imageName.isNotEmpty
-                                    ? "http://10.0.2.2:8000/products/$imageName"
-                                    : "";
+                                String imageUrl = prod['image_url']?.toString() ?? '';
 
                                 double qty =
                                     double.tryParse(

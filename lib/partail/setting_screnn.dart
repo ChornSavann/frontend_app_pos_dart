@@ -52,7 +52,7 @@ class _SettingScreenState extends State<SettingScreen> {
     final cardColor = _isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = _isDarkMode
         ? Colors.white
-        : const Color(0xFF1E293B); // 👈 អត្ថបទប្រែពណ៌សស្អាតពេល Dark Mode
+        : const Color(0xFF1E293B);
     final subtitleColor = _isDarkMode ? Colors.grey[400] : Colors.grey[500];
 
     final tileBgColor = _isDarkMode

@@ -69,7 +69,6 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
           context,
           result['message'] ?? 'User created successfully!',
         );
-        // 🟢 សំខាន់ខ្លាំង៖ ផ្ញើ true ត្រឡប់ទៅ UserIndexScreen វិញ ដើម្បីឱ្យវា Refresh
         Navigator.pop(context, true);
       } else {
         AppSnackBar.showError(

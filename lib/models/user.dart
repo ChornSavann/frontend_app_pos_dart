@@ -23,7 +23,7 @@ class User {
       email: json['email'],
       phone: json['phone'],
       password: json['password'],
-      image: json['image'],
+      image: json['image_url'],
     );
   }
 

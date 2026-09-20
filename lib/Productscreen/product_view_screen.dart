@@ -8,6 +8,7 @@ import 'package:pos_inventory/api/api_product.dart';
 import 'package:pos_inventory/partail/button_screen.dart';
 
 import '../api/api_brand.dart';
+import '../constants/baseurl/base_url_api.dart';
 import '../models/Product.dart';
 import '../models/brand.dart';
 import '../models/category.dart';
@@ -27,7 +28,6 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
   late Future<List<Product>> _futureProducts;
   late Future<List<CategoryModel>> _fetchCategories;
   late Future<List<BrandModel>> _fetchBrands;
-  final String baseUrl = "http://10.0.2.2:8000/";
   int _selectedCategoryId = 0;
   int _selectedBrandId = 0;
 
@@ -230,7 +230,6 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
             ),
           ),
 
-
           const SizedBox(height: 10),
 
           // 🔄 2. ផ្នែកខាងក្រោមនេះ (Banner+Categories + Brands + Product Grid) អាច Scroll បានទាំងអស់គ្នា
@@ -244,9 +243,10 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: SizedBox(
-                      height:
-                      268,
-                      child: BannerProductScreen(categoryId: _selectedCategoryId),
+                      height: 268,
+                      child: BannerProductScreen(
+                        categoryId: _selectedCategoryId,
+                      ),
                     ),
                   ),
                 ),
@@ -318,13 +318,8 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                         itemBuilder: (context, index) {
                           final cat = allCategories[index];
                           final isSelected = cat.id == _selectedCategoryId;
-
-                          final String? imageUrl =
-                              (cat.image != null && cat.image!.isNotEmpty)
-                              ? (cat.image!.startsWith('http')
-                                    ? cat.image!
-                                    : 'http://10.0.2.2:8000/${cat.image!.startsWith('/') ? cat.image!.substring(1) : cat.image}')
-                              : null;
+                          // 🟢 ប្រើប្រាស់ imageUrl ដែលបានទាញយកមកពី Laravel Accessor ស្រាប់ (សុវត្ថិភាពពេល Hosting)
+                          final String? imageUrl = cat.image;
 
                           return GestureDetector(
                             onTap: () {
@@ -363,14 +358,15 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                   ? Colors.amber[800]
                                                   : Colors.black87,
                                             )
-                                          : (imageUrl != null
+                                          : (imageUrl != null &&
+                                                    imageUrl.isNotEmpty
                                                 ? ClipRRect(
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                           100,
                                                         ),
                                                     child: Image.network(
-                                                      imageUrl,
+                                                      imageUrl, // 🟢 ដាក់ Full URL ចូលផ្ទាល់
                                                       width: 38,
                                                       height: 38,
                                                       fit: BoxFit.cover,
@@ -425,7 +421,6 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                     },
                   ),
                 ),
-
                 // 📌 Brands Header
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -452,6 +447,7 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                   ),
                 ),
 
+                // 🏷️ Brand Selector (Horizontal List)
                 // 🏷️ Brand Selector (Horizontal List)
                 SizedBox(
                   height: 90,
@@ -495,13 +491,8 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                         itemBuilder: (context, index) {
                           final brand = allBrands[index];
                           final isSelected = brand.id == _selectedBrandId;
-
-                          final String? imageUrl =
-                              (brand.logo != null && brand.logo!.isNotEmpty)
-                              ? (brand.logo!.startsWith('http')
-                                    ? brand.logo!
-                                    : 'http://10.0.2.2:8000/${brand.logo!.startsWith('/') ? brand.logo!.substring(1) : brand.logo}')
-                              : null;
+                          // 🟢 ប្រើប្រាស់ logoUrl ដែលបានទាញយកមកពី Laravel Accessor ស្រាប់ (សុវត្ថិភាពពេល Hosting)
+                          final String? imageUrl = brand.logo;
 
                           return GestureDetector(
                             onTap: () {
@@ -534,48 +525,48 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                     child: Center(
                                       child: brand.name == "All"
                                           ? Icon(
-                                              Icons.grid_view_rounded,
-                                              size: 26,
-                                              color: isSelected
-                                                  ? Colors.amber[800]
-                                                  : Colors.black87,
-                                            )
-                                          : (imageUrl != null
-                                                ? ClipRRect(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          100,
-                                                        ),
-                                                    child: Image.network(
-                                                      imageUrl,
-                                                      width: 38,
-                                                      height: 38,
-                                                      fit: BoxFit.cover,
-                                                      errorBuilder:
-                                                          (
-                                                            context,
-                                                            error,
-                                                            stackTrace,
-                                                          ) => Icon(
-                                                            Icons
-                                                                .branding_watermark_rounded,
-                                                            size: 24,
-                                                            color: isSelected
-                                                                ? Colors
-                                                                      .amber[800]
-                                                                : Colors
-                                                                      .black87,
-                                                          ),
-                                                    ),
-                                                  )
-                                                : Icon(
-                                                    Icons
-                                                        .branding_watermark_rounded,
-                                                    size: 24,
-                                                    color: isSelected
-                                                        ? Colors.amber[800]
-                                                        : Colors.black87,
-                                                  )),
+                                        Icons.grid_view_rounded,
+                                        size: 26,
+                                        color: isSelected
+                                            ? Colors.amber[800]
+                                            : Colors.black87,
+                                      )
+                                          : (imageUrl != null && imageUrl.isNotEmpty
+                                          ? ClipRRect(
+                                        borderRadius:
+                                        BorderRadius.circular(
+                                          100,
+                                        ),
+                                        child: Image.network(
+                                          imageUrl, // 🟢 ដាក់ Full URL ចូលផ្ទាល់
+                                          width: 38,
+                                          height: 38,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                              ) => Icon(
+                                            Icons
+                                                .branding_watermark_rounded,
+                                            size: 24,
+                                            color: isSelected
+                                                ? Colors
+                                                .amber[800]
+                                                : Colors
+                                                .black87,
+                                          ),
+                                        ),
+                                      )
+                                          : Icon(
+                                        Icons
+                                            .branding_watermark_rounded,
+                                        size: 24,
+                                        color: isSelected
+                                            ? Colors.amber[800]
+                                            : Colors.black87,
+                                      )),
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -603,6 +594,7 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                     },
                   ),
                 ),
+
                 const SizedBox(height: 12),
 
                 // 🛍️ Product Grid View
@@ -654,12 +646,14 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                         physics: const NeverScrollableScrollPhysics(),
                         itemCount: products.length,
                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.75, // 🟢 កែតម្រូវទម្រង់កាតឱ្យសមល្មម ស្អាត
-                        ),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                              childAspectRatio:
+                                  0.75,
+                            ),
                         itemBuilder: (context, index) {
                           final product = products[index];
 
@@ -678,7 +672,10 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.grey.shade100, width: 1),
+                                border: Border.all(
+                                  color: Colors.grey.shade100,
+                                  width: 1,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.04),
@@ -694,49 +691,58 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                   Stack(
                                     children: [
                                       Container(
-                                        height: 125, // 🟢 កំណត់កម្ពស់រូបភាពឱ្យថេរ ធានាថាគ្រប់កាតស្មើគ្នា
+                                        height:
+                                            135, // 🟢 កំណត់កម្ពស់រូបភាពឱ្យថេរ ធានាថាគ្រប់កាតស្មើគ្នា
                                         width: double.infinity,
                                         margin: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF8FAFC),
-                                          borderRadius: BorderRadius.circular(14),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(14),
-                                          child: product.imageUrl != null &&
-                                              product.imageUrl!.isNotEmpty
-                                              ? CachedNetworkImage(
-                                            imageUrl: product.imageUrl!
-                                                .startsWith('http')
-                                                ? product.imageUrl!
-                                                : "$baseUrl${product.imageUrl!}",
-                                            fit: BoxFit.cover, // 🟢 ប្រើ cover ដើម្បីឱ្យរូបភាពពេញប្រអប់ស្អាត មិនមានសល់សសៃសសចំហៀង
-                                            width: double.infinity,
-                                            height: double.infinity,
-                                            placeholder: (context, url) =>
-                                            const Center(
-                                              child: SizedBox(
-                                                width: 15,
-                                                height: 15,
-                                                child: CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              ),
-                                            ),
-                                            errorWidget: (context, url, error) =>
-                                            const Icon(
-                                              Icons.image_not_supported,
-                                              size: 35,
-                                              color: Colors.grey,
-                                            ),
-                                          )
-                                              : const Center(
-                                            child: Icon(
-                                              Icons.shopping_bag_rounded,
-                                              size: 35,
-                                              color: Color(0xFF0F766E),
-                                            ),
+                                          borderRadius: BorderRadius.circular(
+                                            14,
                                           ),
+                                          child:
+                                              product.imageUrl != null &&
+                                                  product.imageUrl!.isNotEmpty
+                                              ? CachedNetworkImage(
+                                                  imageUrl: product.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  width: double.infinity,
+                                                  height: double.infinity,
+                                                  placeholder: (context, url) =>
+                                                      const Center(
+                                                        child: SizedBox(
+                                                          width: 15,
+                                                          height: 15,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        ),
+                                                      ),
+                                                  errorWidget:
+                                                      (
+                                                        context,
+                                                        url,
+                                                        error,
+                                                      ) => const Icon(
+                                                        Icons
+                                                            .image_not_supported,
+                                                        size: 35,
+                                                        color: Colors.grey,
+                                                      ),
+                                                )
+                                              : const Center(
+                                                  child: Icon(
+                                                    Icons.shopping_bag_rounded,
+                                                    size: 35,
+                                                    color: Color(0xFF0F766E),
+                                                  ),
+                                                ),
                                         ),
                                       ),
                                       // Favorite Icon Button
@@ -750,11 +756,14 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                           child: Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: Colors.white.withOpacity(0.9),
+                                              color: Colors.white.withOpacity(
+                                                0.9,
+                                              ),
                                               shape: BoxShape.circle,
                                               boxShadow: [
                                                 BoxShadow(
-                                                  color: Colors.black.withOpacity(0.06),
+                                                  color: Colors.black
+                                                      .withOpacity(0.06),
                                                   blurRadius: 4,
                                                   offset: const Offset(0, 2),
                                                 ),
@@ -774,13 +783,21 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                   // 📝 Details Section
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                                      padding: const EdgeInsets.fromLTRB(
+                                        12,
+                                        0,
+                                        12,
+                                        10,
+                                      ),
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               // 🏷️ Product Name
                                               Text(
@@ -798,13 +815,18 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                               // ⭐ Star Rating & Review Count
                                               Row(
                                                 children: [
-                                                  const Icon(Icons.star_rounded, size: 13, color: Colors.amber),
+                                                  const Icon(
+                                                    Icons.star_rounded,
+                                                    size: 13,
+                                                    color: Colors.amber,
+                                                  ),
                                                   const SizedBox(width: 3),
                                                   Text(
                                                     "4.8", // អាចដាក់ជា Rating ពិតប្រាកដ ឬរក្សាតាមតម្រូវការ
                                                     style: const TextStyle(
                                                       fontSize: 11,
-                                                      fontWeight: FontWeight.bold,
+                                                      fontWeight:
+                                                          FontWeight.bold,
                                                       color: Color(0xFF334155),
                                                     ),
                                                   ),
@@ -822,7 +844,8 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
 
                                               // 📄 Description (Short)
                                               Text(
-                                                product.description ?? "Fresh & Delicious",
+                                                product.description ??
+                                                    "Fresh & Delicious",
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
@@ -836,7 +859,8 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
 
                                           // 💰 Price & Add Button
                                           Row(
-                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
                                                 "\$${product.sellingPrice.toStringAsFixed(2)}",
@@ -851,18 +875,25 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                 width: 30,
                                                 child: ElevatedButton(
                                                   onPressed: () {
-                                                    CartManager.addProduct(product);
+                                                    CartManager.addProduct(
+                                                      product,
+                                                    );
                                                     showTopSnackBar(
                                                       context,
                                                       product.name,
                                                     );
                                                   },
                                                   style: ElevatedButton.styleFrom(
-                                                    backgroundColor: const Color(0xFF0F766E),
-                                                    foregroundColor: Colors.white,
+                                                    backgroundColor:
+                                                        const Color(0xFF0F766E),
+                                                    foregroundColor:
+                                                        Colors.white,
                                                     padding: EdgeInsets.zero,
                                                     shape: RoundedRectangleBorder(
-                                                      borderRadius: BorderRadius.circular(10),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            10,
+                                                          ),
                                                     ),
                                                     elevation: 0,
                                                   ),

@@ -1,30 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:pos_inventory/Productscreen/models/product_model_banner.dart'; // 🔄 កែ Path តាម Model របស់អ្នក
+import 'package:pos_inventory/api/api_product.dart';
 
-class Productmodel {
-  final int? id;
-  final String name;
-  final String description;
-  final String image;
-
-  Productmodel({
-    this.id,
-    required this.name,
-    required this.description,
-    required this.image,
-  });
-
-  factory Productmodel.fromJson(Map<String, dynamic> json) {
-    return Productmodel(
-      id: json['id'],
-      name: json['name'] ?? 'No Name',
-      description: json['description'] ?? 'No description available',
-      image: json['image'] ?? '',
-    );
-  }
-}
 
 class BannerProductScreen extends StatefulWidget {
   final int? categoryId;
@@ -35,8 +13,8 @@ class BannerProductScreen extends StatefulWidget {
 }
 
 class _BannerProductScreenState extends State<BannerProductScreen> {
-  final String baseUrl = 'http://10.0.2.2:8000/api';
-  late Future<List<Productmodel>> _productsFuture;
+  late Future<List<ProductModelBanner>> _productsFuture;
+  final ApiProduct _apiProductService = ApiProduct();
 
   int _currentIndex = 0;
   final CarouselSliderController _controller = CarouselSliderController();
@@ -44,39 +22,14 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = fetchProducts(categoryId: widget.categoryId);
-  }
-
-  Future<List<Productmodel>> fetchProducts({int? categoryId}) async {
-    try {
-      String url = (categoryId == null || categoryId == 0)
-          ? '$baseUrl/products'
-          : '$baseUrl/products/category/$categoryId';
-
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        final List<dynamic> decodedData = jsonResponse['data'] ?? [];
-
-        return decodedData.map((dynamic item) {
-          return Productmodel.fromJson(item as Map<String, dynamic>);
-        }).toList();
-      } else {
-        throw Exception(
-          "Failed to load products. Status: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      throw Exception("Error fetching products: $e");
-    }
+    _productsFuture = _apiProductService.fetchProductsandcategory(categoryId: widget.categoryId);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F9),
-      body: FutureBuilder<List<Productmodel>>(
+      body: FutureBuilder<List<ProductModelBanner>>(
         future: _productsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -136,11 +89,6 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
                     },
                   ),
                   items: products.map((product) {
-                    String imageUrl = product.image;
-                    if (!imageUrl.startsWith('http')) {
-                      imageUrl = 'http://10.0.2.2:8000/$imageUrl';
-                    }
-
                     return Builder(
                       builder: (BuildContext context) {
                         return Container(
@@ -163,7 +111,7 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
                               children: [
                                 // 🖼️ Background Image
                                 Image.network(
-                                  imageUrl,
+                                  product.imageUrl,
                                   fit: BoxFit.cover,
                                   cacheWidth: 1200,
                                   cacheHeight: 800,
@@ -196,7 +144,7 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
                                   ),
                                 ),
 
-                                // 🏷️ Badge ពិសេសពីលើ Banner (Modern Look)
+                                // 🏷️ Badge ពិសេសពីលើ Banner
                                 Positioned(
                                   top: 14,
                                   left: 16,
@@ -234,14 +182,14 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
                                   ),
                                 ),
 
-                                // 📝 Title & Description ពីលើ Banner
+
                                 Positioned(
                                   bottom: 18,
                                   left: 18,
                                   right: 18,
                                   child: Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         product.name,
@@ -298,113 +246,6 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
                   }).toList(),
                 ),
                 const SizedBox(height: 24),
-
-                // // 📋 Header សម្រាប់ Product List ខាងក្រោម
-                // Padding(
-                //   padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                //   child: Row(
-                //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //     children: [
-                //       const Text(
-                //         "All Products",
-                //         style: TextStyle(
-                //           fontSize: 16,
-                //           fontWeight: FontWeight.bold,
-                //           color: Colors.black87,
-                //         ),
-                //       ),
-                //       Text(
-                //         "${products.length} items",
-                //         style: TextStyle(
-                //           fontSize: 13,
-                //           color: Colors.grey.shade600,
-                //           fontWeight: FontWeight.w500,
-                //         ),
-                //       ),
-                //     ],
-                //   ),
-                // ),
-                const SizedBox(height: 12),
-
-                // 📦 List ផលិតផលខាងក្រោម Banner (Card Layout ស្អាត)
-                // ListView.builder(
-                //   shrinkWrap: true,
-                //   physics: const NeverScrollableScrollPhysics(),
-                //   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                //   itemCount: products.length,
-                //   itemBuilder: (context, index) {
-                //     final product = products[index];
-                //     String imageUrl = product.image;
-                //     if (!imageUrl.startsWith('http')) {
-                //       imageUrl = 'http://10.0.2.2:8000/$imageUrl';
-                //     }
-                //
-                //     return Container(
-                //       margin: const EdgeInsets.only(bottom: 12.0),
-                //       padding: const EdgeInsets.all(12.0),
-                //       decoration: BoxDecoration(
-                //         color: Colors.white,
-                //         borderRadius: BorderRadius.circular(16),
-                //         boxShadow: [
-                //           BoxShadow(
-                //             color: Colors.black.withOpacity(0.03),
-                //             blurRadius: 8,
-                //             offset: const Offset(0, 3),
-                //           ),
-                //         ],
-                //       ),
-                //       child: Row(
-                //         children: [
-                //           // Thumbnail រូបភាពតូចខាងឆ្វេង
-                //           ClipRRect(
-                //             borderRadius: BorderRadius.circular(12),
-                //             child: Image.network(
-                //               imageUrl,
-                //               width: 70,
-                //               height: 70,
-                //               fit: BoxFit.cover,
-                //               errorBuilder: (context, error, stackTrace) {
-                //                 return Container(
-                //                   width: 70,
-                //                   height: 70,
-                //                   color: Colors.grey.shade200,
-                //                   child: const Icon(Icons.image, color: Colors.grey),
-                //                 );
-                //               },
-                //             ),
-                //           ),
-                //           const SizedBox(width: 14),
-                //           // ព័ត៌មាន Name & Description
-                //           Expanded(
-                //             child: Column(
-                //               crossAxisAlignment: CrossAxisAlignment.start,
-                //               children: [
-                //                 Text(
-                //                   product.name,
-                //                   style: const TextStyle(
-                //                     fontSize: 15,
-                //                     fontWeight: FontWeight.bold,
-                //                     color: Colors.black87,
-                //                   ),
-                //                 ),
-                //                 const SizedBox(height: 4),
-                //                 Text(
-                //                   product.description,
-                //                   style: TextStyle(
-                //                     fontSize: 12,
-                //                     color: Colors.grey.shade600,
-                //                   ),
-                //                   maxLines: 2,
-                //                   overflow: TextOverflow.ellipsis,
-                //                 ),
-                //               ],
-                //             ),
-                //           ),
-                //         ],
-                //       ),
-                //     );
-                //   },
-                // ),
               ],
             ),
           );

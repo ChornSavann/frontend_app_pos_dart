@@ -15,7 +15,7 @@ class CustomerIndexScreen extends StatefulWidget {
 class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
   final ApiCustomer apiCustomer = ApiCustomer();
 
-  // 🔍 Variables សម្រាប់គ្រប់គ្រងការស្វែងរក (Search)
+
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";

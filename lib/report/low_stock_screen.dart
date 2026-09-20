@@ -216,7 +216,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
                       itemBuilder: (context, index) {
                         final item = lowStockItems[index];
                         bool isCritical = item['status'] == 'Critical';
-                        final productImage = item['image'].toString();
+                        final productImage = item['image_url'].toString();
 
 
                         return GestureDetector(
@@ -264,7 +264,7 @@ class _LowStockScreenState extends State<LowStockScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                       child: productImage.isNotEmpty
                                           ? Image.network(
-                                        "http://10.0.2.2:8000/$productImage",
+                                        productImage,
                                         fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) {
                                           return const Center(child: Text('📦', style: TextStyle(fontSize: 20)));
