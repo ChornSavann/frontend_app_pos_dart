@@ -64,7 +64,6 @@ class ApiAuth {
         body: jsonEncode({'email': email, 'password': password}),
       );
 
-      // ឆែកមើលថាបើ Response Body ទទេស្អាត
       if (response.body.isEmpty) {
         return {'success': false, 'message': 'Server returned empty response.'};
       }
@@ -104,7 +103,7 @@ class ApiAuth {
             String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
 
             if (cleanPath.startsWith('storage/')) {
-              // បើមានពាក្យ storage/ ជាប់មកជាមួយ ជំនួសវា ឬទុករانតាមហ្នឹង
+
               userAvatar = '$domainUrl/$cleanPath';
             } else if (cleanPath.startsWith('users/')) {
               userAvatar = '$domainUrl/$cleanPath';
@@ -192,7 +191,6 @@ class ApiAuth {
         final String newToken = data['token'] ?? '';
 
         if (newToken.isNotEmpty) {
-          // 💾 រក្សាទុក Token ថ្មីចូល SharedPreferences ជំនួសអាសចាស់
           await prefs.setString('token', newToken);
           return newToken;
         }
@@ -349,7 +347,6 @@ class ApiAuth {
           if (rawImage.startsWith('http')) {
             userAvatar = rawImage;
           } else {
-            // 🟢 លុប /storage/ ចេញ ព្រោះរូបភាពទុកក្នុង public/users ផ្ទាល់
             String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
 
             if (cleanPath.startsWith('storage/')) {

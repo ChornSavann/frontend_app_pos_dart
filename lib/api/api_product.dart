@@ -61,8 +61,8 @@ class ApiProduct {
       request.fields['selling_price']  = data['selling_price']?.toString() ?? '0.0';
       request.fields['stock_quantity'] = data['stock_quantity']?.toString() ?? '0';
       request.fields['category_id']    = data['category_id']?.toString() ?? '';
-      request.fields['brand_id']       = data['brand_id']?.toString() ?? '1';
-      request.fields['unit_id']        = data['unit_id']?.toString() ?? '1';
+      request.fields['brand_id']       = data['brand_id']?.toString() ?? '';
+      request.fields['unit_id']        = data['unit_id']?.toString() ?? '';
       request.fields['description']    = data['description']?.toString() ?? '';
 
 

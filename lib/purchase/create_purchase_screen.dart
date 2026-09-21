@@ -12,7 +12,7 @@ import '../models/supplier.dart';
 class CreatePurchaseScreen extends StatefulWidget {
   final dynamic productId;
   final String? productName;
-  const CreatePurchaseScreen({super.key,this.productId,this.productName});
+  const CreatePurchaseScreen({super.key, this.productId, this.productName});
 
   @override
   State<CreatePurchaseScreen> createState() => _CreatePurchaseScreenState();
@@ -29,14 +29,13 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
 
   // Controllers
   final TextEditingController _purchaseNumberController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController _discountController = TextEditingController(
     text: '0',
   );
   final TextEditingController _taxController = TextEditingController(text: '0');
   final TextEditingController _noteController = TextEditingController();
 
-  // Controllers សម្រាប់បន្ថែម Item ថ្មីចូល List
   final TextEditingController _itemQuantityController = TextEditingController();
   final TextEditingController _itemPriceController = TextEditingController();
 
@@ -67,13 +66,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     _generatePurchaseNumber();
   }
 
-  // Future<void> _loadUserData() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     _userId = prefs.getString('user_id') ?? '1';
-  //   });
-  // }
-
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     final userId = prefs.get('user_id');
@@ -99,28 +91,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     }
   }
 
-  // Future<void> _fetchProducts() async {
-  //   try {
-  //     List<Product> productsList = await apiPurchase.fetchProducts();
-  //     setState(() {
-  //       _products = productsList
-  //           .map(
-  //             (product) => {
-  //           'id': product.id,
-  //           'name': product.name,
-  //           'price': product.costPrice,
-  //           'base_unit_name': product.unitName,
-  //         },
-  //       )
-  //           .toList();
-  //       _isLoadingProducts = false;
-  //     });
-  //   } catch (e) {
-  //     print('Error fetching products: $e');
-  //     setState(() => _isLoadingProducts = false);
-  //   }
-  // }
-
   Future<void> _fetchProducts() async {
     try {
       List<Product> productsList = await apiPurchase.fetchProducts();
@@ -128,20 +98,18 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
         _products = productsList
             .map(
               (product) => {
-            'id': product.id.toString(),
-            'name': product.name,
-            'price': product.costPrice,
-            'base_unit_name': product.unitName,
-          },
-        )
+                'id': product.id.toString(),
+                'name': product.name,
+                'price': product.costPrice ?? 0.0,
+                'base_unit_name': product.unitName,
+                'image_url': product.imageUrl, // 🟢 ទាញយករូបភាពផលិតផល
+              },
+            )
             .toList();
         _isLoadingProducts = false;
 
-        // 🟢 កំណត់តម្លៃ selected product បន្ទាប់ពីទាញយកមកបាន
         if (widget.productId != null) {
           String targetId = widget.productId.toString();
-
-          // ឆែកមើលថាតើมี ID ហ្នឹងក្នុង List ដែរឬត់
           bool exists = _products.any((p) => p['id'] == targetId);
 
           if (exists) {
@@ -149,9 +117,12 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
             _selectedProductName = widget.productName;
 
             var matchedProduct = _products.firstWhere(
-                  (p) => p['id'] == targetId,
+              (p) => p['id'] == targetId,
+              orElse: () => <String, dynamic>{},
             );
-            _itemPriceController.text = matchedProduct['price'].toString();
+            if (matchedProduct.isNotEmpty) {
+              _itemPriceController.text = matchedProduct['price'].toString();
+            }
           }
         }
       });
@@ -161,7 +132,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     }
   }
 
-  // ➕ មុខងារបន្ថែម Product ចូលទៅក្នុង Cart List
+  // ➕ មុខងារបន្ថែម Product ចូលទៅក្នុង Cart List រួមទាំង Image URL
   void _addItemToCart() {
     if (_selectedProductId == null) {
       AppSnackBar.showError(context, 'សូមជ្រើសរើសទំនិញ (Product)');
@@ -175,17 +146,23 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
       return;
     }
 
+    // 🟢 ស្វែងរក Product ដែលបានជ្រើសរើសដោយកំណត់ប្រភេទ orElse ឱ្យបានត្រឹមត្រូវ
+    var selectedProductData = _products.firstWhere(
+      (p) => p['id'].toString() == _selectedProductId.toString(),
+      orElse: () => <String, dynamic>{},
+    );
+
     setState(() {
-      // ឆែកមើលក្រែងលោទំនិញហ្នឹងមានរួចហើយ បើមាន បូកបន្ថែម quantity
       int existingIndex = _purchaseItems.indexWhere(
-            (item) => item['product_id'].toString() == _selectedProductId.toString(),
+        (item) =>
+            item['product_id'].toString() == _selectedProductId.toString(),
       );
 
       if (existingIndex >= 0) {
         _purchaseItems[existingIndex]['quantity'] += qty;
         _purchaseItems[existingIndex]['total_price'] =
             _purchaseItems[existingIndex]['quantity'] *
-                _purchaseItems[existingIndex]['unit_cost'];
+            _purchaseItems[existingIndex]['unit_cost'];
       } else {
         _purchaseItems.add({
           'product_id': int.tryParse(_selectedProductId.toString()) ?? 0,
@@ -193,10 +170,12 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
           'unit_cost': price,
           'quantity': qty,
           'total_price': qty * price,
+          'image_url': selectedProductData.isNotEmpty
+              ? selectedProductData['image_url']
+              : null, // 🟢 បញ្ចូល image_url ចូលក្នុង Cart
         });
       }
 
-      // សម្អាត Form បន្ថែម Item
       _selectedProductId = null;
       _selectedProductName = null;
       _itemQuantityController.clear();
@@ -206,7 +185,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     });
   }
 
-  // 🗑️ លុប Item ចេញពី Cart
   void _removeItem(int index) {
     setState(() {
       _purchaseItems.removeAt(index);
@@ -214,7 +192,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     });
   }
 
-  // 🧮 គណនាតម្លៃសរុបទាំងអស់
   void _calculateTotals() {
     double sub = 0;
     for (var item in _purchaseItems) {
@@ -261,7 +238,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
           'notes': _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),
-          'items': _purchaseItems, // 📦 បញ្ជូនបញ្ជី items ទាំងអស់ទៅកាន់ API
+          'items': _purchaseItems,
         };
 
         bool success = await apiPurchase.createPurchase(
@@ -356,28 +333,28 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
               _isLoadingSuppliers
                   ? const Center(child: CircularProgressIndicator())
                   : DropdownButtonFormField<String>(
-                value: _selectedSupplierId,
-                decoration: InputDecoration(
-                  labelText: 'Select Supplier',
-                  prefixIcon: const Icon(Icons.business_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                hint: const Text('Choose a supplier'),
-                items: _suppliers.map<DropdownMenuItem<String>>((
-                    supplier,
-                    ) {
-                  return DropdownMenuItem<String>(
-                    value: supplier['id'].toString(),
-                    child: Text(supplier['name'] ?? 'Supplier Name'),
-                  );
-                }).toList(),
-                onChanged: (value) =>
-                    setState(() => _selectedSupplierId = value),
-                validator: (value) =>
-                value == null ? 'សូមជ្រើសរើស Supplier' : null,
-              ),
+                      value: _selectedSupplierId,
+                      decoration: InputDecoration(
+                        labelText: 'Select Supplier',
+                        prefixIcon: const Icon(Icons.business_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      hint: const Text('Choose a supplier'),
+                      items: _suppliers.map<DropdownMenuItem<String>>((
+                        supplier,
+                      ) {
+                        return DropdownMenuItem<String>(
+                          value: supplier['id'].toString(),
+                          child: Text(supplier['name'] ?? 'Supplier Name'),
+                        );
+                      }).toList(),
+                      onChanged: (value) =>
+                          setState(() => _selectedSupplierId = value),
+                      validator: (value) =>
+                          value == null ? 'សូមជ្រើសរើស Supplier' : null,
+                    ),
               const SizedBox(height: 20),
               const Divider(),
               const Text(
@@ -390,40 +367,43 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
               _isLoadingProducts
                   ? const Center(child: CircularProgressIndicator())
                   : DropdownButtonFormField<String>(
-                value: _selectedProductId,
-                decoration: InputDecoration(
-                  labelText: 'Select Product',
-                  prefixIcon: const Icon(Icons.inventory_2_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                hint: const Text('Choose a product'),
-                items: _products.map<DropdownMenuItem<String>>((product) {
-                  String productName = product['name'] ?? 'Product';
-                  String baseUnitName = product['base_unit_name'] ?? '';
-                  return DropdownMenuItem<String>(
-                    value: product['id'].toString(),
-                    child: Text(
-                      baseUnitName.isNotEmpty
-                          ? '$productName ($baseUnitName)'
-                          : productName,
-                      overflow: TextOverflow.ellipsis,
+                      value: _selectedProductId,
+                      decoration: InputDecoration(
+                        labelText: 'Select Product',
+                        prefixIcon: const Icon(Icons.inventory_2_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      hint: const Text('Choose a product'),
+                      items: _products.map<DropdownMenuItem<String>>((product) {
+                        String productName = product['name'] ?? 'Product';
+                        String baseUnitName = product['base_unit_name'] ?? '';
+                        return DropdownMenuItem<String>(
+                          value: product['id'].toString(),
+                          child: Text(
+                            baseUnitName.isNotEmpty
+                                ? '$productName ($baseUnitName)'
+                                : productName,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedProductId = value;
+                          var selectedItem = _products.firstWhere(
+                            (p) => p['id'].toString() == value,
+                            orElse: () => <String, dynamic>{},
+                          );
+                          if (selectedItem.isNotEmpty) {
+                            _selectedProductName = selectedItem['name'];
+                            _itemPriceController.text = selectedItem['price']
+                                .toString();
+                          }
+                        });
+                      },
                     ),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedProductId = value;
-                    var selectedItem = _products.firstWhere(
-                          (p) => p['id'].toString() == value,
-                    );
-                    _selectedProductName = selectedItem['name'];
-                    _itemPriceController.text = selectedItem['price']
-                        .toString();
-                  });
-                },
-              ),
               const SizedBox(height: 12),
 
               Row(
@@ -459,7 +439,10 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _addItemToCart,
                       icon: const Icon(Icons.add, color: Colors.white),
-                      label: const Text('Add', style: TextStyle(color: Colors.white)),
+                      label: const Text(
+                        'Add',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.indigo,
                         shape: RoundedRectangleBorder(
@@ -472,7 +455,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 📋 បញ្ជីរាយមុខទំនិញដែលបានបន្ថែម (List view ក្នុង Card)
+              // 📋 បញ្ជីរាយមុខទំនិញដែលបានបន្ថែម (ជាមួយរូបភាពផលិតផល)
               if (_purchaseItems.isNotEmpty) ...[
                 const Text(
                   'Selected Items:',
@@ -485,15 +468,57 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                   itemCount: _purchaseItems.length,
                   itemBuilder: (context, index) {
                     final item = _purchaseItems[index];
+                    final String? imageUrl = item['image_url'];
+
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        // 🟢 បង្ហាញរូបភាពផលិតផលនៅផ្នែក Leading
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            child: imageUrl != null && imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(
+                                        Icons.inventory_2_rounded,
+                                        color: Colors.indigo,
+                                        size: 20,
+                                      );
+                                    },
+                                  )
+                                : const Icon(
+                                    Icons.inventory_2_rounded,
+                                    color: Colors.indigo,
+                                    size: 20,
+                                  ),
+                          ),
+                        ),
                         title: Text(
                           item['product_name'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                         subtitle: Text(
                           'Qty: ${item['quantity']} x \$${item['unit_cost']}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -503,6 +528,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.indigo,
+                                fontSize: 14,
                               ),
                             ),
                             IconButton(
@@ -625,12 +651,12 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                   child: _isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text(
-                    'Save Purchase',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                          'Save Purchase',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],

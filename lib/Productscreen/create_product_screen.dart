@@ -34,6 +34,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final ApiProduct apiProduct = ApiProduct();
 
   @override
+  void initState() {
+    super.initState();
+    _stockQuantityController.text = "0";
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _skuController.dispose();
@@ -49,9 +55,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     try {
       final List<XFile> pickedFile = await _picker.pickMultiImage(
         requestFullMetadata: true,
-        imageQuality: 100,
-        maxHeight: 1000,
-        maxWidth: 1000,
+        imageQuality: 90,
+        maxHeight: 1200,
+        maxWidth: 1200,
       );
 
       if (pickedFile.isNotEmpty) {
@@ -93,6 +99,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
         const SnackBar(
           content: Text('Please select at least one product image!'),
           backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
         ),
       );
       return;
@@ -162,7 +169,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -223,6 +230,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
+        centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
         title: const Text(
           "Create Product",
@@ -230,6 +238,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             color: Color(0xFF1E293B),
             fontSize: 18,
             fontWeight: FontWeight.bold,
+            letterSpacing: -0.3,
           ),
         ),
       ),
@@ -240,17 +249,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🖼️ Image Picker Section Card
+              // 🌟 1. Premium Large Image Banner Section
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -258,7 +267,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Product Images",
+                      "Product Image",
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -268,102 +277,111 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     const SizedBox(height: 12),
                     GestureDetector(
                       onTap: _getImages,
-                      child: Container(
-                        width: double.infinity,
-                        height: 90,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withOpacity(0.04),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFF2563EB).withOpacity(0.2),
-                            style: BorderStyle.solid,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(
-                              Icons.add_photo_alternate_rounded,
-                              size: 28,
-                              color: Color(0xFF2563EB),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              width: double.infinity,
+                              height: 200,
+                              color: const Color(0xFFF1F5F9),
+                              child: _selectedImages.isNotEmpty
+                                  ? Image.file(
+                                      File(_selectedImages[0].path),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(14),
+                                          decoration: BoxDecoration(
+                                            color: const Color(
+                                              0xFF2563EB,
+                                            ).withValues(alpha: 0.08),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Icons.add_a_photo_rounded,
+                                            size: 30,
+                                            color: Color(0xFF2563EB),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        const Text(
+                                          "Tap to choose product image",
+                                          style: TextStyle(
+                                            color: Color(0xFF2563EB),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                             ),
-                            SizedBox(width: 8),
-                            Text(
-                              "Click to choose product images",
-                              style: TextStyle(
-                                color: Color(0xFF2563EB),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                            // Dark overlay when image is selected to show change button clearly
+                            if (_selectedImages.isNotEmpty)
+                              Container(
+                                width: double.infinity,
+                                height: 200,
+                                color: Colors.black.withValues(alpha: 0.25),
                               ),
-                            ),
+                            if (_selectedImages.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      "Change Photo",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                         ),
                       ),
                     ),
-                    if (_selectedImages.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 90,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _selectedImages.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(width: 10),
-                          itemBuilder: (context, index) {
-                            return Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Image.file(
-                                    File(_selectedImages[index].path),
-                                    width: 90,
-                                    height: 90,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: GestureDetector(
-                                    onTap: () => setState(
-                                      () => _selectedImages.removeAt(index),
-                                    ),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: const BoxDecoration(
-                                        color: Colors.black54,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.close,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // 📝 General Information Card
+              // 📝 2. General Information Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -436,30 +454,22 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-
-                    // _buildTextField(
-                    //   controller: _stockQuantityController,
-                    //   label: "Stock Quantity",
-                    //   icon: Icons.inventory_2_outlined,
-                    //   keyboardType: TextInputType.number,
-                    // ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
 
-              // 🗂️ Categorization & Organization Card
+              // 🗂️ 3. Organization Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -571,17 +581,17 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 📝 Description Card
+              // 📝 4. Additional Details Card
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
@@ -607,33 +617,50 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
-              // Save Button
-              SizedBox(
+              // 💾 Save Button with Soft Shadow
+              Container(
                 width: double.infinity,
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: _submitProduct,
-                  icon: const Icon(Icons.save_rounded, color: Colors.white),
-                  label: const Text(
-                    "Save Product",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                height: 54,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
                     ),
-                  ),
+                  ],
+                ),
+                child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
+                  ),
+                  onPressed: _submitProduct,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.save_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        "Save Product",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 30),
             ],
           ),
         ),

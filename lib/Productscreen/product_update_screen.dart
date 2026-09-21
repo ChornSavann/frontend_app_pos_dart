@@ -123,9 +123,9 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 85,
-      maxHeight: 1000,
-      maxWidth: 1000,
+      imageQuality: 90,
+      maxHeight: 1200,
+      maxWidth: 1200,
     );
 
     if (pickedFile != null) {
@@ -175,288 +175,466 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF4F6F9),
       appBar: AppBar(
         title: const Text(
           "Update Product",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Color(0xFF1E293B),
+            letterSpacing: -0.3,
+          ),
         ),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
+        centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+            )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
+              padding: const EdgeInsets.all(16.0),
               child: Form(
                 key: _formKey,
                 child: Column(
                   children: [
-                    // 🖼️ Image Picker Section
-                    Center(
-                      child: Stack(
+                    // 🌟 1. Premium Large Image Banner Section
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          GestureDetector(
-                            onTap: _pickImage,
-                            child: Container(
-                              width: 120,
-                              height: 120,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.blueAccent.withOpacity(0.3),
-                                  width: 2,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              clipBehavior: Clip.antiAlias,
-                              child: _selectedImage != null
-                                  ? Image.file(
-                                      _selectedImage!,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : (widget.product.imageUrl != null &&
-                                            widget.product.imageUrl!.isNotEmpty
-                                        ? Image.network(
-                                            widget.product.imageUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (context, error, stackTrace) =>
-                                                    const Icon(
-                                                      Icons.broken_image,
-                                                      size: 40,
-                                                      color: Colors.grey,
-                                                    ),
-                                          )
-                                        : const Column(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.add_a_photo,
-                                                size: 36,
-                                                color: Colors.blueAccent,
-                                              ),
-                                              SizedBox(height: 4),
-                                              Text(
-                                                "Photo",
-                                                style: TextStyle(
-                                                  color: Colors.blueAccent,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
-                                                ),
-                                              ),
-                                            ],
-                                          )),
+                          const Text(
+                            "Product Image",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
                             ),
                           ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: Colors.blueAccent,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.camera_alt,
-                                color: Colors.white,
-                                size: 16,
+                          const SizedBox(height: 12),
+                          GestureDetector(
+                            onTap: _pickImage,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(16),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: double.infinity,
+                                    height: 200,
+                                    color: const Color(0xFFF1F5F9),
+                                    child: _selectedImage != null
+                                        ? Image.file(
+                                            _selectedImage!,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : (widget.product.imageUrl != null &&
+                                                  widget
+                                                      .product
+                                                      .imageUrl!
+                                                      .isNotEmpty
+                                              ? Image.network(
+                                                  widget.product.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder:
+                                                      (
+                                                        context,
+                                                        error,
+                                                        stackTrace,
+                                                      ) => const Center(
+                                                        child: Icon(
+                                                          Icons.broken_image,
+                                                          size: 40,
+                                                          color: Colors.grey,
+                                                        ),
+                                                      ),
+                                                )
+                                              : const Center(
+                                                  child: Icon(
+                                                    Icons.image_outlined,
+                                                    size: 40,
+                                                    color: Colors.grey,
+                                                  ),
+                                                )),
+                                  ),
+
+                                  // 🌟 Dark Overlay ពេលយក Mouse ឬដៃတို့មើលទៅរលោងស្អាត
+                                  Container(
+                                    width: double.infinity,
+                                    height: 200,
+                                    color: Colors.black.withOpacity(0.2),
+                                  ),
+
+                                  // 📷 Floating Camera Icon Button (រាងមូលតូចល្មម មានសោភ័ណភាពខ្ពស់)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(30),
+                                      border: Border.all(
+                                        color: Colors.white.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.camera_alt_rounded,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          "Change Photo",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 14),
 
-                    // Input Fields
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: _inputDecoration(
-                        'Product Name',
-                        Icons.shopping_bag_outlined,
+                    // 📝 2. General Information Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      validator: (v) =>
-                          v!.isEmpty ? 'Product name is required' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _skuController,
-                      decoration: _inputDecoration(
-                        'SKU Code',
-                        Icons.qr_code_scanner,
-                      ),
-                      validator: (v) => v!.isEmpty ? 'SKU is required' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _barcodeController,
-                      decoration: _inputDecoration(
-                        'Barcode (Optional)',
-                        Icons.qr_code,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _costPriceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "General Information",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
                             ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _nameController,
                             decoration: _inputDecoration(
-                              'Cost Price (\$)',
-                              Icons.money_off,
+                              'Product Name',
+                              Icons.shopping_bag_outlined,
+                            ),
+                            validator: (v) =>
+                                v!.isEmpty ? 'Product name is required' : null,
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _skuController,
+                            decoration: _inputDecoration(
+                              'SKU Code',
+                              Icons.qr_code_scanner,
+                            ),
+                            validator: (v) =>
+                                v!.isEmpty ? 'SKU is required' : null,
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _barcodeController,
+                            decoration: _inputDecoration(
+                              'Barcode (Optional)',
+                              Icons.qr_code,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 💰 3. Pricing & Inventory Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Pricing & Inventory",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _costPriceController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  decoration: _inputDecoration(
+                                    'Cost Price (\$)',
+                                    Icons.money_off,
+                                  ),
+                                  validator: (v) =>
+                                      v!.isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _sellingPriceController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  decoration: _inputDecoration(
+                                    'Selling Price (\$)',
+                                    Icons.attach_money,
+                                  ),
+                                  validator: (v) =>
+                                      v!.isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _stockQuantityController,
+                            keyboardType: TextInputType.number,
+                            decoration: _inputDecoration(
+                              'Stock Quantity',
+                              Icons.inventory_2_outlined,
                             ),
                             validator: (v) => v!.isEmpty ? 'Required' : null,
                           ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _sellingPriceController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 🗂️ 4. Organization Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Organization",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
                             ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Category Dropdown
+                          DropdownButtonFormField<String>(
+                            value:
+                                _categories.any(
+                                  (cat) =>
+                                      cat['id'].toString() ==
+                                      _categoryIdController.text,
+                                )
+                                ? _categoryIdController.text
+                                : null,
                             decoration: _inputDecoration(
-                              'Selling Price (\$)',
-                              Icons.attach_money,
+                              'Category',
+                              Icons.category_outlined,
                             ),
-                            validator: (v) => v!.isEmpty ? 'Required' : null,
+                            items: _categories.map((cat) {
+                              return DropdownMenuItem<String>(
+                                value: cat['id'].toString(),
+                                child: Text(cat['name'].toString()),
+                              );
+                            }).toList(),
+                            onChanged: (value) => setState(
+                              () => _categoryIdController.text = value!,
+                            ),
+                            validator: (value) => value == null
+                                ? 'Please select a category'
+                                : null,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+                          const SizedBox(height: 14),
 
-                    TextFormField(
-                      controller: _stockQuantityController,
-                      keyboardType: TextInputType.number,
-                      decoration: _inputDecoration(
-                        'Stock Quantity',
-                        Icons.inventory_2_outlined,
-                      ),
-                      validator: (v) => v!.isEmpty ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Category Dropdown
-                    DropdownButtonFormField<String>(
-                      value:
-                          _categories.any(
-                            (cat) =>
-                                cat['id'].toString() ==
-                                _categoryIdController.text,
-                          )
-                          ? _categoryIdController.text
-                          : null,
-                      decoration: _inputDecoration(
-                        'Category',
-                        Icons.category_outlined,
-                      ),
-                      items: _categories.map((cat) {
-                        return DropdownMenuItem<String>(
-                          value: cat['id'].toString(),
-                          child: Text(cat['name'].toString()),
-                        );
-                      }).toList(),
-                      onChanged: (value) =>
-                          setState(() => _categoryIdController.text = value!),
-                      validator: (value) =>
-                          value == null ? 'Please select a category' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Brand Dropdown
-                    DropdownButtonFormField<String>(
-                      value:
-                          _brand.any(
-                            (cat) =>
-                                cat.id.toString() == _brandIdController.text,
-                          )
-                          ? _brandIdController.text
-                          : null,
-                      decoration: _inputDecoration(
-                        'Brands',
-                        Icons.category_outlined,
-                      ),
-                      items: _brand.map((cat) {
-                        return DropdownMenuItem<String>(
-                          value: cat.id.toString(),
-                          child: Text(cat.name.toString()),
-                        );
-                      }).toList(),
-                      onChanged: (value) =>
-                          setState(() => _brandIdController.text = value!),
-                      validator: (value) =>
-                          value == null ? 'Please select a brand' : null,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Unit Dropdown
-                    DropdownButtonFormField<String>(
-                      value:
-                          _units.any(
-                            (unit) =>
-                                unit['id'].toString() == _unitIdController.text,
-                          )
-                          ? _unitIdController.text
-                          : null,
-                      decoration: _inputDecoration(
-                        'Unit',
-                        Icons.straighten_outlined,
-                      ),
-                      items: _units.map((unit) {
-                        return DropdownMenuItem<String>(
-                          value: unit['id'].toString(),
-                          child: Text(
-                            "${unit['name']} (${unit['short_name'] ?? ''})",
+                          // Brand Dropdown
+                          DropdownButtonFormField<String>(
+                            value:
+                                _brand.any(
+                                  (cat) =>
+                                      cat.id.toString() ==
+                                      _brandIdController.text,
+                                )
+                                ? _brandIdController.text
+                                : null,
+                            decoration: _inputDecoration(
+                              'Brand',
+                              Icons.branding_watermark_outlined,
+                            ),
+                            items: _brand.map((cat) {
+                              return DropdownMenuItem<String>(
+                                value: cat.id.toString(),
+                                child: Text(cat.name.toString()),
+                              );
+                            }).toList(),
+                            onChanged: (value) => setState(
+                              () => _brandIdController.text = value!,
+                            ),
+                            validator: (value) =>
+                                value == null ? 'Please select a brand' : null,
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (value) =>
-                          setState(() => _unitIdController.text = value!),
-                      validator: (value) =>
-                          value == null ? 'Please select a unit' : null,
-                    ),
-                    const SizedBox(height: 16),
+                          const SizedBox(height: 14),
 
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 3,
-                      decoration: _inputDecoration(
-                        'Description (Optional)',
-                        Icons.description_outlined,
+                          // Unit Dropdown
+                          DropdownButtonFormField<String>(
+                            value:
+                                _units.any(
+                                  (unit) =>
+                                      unit['id'].toString() ==
+                                      _unitIdController.text,
+                                )
+                                ? _unitIdController.text
+                                : null,
+                            decoration: _inputDecoration(
+                              'Unit',
+                              Icons.straighten_outlined,
+                            ),
+                            items: _units.map((unit) {
+                              return DropdownMenuItem<String>(
+                                value: unit['id'].toString(),
+                                child: Text(
+                                  "${unit['name']} (${unit['short_name'] ?? ''})",
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (value) =>
+                                setState(() => _unitIdController.text = value!),
+                            validator: (value) =>
+                                value == null ? 'Please select a unit' : null,
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 14),
 
-                    // Save Button
-                    SizedBox(
+                    // 📝 5. Additional Details Card
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Additional Details",
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _descriptionController,
+                            maxLines: 3,
+                            decoration: _inputDecoration(
+                              'Description (Optional)',
+                              Icons.description_outlined,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // 💾 Save Button
+                    Container(
                       width: double.infinity,
-                      height: 52,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF2563EB,
+                            ).withValues(alpha: 0.35),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: const Color(0xFF2563EB),
                           foregroundColor: Colors.white,
-                          elevation: 3,
-                          shadowColor: Colors.blueAccent.withOpacity(0.4),
+                          elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         onPressed: _updateProduct,
@@ -470,13 +648,14 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -487,21 +666,22 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.blueAccent, size: 22),
+      labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+      prefixIcon: Icon(icon, color: const Color(0xFF2563EB), size: 20),
       filled: true,
-      fillColor: Colors.grey[50],
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: Colors.grey.shade200),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: Colors.grey.shade200),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+        borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),

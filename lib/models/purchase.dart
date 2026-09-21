@@ -12,7 +12,7 @@ class PurchaseModel {
   final String paymentMethod;
   final String status;
   final String? notes;
-  final List<dynamic>? items;
+  final List<Map<String, dynamic>>? items; // 🟢 កំណត់ Type ឱ្យច្បាស់ជា Map<String, dynamic>
 
   PurchaseModel({
     this.id,
@@ -54,6 +54,17 @@ class PurchaseModel {
       uName = json['user_name']?.toString();
     }
 
+    // 🟢 បំប្លែង items ឱ្យទៅជា List<Map<String, dynamic>> យ៉ាងមានសុវត្ថិភាព
+    List<Map<String, dynamic>>? parsedItems;
+    if (json['items'] != null && json['items'] is List) {
+      parsedItems = (json['items'] as List).map((item) {
+        if (item is Map) {
+          return Map<String, dynamic>.from(item);
+        }
+        return <String, dynamic>{};
+      }).toList();
+    }
+
     return PurchaseModel(
       id: json['id'],
       purchaseNumber: json['purchase_number']?.toString(),
@@ -68,10 +79,9 @@ class PurchaseModel {
       paymentMethod: json['payment_method']?.toString() ?? 'cash',
       status: json['status']?.toString() ?? 'completed',
       notes: json['notes']?.toString(),
-      items: json['items'],
+      items: parsedItems,
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {
@@ -85,7 +95,7 @@ class PurchaseModel {
       'payment_method': paymentMethod,
       'status': status,
       'notes': notes,
-      'items': items,
+      'items': items?.map((item) => Map<String, dynamic>.from(item)).toList(),
     };
   }
 }

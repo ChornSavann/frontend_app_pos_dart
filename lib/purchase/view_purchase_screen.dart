@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:pos_inventory/constants/baseurl/base_url_api.dart'; // 🟢 Import BaseUrlApi របស់អ្នក
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 
 import '../api/api_purchase.dart';
 import '../msg/appSnackBar.dart';
@@ -43,21 +43,52 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
     }
   }
 
+  // Helper សម្រាប់កំណត់ពណ៌ Status Badge
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+      case 'success':
+        return Colors.green;
+      case 'pending':
+        return Colors.orange;
+      case 'cancelled':
+        return Colors.red;
+      default:
+        return Colors.indigo;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // គណនាសរុបទឹកប្រាក់ទំនិញទាំងអស់
+    double grandTotal = 0.0;
+    if (_purchaseData != null && _purchaseData!['items'] is List) {
+      for (var item in _purchaseData!['items']) {
+        final double qty =
+            double.tryParse((item['quantity'] ?? 0).toString()) ?? 0.0;
+        final double price =
+            double.tryParse((item['unit_cost'] ?? 0).toString()) ?? 0.0;
+        grandTotal +=
+            double.tryParse(
+              (item['total_price'] ?? (qty * price)).toString(),
+            ) ??
+            (qty * price);
+      }
+    }
+
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           'Purchase Details',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Colors.black87,
+            color: Color(0xFF1E293B),
           ),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        foregroundColor: const Color(0xFF1E293B),
         elevation: 0,
         centerTitle: true,
         bottom: PreferredSize(
@@ -75,7 +106,7 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.refresh_rounded, size: 20),
-                  color: Colors.black87,
+                  color: const Color(0xFF1E293B),
                   onPressed: _fetchPurchaseDetail,
                   tooltip: 'Refresh',
                 ),
@@ -85,7 +116,9 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+            )
           : _purchaseData == null
           ? const Center(child: Text('No data found'))
           : SingleChildScrollView(
@@ -93,15 +126,16 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 📄 Purchase Information Card
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.08),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -113,46 +147,65 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'Purchase Information',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: Color(0xFF2563EB),
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Purchase Information',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
-                                vertical: 4,
+                                vertical: 5,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.indigo.shade50,
+                                color: _getStatusColor(
+                                  _purchaseData!['status'] ?? 'N/A',
+                                ).withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
                                 (_purchaseData!['status'] ?? 'N/A')
                                     .toString()
                                     .toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.indigo,
-                                  fontSize: 12,
+                                style: TextStyle(
+                                  color: _getStatusColor(
+                                    _purchaseData!['status'] ?? 'N/A',
+                                  ),
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const Divider(height: 24),
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Divider(height: 1, thickness: 0.5),
+                        ),
                         _buildInfoRow(
+                          Icons.confirmation_number_outlined,
                           'Purchase Number',
                           (_purchaseData!['purchase_number'] ??
                                   _purchaseData!['purchaseNumber'] ??
                                   'N/A')
                               .toString(),
                         ),
-                        const Divider(height: 24),
+                        const SizedBox(height: 12),
                         _buildInfoRow(
+                          Icons.storefront_outlined,
                           'Supplier Name',
                           ((_purchaseData!['supplier'] is Map &&
                                       _purchaseData!['supplier']['name'] !=
@@ -166,6 +219,7 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                         ),
                         const SizedBox(height: 12),
                         _buildInfoRow(
+                          Icons.calendar_today_outlined,
                           'Date',
                           (_purchaseData!['date'] ??
                                   _purchaseData!['created_at'] ??
@@ -183,7 +237,7 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -215,7 +269,6 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                           ) ??
                           (qty * price);
 
-
                       String? imageUrl;
                       if (item['product'] is Map) {
                         String? img =
@@ -245,25 +298,32 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                       }
 
                       return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
+                        margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.02),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                          border: Border.all(color: Colors.grey.shade100),
                         ),
                         child: Row(
                           children: [
                             // 🖼️ Product Image Container
                             Container(
-                              width: 50,
-                              height: 50,
+                              width: 56,
+                              height: 56,
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(8),
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
                               ),
                               child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(12),
                                 child: imageUrl != null && imageUrl.isNotEmpty
                                     ? CachedNetworkImage(
                                         imageUrl: imageUrl,
@@ -271,8 +331,8 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                                         placeholder: (context, url) =>
                                             const Center(
                                               child: SizedBox(
-                                                width: 20,
-                                                height: 20,
+                                                width: 18,
+                                                height: 18,
                                                 child:
                                                     CircularProgressIndicator(
                                                       strokeWidth: 2,
@@ -281,19 +341,20 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                                             ),
                                         errorWidget: (context, url, error) =>
                                             const Icon(
-                                              Icons.image_not_supported,
+                                              Icons
+                                                  .image_not_supported_outlined,
                                               size: 24,
                                               color: Colors.grey,
                                             ),
                                       )
                                     : const Icon(
                                         Icons.inventory_2_rounded,
-                                        color: Colors.indigo,
-                                        size: 28,
+                                        color: Color(0xFF2563EB),
+                                        size: 26,
                                       ),
                               ),
                             ),
-                            const SizedBox(width: 12),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,15 +368,43 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 14,
+                                      color: Color(0xFF1E293B),
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Qty: ${qty % 1 == 0 ? qty.toInt() : qty}  |  Price: \$${price.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 12,
-                                    ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 2,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade100,
+                                          borderRadius: BorderRadius.circular(
+                                            4,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'Qty: ${qty % 1 == 0 ? qty.toInt() : qty}',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade700,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Price: \$${price.toStringAsFixed(2)}',
+                                        style: TextStyle(
+                                          color: Colors.grey.shade600,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -324,8 +413,8 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                               '\$${total.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Colors.indigo,
+                                fontSize: 15,
+                                color: Color(0xFF2563EB),
                               ),
                             ),
                           ],
@@ -333,26 +422,63 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                       );
                     },
                   ),
+                  const SizedBox(height: 10),
+
+                  // 💰 Grand Total Summary Card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total Amount:',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        Text(
+                          '\$${grandTotal.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2563EB),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
                 ],
               ),
             ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        Icon(icon, size: 16, color: Colors.grey.shade500),
+        const SizedBox(width: 8),
         Text(
           label,
-          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
         ),
+        const Spacer(),
         Text(
           value,
           style: const TextStyle(
             fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: Colors.black87,
+            fontSize: 13,
+            color: Color(0xFF1E293B),
           ),
         ),
       ],

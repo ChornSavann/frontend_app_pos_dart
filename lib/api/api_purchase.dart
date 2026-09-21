@@ -36,8 +36,36 @@ class ApiPurchase {
   }
 
 
+  // Future<bool> updatePurchase(dynamic id, PurchaseModel purchase, {String? token}) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/purchases/$id'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Accept': 'application/json',
+  //         if (token != null) 'Authorization': 'Bearer $token',
+  //       },
+  //       body: jsonEncode(purchase.toJson()),
+  //     );
+  //
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return true;
+  //     } else {
+  //       print('Failed to update purchase. Status code: ${response.statusCode}');
+  //       print('Response body: ${response.body}');
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print('Error on updatePurchase: $e');
+  //     return false;
+  //   }
+  // }
+
   Future<bool> updatePurchase(dynamic id, PurchaseModel purchase, {String? token}) async {
     try {
+      // 🟢 ធ្វើការ cast ទិន្នន័យ toJson() ឱ្យទៅជា Map<String, dynamic> យ៉ាងច្បាស់លាស់
+      final Map<String, dynamic> payload = Map<String, dynamic>.from(purchase.toJson());
+
       final response = await http.post(
         Uri.parse('$baseUrl/purchases/$id'),
         headers: {
@@ -45,7 +73,7 @@ class ApiPurchase {
           'Accept': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(purchase.toJson()),
+        body: jsonEncode(payload), // 🟢 យក payload ដែលបាន cast រួចมา encode
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
