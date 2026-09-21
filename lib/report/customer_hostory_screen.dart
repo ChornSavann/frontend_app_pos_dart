@@ -278,7 +278,6 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen> {
                                 ],
                               ),
                               const Divider(height: 20),
-
                               // 📦 បញ្ជីទំនិញខាងក្នុង Order ( ListView.builder )
                               ListView.builder(
                                 shrinkWrap: true,
@@ -286,16 +285,25 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen> {
                                 itemCount: items.length,
                                 itemBuilder: (context, itemIndex) {
                                   final prod = items[itemIndex];
-                                  // 🟢 ឆែកមើល និងការពារកុំឱ្យស្ទួនពាក្យ products/
-                                  String imageName = prod['image']?.toString() ?? '';
-                                  if (imageName.startsWith('products/')) {
-                                    imageName = imageName.replaceFirst('products/', '');
+                                  debugPrint("Order Item Data: $prod");
+
+                                  String rawImage =
+                                      prod['image']?.toString() ?? '';
+                                  String imageUrl = "";
+                                  if (rawImage.isNotEmpty) {
+                                    if (rawImage.startsWith('http://') ||
+                                        rawImage.startsWith('https://')) {
+                                      imageUrl = rawImage;
+                                    } else {
+                                      String baseServerUrl = apiReport.baseUrl
+                                          .replaceAll('/api', '');
+                                      String cleanPath =
+                                          rawImage.startsWith('/')
+                                          ? rawImage.substring(1)
+                                          : rawImage;
+                                      imageUrl = "$baseServerUrl/$cleanPath";
+                                    }
                                   }
-
-                                  String imageUrl = imageName.isNotEmpty
-                                      ? "http://10.0.2.2:8000/products/$imageName"
-                                      : "";
-
                                   return Padding(
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 6.0,
@@ -311,7 +319,9 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen> {
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
-                                            image: imageUrl.isNotEmpty
+                                            image:
+                                                imageUrl != null &&
+                                                    imageUrl.isNotEmpty
                                                 ? DecorationImage(
                                                     image: NetworkImage(
                                                       imageUrl,
@@ -320,7 +330,9 @@ class _CustomerHistoryScreenState extends State<CustomerHistoryScreen> {
                                                   )
                                                 : null,
                                           ),
-                                          child: imageUrl.isEmpty
+                                          child:
+                                              imageUrl == null ||
+                                                  imageUrl.isEmpty
                                               ? const Icon(
                                                   CupertinoIcons.cube_box,
                                                   size: 20,

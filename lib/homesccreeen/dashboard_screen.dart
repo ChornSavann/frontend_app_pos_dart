@@ -4,6 +4,7 @@ import 'package:pos_inventory/homesccreeen/screen_home.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
 import '../partail/app_bar_screen.dart';
 import '../partail/button_screen.dart';
+import '../stores/models/store.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -13,10 +14,13 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  Store? currentStore;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarScreen(),
+      appBar:  AppBarScreen(
+        store: currentStore,
+      ),
 
       body: ScreenHome(),
       floatingActionButton: Transform.translate(

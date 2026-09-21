@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/CategoryScreen/category_index_screen.dart';
 import 'package:pos_inventory/CategoryScreen/create_categrory_screen.dart';
+import 'package:pos_inventory/Productscreen/banner_product_screen.dart';
 import 'package:pos_inventory/Productscreen/create_product_screen.dart';
 import 'package:pos_inventory/Productscreen/product_index_screen.dart';
 import 'package:pos_inventory/api/api_product.dart';
@@ -206,6 +207,7 @@ class _ScreenHomeState extends State<ScreenHome> {
             ),
             const SizedBox(height: 24),
             const AutoPlayBanner(),
+            // const BannerProductScreen(),
             const SizedBox(height: 24),
 
             // 📊 Quick Statistics Section

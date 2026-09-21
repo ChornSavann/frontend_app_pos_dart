@@ -34,7 +34,7 @@ class ApiUser {
     required String email,
     required String password,
     String? phone,
-    File? image, // 🖼️ បញ្ចូល image មកទីនេះវិញ ដើម្បីកុំឱ្យបាត់
+    File? image,
   }) async {
     try {
       var request = http.MultipartRequest(
@@ -61,7 +61,8 @@ class ApiUser {
       var response = await http.Response.fromStream(streamedResponse);
       var data = jsonDecode(response.body);
 
-      if (response.statusCode == 201 && data['success'] == true) {
+      if (response.statusCode == 200 && data['success'] == true)
+      {
         return {
           'success': true,
           'message': data['message'],

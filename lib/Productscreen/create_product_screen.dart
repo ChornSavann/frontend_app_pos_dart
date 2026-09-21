@@ -438,12 +438,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    _buildTextField(
-                      controller: _stockQuantityController,
-                      label: "Stock Quantity",
-                      icon: Icons.inventory_2_outlined,
-                      keyboardType: TextInputType.number,
-                    ),
+                    // _buildTextField(
+                    //   controller: _stockQuantityController,
+                    //   label: "Stock Quantity",
+                    //   icon: Icons.inventory_2_outlined,
+                    //   keyboardType: TextInputType.number,
+                    // ),
                   ],
                 ),
               ),

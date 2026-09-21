@@ -31,7 +31,6 @@ class Store {
       address: json['address'],
       logo: json['logo'],
       description: json['description'],
-      // 🟢 ទាញយក image_url ផ្ទាល់ពី Laravel accessor (appends)
       imageUrl: json['image_url'] ?? json['logo'],
     );
   }

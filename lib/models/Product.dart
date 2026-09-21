@@ -15,6 +15,7 @@ class Product {
   final String? imageUrl;
   final int isActive;
   bool isFavorite;
+  final String ?createdAt;
 
   final String? categoryName;
   final String? brandName;
@@ -40,6 +41,7 @@ class Product {
     this.brandName,
     this.unitName,
     this.isFavorite = false,
+     this.createdAt,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
@@ -80,8 +82,10 @@ class Product {
       brandName: json['brand'] != null ? json['brand']['name'] : null,
       unitName: json['unit'] != null ? json['unit']['name'] : null,
       isFavorite: json['is_favorite'] ?? false,
+      createdAt: json['created_at']
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {
@@ -100,6 +104,7 @@ class Product {
       'alert_quantity': alertQuantity,
       'image': imageUrl,
       'is_active': isActive,
+      'createdAt':createdAt
     };
   }
 }

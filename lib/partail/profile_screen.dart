@@ -24,9 +24,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiAuth apiAuth = ApiAuth();
-  String _userName = "Chorn Savann";
+  String _userName = "Let Lihor";
   String _userRole = "Cashier • Register #01";
-  String _userAvatar = "assets/Savann.jpg";
+  String _userAvatar = "";
 
   @override
   void initState() {
@@ -37,25 +37,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _userName = prefs.getString('name') ?? "Chorn Savann";
+      _userName = prefs.getString('name') ?? "Let Lihor";
       _userRole = prefs.getString('role') ?? "Cashier • Register #01";
-      _userAvatar = prefs.getString('image') ?? "assets/Savann.jpg";
+      _userAvatar = prefs.getString('image') ?? '';
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
           TranslateConstants.userProfile.tr,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 17,
             color: Color(0xFF1E293B),
             letterSpacing: -0.3,
-            fontFamily: 'KantumruyPro',
+            // fontFamily: 'KantumruyPro',
           ),
         ),
         backgroundColor: Colors.white,
@@ -65,7 +65,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
@@ -88,13 +88,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), // เว้นចន្លោះបាតកុំឲ្យបាំងប៊ូតុង
         child: Column(
           children: [
-            // 🌟 Modern Gradient Profile Header Card
+            // 🌟 1. Modern Gradient Profile Header Card (ពង្រីកទំហំឲ្យធំទូលាយស្អាត)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+              padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
@@ -104,7 +104,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                    color: const Color(0xFF2563EB).withOpacity(0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -113,13 +113,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Stack(
                 children: [
                   Positioned(
-                    right: -40,
-                    bottom: -40,
+                    right: -30,
+                    bottom: -30,
                     child: Container(
-                      width: 140,
-                      height: 140,
+                      width: 130,
+                      height: 130,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: Colors.white.withOpacity(0.07),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -127,52 +127,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(3),
+                        padding: const EdgeInsets.all(3.5),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white.withOpacity(0.3),
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.15),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
                         ),
-                        child: ClipOval(
-                          child: _userAvatar.startsWith('http')
-                              ? Image.network(
-                            _userAvatar,
-                            width: 86,
-                            height: 86,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return const SizedBox(
-                                width: 86,
-                                height: 86,
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.blueAccent,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: ClipOval(
+                            child: _userAvatar.isNotEmpty && _userAvatar.startsWith('http')
+                                ? Image.network(
+                              _userAvatar,
+                              width: 84,
+                              height: 84,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 84,
+                                  height: 84,
+                                  color: Colors.grey.shade100,
+                                  child: const Icon(
+                                    Icons.person,
+                                    size: 42,
+                                    color: Color(0xFF2563EB),
                                   ),
-                                ),
-                              );
-                            },
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/images/default_avatar.png',
-                                width: 86,
-                                height: 86,
-                                fit: BoxFit.cover,
-                              );
-                            },
-                          )
-                              : Image.asset(
-                            _userAvatar,
-                            width: 86,
-                            height: 86,
-                            fit: BoxFit.cover,
+                                );
+                              },
+                            )
+                                : Container(
+                              width: 84,
+                              height: 84,
+                              color: Colors.grey.shade100,
+                              child: const Icon(
+                                Icons.person,
+                                size: 42,
+                                color: Color(0xFF2563EB),
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -191,7 +186,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _userRole,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: Colors.white.withOpacity(0.85),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -202,15 +197,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.18),
+                          color: Colors.white.withOpacity(0.18),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.12),
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 8,
-                              height: 8,
+                              width: 7.5,
+                              height: 7.5,
                               decoration: const BoxDecoration(
                                 color: Color(0xFF34D399),
                                 shape: BoxShape.circle,
@@ -221,9 +219,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               "Active Session",
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 11,
+                                fontSize: 11.5,
                                 fontWeight: FontWeight.w600,
-                                letterSpacing: 0.3,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],
@@ -234,16 +232,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
 
-            // 📋 Settings & Info List Options Card
+            // 📋 2. Settings & Info List Options Card (រៀបចំរចនាសម្ព័ន្ធម៉ឺនុយឲ្យមានគម្លាតស្អាត)
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: Colors.black.withOpacity(0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -269,7 +267,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
                       },
                     ),
-                    Divider(height: 6, indent: 70, color: Colors.grey.shade100),
+                    Divider(height: 1, indent: 68, color: Colors.grey.shade100),
                     _buildProfileMenuItem(
                       icon: Icons.store_rounded,
                       title: TranslateConstants.information.tr,
@@ -286,7 +284,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         }
                       },
                     ),
-                    Divider(height: 6, indent: 70, color: Colors.grey.shade100),
+                    Divider(height: 1, indent: 68, color: Colors.grey.shade100),
                     _buildProfileMenuItem(
                       icon: Icons.lock_outline_rounded,
                       title: TranslateConstants.changePassword.tr,
@@ -300,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         );
                       },
                     ),
-                    Divider(height: 6, indent: 70, color: Colors.grey.shade100),
+                    Divider(height: 1, indent: 68, color: Colors.grey.shade100),
                     _buildProfileMenuItem(
                       icon: Icons.language_rounded,
                       title: TranslateConstants.language.tr,
@@ -318,9 +316,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 22),
 
-            // 🚪 Log Out Button
+            // 🚪 3. Log Out Button (រចនាកូដប៊ូតុងចាកចេញឲ្យទាក់ទាញភ្នែក)
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -339,7 +337,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     builder: (BuildContext context) {
                       return AlertDialog(
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         title: const Text(
                           'Confirm Logout',
@@ -411,7 +409,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -436,7 +433,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 🟢 Modern Polished Menu Item Widget
   Widget _buildProfileMenuItem({
     required IconData icon,
     required String title,
@@ -448,13 +444,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                  color: const Color(0xFF2563EB).withOpacity(0.07),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: const Color(0xFF2563EB), size: 22),
@@ -467,13 +463,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Text(
                       title,
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E293B),
                         fontFamily: 'KantumruyPro',
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: TextStyle(
@@ -489,12 +485,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
+                  color: Colors.grey.shade50,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.arrow_forward_ios_rounded,
-                  size: 10,
+                  size: 11,
                   color: Colors.grey.shade400,
                 ),
               ),

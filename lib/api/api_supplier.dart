@@ -5,7 +5,6 @@ import '../constants/baseurl/base_url_api.dart';
 import '../models/supplier.dart';
 
 class ApiSupplier {
-
   final String baseUrl = BaseUrlApi.baseurl;
 
   Future<List<Supplier>> getAllSuppliers() async {
@@ -38,8 +37,10 @@ class ApiSupplier {
         body: jsonEncode(supplier.toJson()),
       );
 
-      if (response.statusCode == 201) {
-        final data = jsonDecode(response.body);
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          data['success'] == true) {
         return Supplier.fromJson(data['data']);
       } else {
         throw Exception('Failed to create supplier: ${response.body}');
@@ -48,7 +49,6 @@ class ApiSupplier {
       throw Exception('Error: $e');
     }
   }
-
 
   Future<Supplier> updateSupplier(int id, Supplier supplier) async {
     try {
@@ -71,7 +71,6 @@ class ApiSupplier {
       throw Exception('Error: $e');
     }
   }
-
 
   Future<bool> deleteSupplier(int id) async {
     try {

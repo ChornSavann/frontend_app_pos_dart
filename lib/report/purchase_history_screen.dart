@@ -251,7 +251,6 @@ class _PurchaseHistoryScreenState extends State<PurchaseHistoryScreen> {
                               itemBuilder: (context, index) {
                                 final prod = purchaseItems[index];
 
-
                                 String imageName =
                                     prod['image_url']?.toString() ?? '';
                                 if (imageName.startsWith('products/')) {

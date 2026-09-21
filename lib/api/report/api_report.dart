@@ -82,6 +82,51 @@ class ApiReport {
       return [];
     }
   }
+  //
+  // Future<List<Map<String, dynamic>>> fetchLowStockProducts() async {
+  //   try {
+  //     final response = await http.get(Uri.parse("$baseUrl/reports/low-stock"));
+  //
+  //     if (response.statusCode == 200) {
+  //       final decodedData = jsonDecode(response.body);
+  //
+  //       List<dynamic> listData = [];
+  //       if (decodedData is List) {
+  //         listData = decodedData;
+  //       } else if (decodedData is Map<String, dynamic> &&
+  //           decodedData['data'] is List) {
+  //         listData = decodedData['data'];
+  //       }
+  //
+  //       return listData.map((item) {
+  //         final category = item['category'] ?? {};
+  //         final stockLeft = item['stock_quantity'] != null
+  //             ? double.parse(item['stock_quantity'].toString())
+  //             : 0.0;
+  //         final minAlert = item['alert_quantity'] != null
+  //             ? double.parse(item['alert_quantity'].toString())
+  //             : 0.0;
+  //
+  //         // កំណត់ Status ស្វ័យប្រវត្តិ (Critical បើស្តុក <= 2 ឬ <= 0)
+  //         String status = stockLeft <= 2 ? 'Critical' : 'Low Stock';
+  //
+  //         return {
+  //           'id': item['id'],
+  //           'name': item['name'] ?? 'Unknown Product',
+  //           'category': category['name'] ?? 'General',
+  //           'stock_left': stockLeft.toInt(),
+  //           'min_alert': minAlert.toInt(),
+  //           'status': status,
+  //           'image_url': item['image_url'] ?? '',
+  //         };
+  //       }).toList();
+  //     }
+  //     return [];
+  //   } catch (e) {
+  //     debugPrint('Error fetching low stock: $e');
+  //     return [];
+  //   }
+  // }
 
   Future<List<Map<String, dynamic>>> fetchLowStockProducts() async {
     try {
@@ -89,6 +134,9 @@ class ApiReport {
 
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(response.body);
+
+        // 🟢 មើលទិន្នន័យពិតប្រាកដដែលបានទាញយកមក
+        debugPrint("API Response: $decodedData");
 
         List<dynamic> listData = [];
         if (decodedData is List) {
@@ -99,6 +147,9 @@ class ApiReport {
         }
 
         return listData.map((item) {
+          // 🟢 មើលរូបភាពរបស់ product នីមួយៗ
+          debugPrint("Product Image URL from backend: ${item['image_url']}");
+
           final category = item['category'] ?? {};
           final stockLeft = item['stock_quantity'] != null
               ? double.parse(item['stock_quantity'].toString())
@@ -107,7 +158,6 @@ class ApiReport {
               ? double.parse(item['alert_quantity'].toString())
               : 0.0;
 
-          // កំណត់ Status ស្វ័យប្រវត្តិ (Critical បើស្តុក <= 2 ឬ <= 0)
           String status = stockLeft <= 2 ? 'Critical' : 'Low Stock';
 
           return {
