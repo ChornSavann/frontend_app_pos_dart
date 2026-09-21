@@ -67,12 +67,12 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
           'product_id': item['product_id']?.toString() ?? '',
           'product_name': item['product_name']?.toString() ?? 'Product',
           'unit_cost':
-              double.tryParse(
-                (item['unit_cost'] ?? item['price'] ?? 0).toString(),
-              ) ??
+          double.tryParse(
+            (item['unit_cost'] ?? item['price'] ?? 0).toString(),
+          ) ??
               0.0,
           'quantity':
-              double.tryParse((item['quantity'] ?? 1).toString()) ?? 1.0,
+          double.tryParse((item['quantity'] ?? 1).toString()) ?? 1.0,
           'image_url': item['image_url'] ?? item['product']?['image_url'],
         };
       }).toList();
@@ -162,170 +162,170 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
                   Expanded(
                     child: _isLoadingProducts
                         ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Color(0xFF2563EB),
-                            ),
-                          )
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF2563EB),
+                      ),
+                    )
                         : filteredProducts.isEmpty
                         ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.search_off_rounded,
-                                  size: 48,
-                                  color: Colors.grey.shade400,
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'No products found',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: filteredProducts.length,
-                            itemBuilder: (context, index) {
-                              final product = filteredProducts[index];
-                              final String? imageUrl = product['image_url'];
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: Colors.grey.shade100,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: 0.02,
-                                      ),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  leading: ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: Container(
-                                      width: 50,
-                                      height: 50,
-                                      color: const Color(
-                                        0xFF2563EB,
-                                      ).withValues(alpha: 0.08),
-                                      child:
-                                          imageUrl != null &&
-                                              imageUrl.isNotEmpty
-                                          ? Image.network(
-                                              imageUrl,
-                                              fit: BoxFit.cover,
-                                              errorBuilder:
-                                                  (context, error, stackTrace) {
-                                                    return const Icon(
-                                                      Icons.inventory_2_rounded,
-                                                      color: Color(0xFF2563EB),
-                                                      size: 24,
-                                                    );
-                                                  },
-                                            )
-                                          : const Icon(
-                                              Icons.inventory_2_rounded,
-                                              color: Color(0xFF2563EB),
-                                              size: 24,
-                                            ),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    product['name'] ?? 'Unknown',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 15,
-                                      color: Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  subtitle: Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Text(
-                                      'Price: \$${double.parse(product['price'].toString()).toStringAsFixed(2)}',
-                                      style: const TextStyle(
-                                        color: Color(0xFF2563EB),
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                  trailing: SizedBox(
-                                    height: 38,
-                                    width: 38,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF2563EB,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        padding: EdgeInsets.zero,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        elevation: 0,
-                                      ),
-                                      onPressed: () {
-                                        Navigator.of(modalContext).pop();
-                                        setState(() {
-                                          Map<String, dynamic> newItem = {
-                                            'product_id': product['id']
-                                                .toString(),
-                                            'product_name': product['name']
-                                                .toString(),
-                                            'unit_cost':
-                                                double.tryParse(
-                                                  product['price'].toString(),
-                                                ) ??
-                                                0.0,
-                                            'quantity': 1.0,
-                                            'image_url': product['image_url'],
-                                          };
-                                          _purchaseItems.add(newItem);
-                                          _calculateTotals();
-                                        });
-
-                                        Future.delayed(
-                                          const Duration(milliseconds: 150),
-                                          () {
-                                            if (_scrollController.hasClients) {
-                                              _scrollController.animateTo(
-                                                _scrollController
-                                                    .position
-                                                    .maxScrollExtent,
-                                                duration: const Duration(
-                                                  milliseconds: 300,
-                                                ),
-                                                curve: Curves.easeOut,
-                                              );
-                                            }
-                                          },
-                                        );
-                                      },
-                                      child: const Icon(Icons.add, size: 20),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.search_off_rounded,
+                            size: 48,
+                            color: Colors.grey.shade400,
                           ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'No products found',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                        : ListView.builder(
+                      itemCount: filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        final product = filteredProducts[index];
+                        final String? imageUrl = product['image_url'];
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.grey.shade100,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: 0.02,
+                                ),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                width: 50,
+                                height: 50,
+                                color: const Color(
+                                  0xFF2563EB,
+                                ).withValues(alpha: 0.08),
+                                child:
+                                imageUrl != null &&
+                                    imageUrl.isNotEmpty
+                                    ? Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) {
+                                    return const Icon(
+                                      Icons.inventory_2_rounded,
+                                      color: Color(0xFF2563EB),
+                                      size: 24,
+                                    );
+                                  },
+                                )
+                                    : const Icon(
+                                  Icons.inventory_2_rounded,
+                                  color: Color(0xFF2563EB),
+                                  size: 24,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              product['name'] ?? 'Unknown',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                'Price: \$${double.parse(product['price'].toString()).toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  color: Color(0xFF2563EB),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            trailing: SizedBox(
+                              height: 38,
+                              width: 38,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(
+                                    0xFF2563EB,
+                                  ),
+                                  foregroundColor: Colors.white,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(
+                                      10,
+                                    ),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                onPressed: () {
+                                  Navigator.of(modalContext).pop();
+                                  setState(() {
+                                    Map<String, dynamic> newItem = {
+                                      'product_id': product['id']
+                                          .toString(),
+                                      'product_name': product['name']
+                                          .toString(),
+                                      'unit_cost':
+                                      double.tryParse(
+                                        product['price'].toString(),
+                                      ) ??
+                                          0.0,
+                                      'quantity': 1.0,
+                                      'image_url': product['image_url'],
+                                    };
+                                    _purchaseItems.add(newItem);
+                                    _calculateTotals();
+                                  });
+
+                                  Future.delayed(
+                                    const Duration(milliseconds: 150),
+                                        () {
+                                      if (_scrollController.hasClients) {
+                                        _scrollController.animateTo(
+                                          _scrollController
+                                              .position
+                                              .maxScrollExtent,
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          curve: Curves.easeOut,
+                                        );
+                                      }
+                                    },
+                                  );
+                                },
+                                child: const Icon(Icons.add, size: 20),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),
@@ -357,21 +357,20 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
         _products = productsList
             .map(
               (p) => {
-                'id': p.id,
-                'name': p.name,
-                'price': p.costPrice ?? 0.0,
-                'image_url': p.imageUrl,
-              },
-            )
+            'id': p.id,
+            'name': p.name,
+            'price': p.costPrice ?? 0.0,
+            'image_url': p.imageUrl,
+          },
+        )
             .toList();
 
-        // 🟢 ដំណោះស្រាយ៖ ផ្ទៀងផ្ទាត់ទំនិញចាស់ៗ និងទាញយករូបភាពមកបំពេញ
         for (var i = 0; i < _purchaseItems.length; i++) {
           if (_purchaseItems[i]['image_url'] == null ||
               _purchaseItems[i]['image_url'] == '') {
             final matchedProduct = _products.firstWhere(
-              (p) =>
-                  p['id'].toString() ==
+                  (p) =>
+              p['id'].toString() ==
                   _purchaseItems[i]['product_id'].toString(),
               orElse: () => <String, dynamic>{},
             );
@@ -539,47 +538,52 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
             ),
             const SizedBox(height: 14),
 
-            // Supplier Dropdown
+            // Supplier Dropdown (មានភ្ជាប់សុវត្ថិភាពការពារ Crash)
             _isLoadingSuppliers
                 ? const Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2563EB)),
-                  )
+              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+            )
                 : DropdownButtonFormField<String>(
-                    value: _selectedSupplierId,
-                    decoration: InputDecoration(
-                      labelText: 'Select Supplier',
-                      labelStyle: TextStyle(color: Colors.grey.shade600),
-                      prefixIcon: const Icon(
-                        Icons.business_outlined,
-                        color: Color(0xFF2563EB),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(
-                          color: Color(0xFF2563EB),
-                          width: 1.5,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    items: _suppliers.map<DropdownMenuItem<String>>((supplier) {
-                      return DropdownMenuItem<String>(
-                        value: supplier['id'].toString(),
-                        child: Text(supplier['name'] ?? ''),
-                      );
-                    }).toList(),
-                    onChanged: (val) =>
-                        setState(() => _selectedSupplierId = val),
+              value:
+              _suppliers.any(
+                    (s) => s['id'].toString() == _selectedSupplierId,
+              )
+                  ? _selectedSupplierId
+                  : null,
+              decoration: InputDecoration(
+                labelText: 'Select Supplier',
+                labelStyle: TextStyle(color: Colors.grey.shade600),
+                prefixIcon: const Icon(
+                  Icons.business_outlined,
+                  color: Color(0xFF2563EB),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF2563EB),
+                    width: 1.5,
                   ),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              items: _suppliers.map<DropdownMenuItem<String>>((supplier) {
+                return DropdownMenuItem<String>(
+                  value: supplier['id'].toString(),
+                  child: Text(supplier['name'] ?? ''),
+                );
+              }).toList(),
+              onChanged: (val) =>
+                  setState(() => _selectedSupplierId = val),
+            ),
             const SizedBox(height: 20),
 
             // Header for Purchase Items
@@ -649,7 +653,6 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
                     children: [
                       Row(
                         children: [
-                          // 🟢 បង្ហាញរូបភាពផលិតផល
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: Container(
@@ -660,22 +663,22 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
                               ).withValues(alpha: 0.08),
                               child: imageUrl != null && imageUrl.isNotEmpty
                                   ? Image.network(
-                                      imageUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                            return const Icon(
-                                              Icons.inventory_2_rounded,
-                                              color: Color(0xFF2563EB),
-                                              size: 20,
-                                            );
-                                          },
-                                    )
+                                imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder:
+                                    (context, error, stackTrace) {
+                                  return const Icon(
+                                    Icons.inventory_2_rounded,
+                                    color: Color(0xFF2563EB),
+                                    size: 20,
+                                  );
+                                },
+                              )
                                   : const Icon(
-                                      Icons.inventory_2_rounded,
-                                      color: Color(0xFF2563EB),
-                                      size: 20,
-                                    ),
+                                Icons.inventory_2_rounded,
+                                color: Color(0xFF2563EB),
+                                size: 20,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -697,9 +700,9 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
                               });
                             },
                             borderRadius: BorderRadius.circular(8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: const Icon(
+                            child: const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Icon(
                                 Icons.delete_outline_rounded,
                                 color: Colors.redAccent,
                                 size: 20,
@@ -935,21 +938,21 @@ class _EditPurchaseScreenState extends State<EditPurchaseScreen> {
                 ),
                 child: _isLoading
                     ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
-                        ),
-                      )
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2.5,
+                  ),
+                )
                     : const Text(
-                        'Update Purchase',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
+                  'Update Purchase',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 20),
