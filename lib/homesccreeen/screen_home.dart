@@ -432,7 +432,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               mainAxisSpacing: 10,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.9,
+              childAspectRatio: 2.05,
               children: [
                 _buildModernActionCard(
                   title: TranslateConstants.product.tr,
