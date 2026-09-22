@@ -17,6 +17,7 @@ class ApiProduct {
   final String baseUrl = BaseUrlApi.baseurl;
 
 
+
   Future<List<Product>> fetchProducts({int? categoryId, int? brandId}) async {
     try {
       String url = '$baseUrl/products';
@@ -353,6 +354,23 @@ class ApiProduct {
       }
     } catch (e) {
       throw Exception("Error fetching products: $e");
+    }
+  }
+
+  Future<List<dynamic>> getLowStockProducts() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/products/low-stock'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['success'] == true) {
+          return data['data']; // ส่งคืนបញ្ជីទំនិញជិតអស់ស្តុក
+        }
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching low stock API: $e");
+      return [];
     }
   }
 

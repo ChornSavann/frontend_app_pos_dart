@@ -12,6 +12,8 @@ import 'package:pos_inventory/stores/index_store_screen.dart';
 import 'package:pos_inventory/translations/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Productscreen/notication/notication_service.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
@@ -23,7 +25,7 @@ void main() async {
   Widget initialScreen = (token != null && token.isNotEmpty)
       ? const DashboardScreen()
       : const SplashScreen();
-
+  await NotificationService.initialize();
   runApp(MyApp(initialScreen: initialScreen));
 }
 

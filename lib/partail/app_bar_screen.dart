@@ -8,13 +8,22 @@ import 'package:pos_inventory/order/cart_screen.dart';
 import 'package:pos_inventory/stores/models/store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../translations/language/language_switcher_button.dart';
 import '../order/card_manager.dart';
 
 class AppBarScreen extends StatefulWidget implements PreferredSizeWidget {
   final int cartItemCount;
+  final int lowStockCount;
   final Store? store;
+  final VoidCallback? onNotificationTap;
 
-  const AppBarScreen({super.key, this.cartItemCount = 0, this.store});
+  const AppBarScreen({
+    super.key,
+    this.cartItemCount = 0,
+    this.lowStockCount = 0,
+    this.store,
+    this.onNotificationTap,
+  });
 
   @override
   State<AppBarScreen> createState() => _AppBarScreenState();
@@ -65,8 +74,8 @@ class _AppBarScreenState extends State<AppBarScreen> {
   Widget build(context) {
     final Store store =
         widget.store ??
-        _fetchedStore ??
-        Store(id: null, name: '', imageUrl: '');
+            _fetchedStore ??
+            Store(id: null, name: '', imageUrl: '');
 
     return AppBar(
       toolbarHeight: 75,
@@ -112,31 +121,31 @@ class _AppBarScreenState extends State<AppBarScreen> {
 
                   return (store.imageUrl != null && store.imageUrl!.isNotEmpty)
                       ? CachedNetworkImage(
-                          imageUrl: store.imageUrl!,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => const Center(
-                            child: SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Color(0xFF2563EB),
-                              ),
-                            ),
-                          ),
-                          errorWidget: (context, url, error) {
-                            return const Icon(
-                              Icons.storefront_rounded,
-                              color: Color(0xFF2563EB),
-                              size: 24,
-                            );
-                          },
-                        )
-                      : const Icon(
-                          Icons.storefront_rounded,
+                    imageUrl: store.imageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(
+                      child: SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
                           color: Color(0xFF2563EB),
-                          size: 24,
-                        );
+                        ),
+                      ),
+                    ),
+                    errorWidget: (context, url, error) {
+                      return const Icon(
+                        Icons.storefront_rounded,
+                        color: Color(0xFF2563EB),
+                        size: 24,
+                      );
+                    },
+                  )
+                      : const Icon(
+                    Icons.storefront_rounded,
+                    color: Color(0xFF2563EB),
+                    size: 24,
+                  );
                 },
               ),
             ),
@@ -192,7 +201,7 @@ class _AppBarScreenState extends State<AppBarScreen> {
         ],
       ),
       actions: [
-        // 🌐 Language Switcher
+        // 🌐 Language Switcher (ហៅយកមកប្រើប្រាស់ត្រង់នេះ)
         const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.0),
@@ -201,18 +210,53 @@ class _AppBarScreenState extends State<AppBarScreen> {
         ),
         const SizedBox(width: 2),
 
-        // 🔍 Search Action Button
-        _buildActionCircle(Icons.search_rounded, () {}),
-        const SizedBox(width: 8),
+        // 🔔 Notification Action Button
+        Stack(
+          alignment: Alignment.center,
+          children: [
+            _buildActionCircle(Icons.notifications_none_rounded, () {
+              if (widget.onNotificationTap != null) {
+                widget.onNotificationTap!();
+              }
+            }),
+            if (widget.lowStockCount > 0)
+              Positioned(
+                right: 2,
+                top: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 18,
+                    minHeight: 18,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${widget.lowStockCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(width: 6),
 
-        // 🔔 Notification / Cart Action Button with Badge
+        // 🛒 Cart Action Button
         ValueListenableBuilder<int>(
           valueListenable: CartManager.cartItemCount,
           builder: (context, itemCount, child) {
             return Stack(
               alignment: Alignment.center,
               children: [
-                _buildActionCircle(Icons.notifications_none_rounded, () {
+                _buildActionCircle(Icons.shopping_cart_outlined, () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const CartScreen()),
@@ -220,12 +264,12 @@ class _AppBarScreenState extends State<AppBarScreen> {
                 }),
                 if (itemCount > 0)
                   Positioned(
-                    right: 4,
-                    top: 6,
+                    right: 1,
+                    top: -2,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Colors.redAccent,
+                        color: Colors.blueAccent,
                         shape: BoxShape.circle,
                       ),
                       constraints: const BoxConstraints(
@@ -273,76 +317,6 @@ class _AppBarScreenState extends State<AppBarScreen> {
         padding: EdgeInsets.zero,
         icon: Icon(icon, color: const Color(0xFF475569), size: 20),
         onPressed: onTap,
-      ),
-    );
-  }
-}
-
-// 🇰🇭🇬🇧 Language Switcher Button with GetX
-class LanguageSwitcherButton extends StatefulWidget {
-  const LanguageSwitcherButton({super.key});
-
-  @override
-  State<LanguageSwitcherButton> createState() => _LanguageSwitcherButtonState();
-}
-
-class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
-  bool isKhmer = true;
-
-  void onChangeLanguage() {
-    setState(() {
-      isKhmer = !isKhmer;
-    });
-
-    if (Get.locale?.languageCode == TranslateConstants.km) {
-      var locale = const Locale(TranslateConstants.en, TranslateConstants.us);
-      Get.updateLocale(locale);
-    } else {
-      var locale = const Locale(TranslateConstants.km, TranslateConstants.kh);
-      Get.updateLocale(locale);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: InkWell(
-        onTap: onChangeLanguage,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade200, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                isKhmer ? "🇰🇭" : "🇬🇧",
-                style: const TextStyle(fontSize: 15),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                isKhmer ? "KH" : "EN",
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF334155),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

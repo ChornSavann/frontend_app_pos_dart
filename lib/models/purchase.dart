@@ -54,7 +54,6 @@ class PurchaseModel {
       uName = json['user_name']?.toString();
     }
 
-    // 🟢 បំប្លែង items ឱ្យទៅជា List<Map<String, dynamic>> យ៉ាងមានសុវត្ថិភាព
     List<Map<String, dynamic>>? parsedItems;
     if (json['items'] != null && json['items'] is List) {
       parsedItems = (json['items'] as List).map((item) {

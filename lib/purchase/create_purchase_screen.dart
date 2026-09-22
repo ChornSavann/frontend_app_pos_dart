@@ -12,7 +12,13 @@ import '../models/supplier.dart';
 class CreatePurchaseScreen extends StatefulWidget {
   final dynamic productId;
   final String? productName;
-  const CreatePurchaseScreen({super.key, this.productId, this.productName});
+  final dynamic productQuantity;
+  const CreatePurchaseScreen({
+    super.key,
+    this.productId,
+    this.productName,
+    this.productQuantity,
+  });
 
   @override
   State<CreatePurchaseScreen> createState() => _CreatePurchaseScreenState();
@@ -62,6 +68,9 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     if (widget.productId != null) {
       _selectedProductId = widget.productId.toString();
       _selectedProductName = widget.productName;
+    }
+    if (widget.productQuantity != null) {
+      _itemQuantityController.text = widget.productQuantity.toString();
     }
     _generatePurchaseNumber();
   }
@@ -243,6 +252,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
 
         bool success = await apiPurchase.createPurchase(
           PurchaseModel.fromJson(purchaseDataMap),
+
         );
 
         setState(() => _isLoading = false);

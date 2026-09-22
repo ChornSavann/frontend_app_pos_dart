@@ -282,19 +282,12 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
             ),
             child: IconButton(
               icon: const Icon(
-                Icons.home_outlined,
+                Icons.arrow_back_ios_new,
                 color: Colors.white,
-                size: 20,
+                size: 18,
               ),
-              onPressed: () async {
-                await Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        ScreenHome(), // ប្រាកដថាបាន Import DashboardScreen រួចរាល់
-                  ),
-                  (route) => false,
-                );
+              onPressed: () {
+                Navigator.pop(context);
               },
             ),
           ),
@@ -418,46 +411,54 @@ class _BrandIndexScreenState extends State<BrandIndexScreen> {
                               // 🖼️ Brand Logo
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: (brand.logo != null && brand.logo!.isNotEmpty)
+                                child:
+                                    (brand.logo != null &&
+                                        brand.logo!.isNotEmpty)
                                     ? CachedNetworkImage(
-                                  imageUrl: brand.logo!,
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    width: 60,
-                                    height: 60,
-                                    color: Colors.grey.shade100,
-                                    child: const Center(
-                                      child: SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
+                                        imageUrl: brand.logo!,
+                                        width: 60,
+                                        height: 60,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            Container(
+                                              width: 60,
+                                              height: 60,
+                                              color: Colors.grey.shade100,
+                                              child: const Center(
+                                                child: SizedBox(
+                                                  width: 20,
+                                                  height: 20,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                ),
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                              width: 60,
+                                              height: 60,
+                                              color: Colors.grey.shade100,
+                                              child: const Icon(
+                                                Icons
+                                                    .image_not_supported_outlined,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                      )
+                                    : Container(
+                                        width: 60,
+                                        height: 60,
+                                        color: const Color(
+                                          0xFF4F46E5,
+                                        ).withValues(alpha: 0.1),
+                                        child: const Icon(
+                                          Icons.branding_watermark_outlined,
+                                          color: Color(0xFF4F46E5),
+                                          size: 28,
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => Container(
-                                    width: 60,
-                                    height: 60,
-                                    color: Colors.grey.shade100,
-                                    child: const Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                )
-                                    : Container(
-                                  width: 60,
-                                  height: 60,
-                                  color: const Color(0xFF4F46E5).withValues(alpha: 0.1),
-                                  child: const Icon(
-                                    Icons.branding_watermark_outlined,
-                                    color: Color(0xFF4F46E5),
-                                    size: 28,
-                                  ),
-                                ),
                               ),
                               const SizedBox(width: 14),
 
