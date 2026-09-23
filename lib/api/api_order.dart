@@ -69,7 +69,73 @@ class ApiOrder {
   }
 
 
+// 🛒 យកប្រវត្តិនៃការលក់ទាំងអស់ (Get All Orders/Sales)
+  Future<Map<String, dynamic>> getAllOrders({String? token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders'), // 🟢 ប្តូរ endpoint ទៅតាម Laravel API របស់អ្នក (ឧ. /orders ឬ /sales)
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
 
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(response.body);
+
+        // ត្រឡប់ទម្រង់ជា Map ដែលមាន success: true និង data ជា List
+        if (decodedData is Map) {
+          return {
+            'success': true,
+            'data': decodedData['data'] ?? decodedData,
+          };
+        } else if (decodedData is List) {
+          return {
+            'success': true,
+            'data': decodedData,
+          };
+        }
+      }
+
+      return {'success': false, 'data': []};
+    } catch (e) {
+      print('Error fetching orders: $e');
+      return {'success': false, 'data': []};
+    }
+  }
+
+  // 🔍 យកព័ត៌មានលម្អិតតាម Order ID
+// 🔍 យកព័ត៌មានលម្អិតតាម Order ID
+  Future<Map<String, dynamic>> getOrderById(int orderId, {String? token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/orders/$orderId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      final decodedData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && decodedData['success'] == true) {
+        return {
+          'success': true,
+          'data': decodedData['data'], // 👈 ទិន្នន័យ Order ព្រមទាំង relations (details, customer, user, payment) នឹងស្ថិតនៅទីនេះ
+        };
+      } else {
+        return {
+          'success': false,
+          'message': decodedData['message'] ?? 'Failed to load details'
+        };
+      }
+    } catch (e) {
+      print('Error fetching order detail: $e');
+      return {'success': false, 'message': e.toString()};
+    }
+  }
 
 
 }

@@ -1,4 +1,3 @@
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/Productscreen/create_product_screen.dart';
@@ -8,6 +7,8 @@ import 'package:pos_inventory/api/api_product.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
 import 'package:pos_inventory/models/Product.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
+import '../purchase/scane_barcode/generate_sticker_screen.dart';
 
 class ProductIndexScreen extends StatefulWidget {
   const ProductIndexScreen({super.key});
@@ -267,7 +268,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   MaterialPageRoute(
                     builder: (context) => const DashboardScreen(),
                   ),
-                      (route) => false,
+                  (route) => false,
                 );
               },
             ),
@@ -303,15 +304,39 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     delegate: ProductSearchDelegate(
                       products,
                       _refreshProductList,
-                          (product) {
-                        // 🟢 បើកទំព័រ ShowProductIdScreen ពេលចុចលើ Search Result
+                      (product) {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ShowProductIdScreen(productId: product.id),
+                            builder: (context) =>
+                                ShowProductIdScreen(productId: product.id),
                           ),
                         );
                       },
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.qr_code_2_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                tooltip: 'Generate Barcode Stickers',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GenerateStickerScreen(),
                     ),
                   );
                 },
@@ -336,7 +361,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   final isChanged = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const CreateProductScreen(),
+                      builder: (context) => CreateProductScreen(),
                     ),
                   );
                   if (isChanged == true) {
@@ -416,7 +441,8 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ShowProductIdScreen(productId: product.id), // 🟢 បញ្ជូន ID ទៅកាន់ Page ថ្មី
+                              builder: (context) =>
+                                  ShowProductIdScreen(productId: product.id),
                             ),
                           );
                         },
@@ -428,49 +454,49 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
                                 child:
-                                product.imageUrl != null &&
-                                    product.imageUrl!.isNotEmpty
+                                    product.imageUrl != null &&
+                                        product.imageUrl!.isNotEmpty
                                     ? CachedNetworkImage(
-                                  imageUrl: product.imageUrl!,
-                                  width: 70,
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                  const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: Center(
-                                      child:
-                                      CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) {
-                                    return Container(
-                                      width: 70,
-                                      height: 70,
-                                      color: Colors.grey.shade100,
-                                      child: const Icon(
-                                        Icons
-                                            .image_not_supported_outlined,
-                                        color: Colors.grey,
-                                      ),
-                                    );
-                                  },
-                                )
+                                        imageUrl: product.imageUrl!,
+                                        width: 70,
+                                        height: 70,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            const SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) {
+                                          return Container(
+                                            width: 70,
+                                            height: 70,
+                                            color: Colors.grey.shade100,
+                                            child: const Icon(
+                                              Icons
+                                                  .image_not_supported_outlined,
+                                              color: Colors.grey,
+                                            ),
+                                          );
+                                        },
+                                      )
                                     : Container(
-                                  width: 70,
-                                  height: 70,
-                                  color: Colors.blue.withValues(
-                                    alpha: 0.1,
-                                  ),
-                                  child: const Icon(
-                                    Icons.shopping_bag_outlined,
-                                    color: Colors.blueAccent,
-                                    size: 32,
-                                  ),
-                                ),
+                                        width: 70,
+                                        height: 70,
+                                        color: Colors.blue.withValues(
+                                          alpha: 0.1,
+                                        ),
+                                        child: const Icon(
+                                          Icons.shopping_bag_outlined,
+                                          color: Colors.blueAccent,
+                                          size: 32,
+                                        ),
+                                      ),
                               ),
                               const SizedBox(width: 14),
                               Expanded(
@@ -528,11 +554,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                           decoration: BoxDecoration(
                                             color: product.stockQuantity > 0
                                                 ? Colors.blue.withValues(
-                                              alpha: 0.1,
-                                            )
+                                                    alpha: 0.1,
+                                                  )
                                                 : Colors.red.withValues(
-                                              alpha: 0.1,
-                                            ),
+                                                    alpha: 0.1,
+                                                  ),
                                             borderRadius: BorderRadius.circular(
                                               6,
                                             ),
@@ -701,24 +727,24 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child:
-                    product.imageUrl != null && product.imageUrl!.isNotEmpty
+                        product.imageUrl != null && product.imageUrl!.isNotEmpty
                         ? CachedNetworkImage(
-                      imageUrl: product.imageUrl!,
-                      width: 70,
-                      height: 70,
-                      fit: BoxFit.cover,
-                      errorWidget: (context, url, error) =>
-                      const Icon(Icons.image_not_supported),
-                    )
+                            imageUrl: product.imageUrl!,
+                            width: 70,
+                            height: 70,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.image_not_supported),
+                          )
                         : Container(
-                      width: 70,
-                      height: 70,
-                      color: Colors.blue.withValues(alpha: 0.1),
-                      child: const Icon(
-                        Icons.shopping_bag_outlined,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
+                            width: 70,
+                            height: 70,
+                            color: Colors.blue.withValues(alpha: 0.1),
+                            child: const Icon(
+                              Icons.shopping_bag_outlined,
+                              color: Colors.blueAccent,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(

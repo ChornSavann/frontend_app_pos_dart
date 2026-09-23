@@ -55,7 +55,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 17,
             color: Color(0xFF1E293B),
             letterSpacing: -0.3,
-            // fontFamily: 'KantumruyPro',
           ),
         ),
         backgroundColor: Colors.white,
@@ -88,10 +87,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100), // เว้นចន្លោះបាតកុំឲ្យបាំងប៊ូតុង
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
         child: Column(
           children: [
-            // 🌟 1. Modern Gradient Profile Header Card (ពង្រីកទំហំឲ្យធំទូលាយស្អាត)
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 26, horizontal: 20),
@@ -318,7 +316,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 22),
 
-            // 🚪 3. Log Out Button (រចនាកូដប៊ូតុងចាកចេញឲ្យទាក់ទាញភ្នែក)
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -412,24 +409,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const ButtonScreen(currentIndex: 2),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 15),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CartScreen()),
-            );
-          },
-          backgroundColor: const Color(0xFF2563EB),
-          foregroundColor: Colors.white,
-          elevation: 4.0,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.point_of_sale_rounded, size: 26),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
     );
   }
 

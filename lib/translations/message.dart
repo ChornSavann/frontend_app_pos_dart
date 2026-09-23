@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 import '../constants/translate_constants.dart';
 
@@ -49,6 +50,12 @@ class Messages extends Translations {
       TranslateConstants.expense_type:'Expense Type',
       TranslateConstants.expense:'Expense',
       TranslateConstants.manage_expense:'Manage Expense',
+      TranslateConstants.history:'History',
+      TranslateConstants.sales_history:'Sales History',
+      TranslateConstants.purchase_history:'Purchase History',
+      TranslateConstants.review_sales:'Review the list of invoices and outgoing sales',
+      TranslateConstants.review_purchase:'Review stock orders from suppliers.',
+      TranslateConstants.transaction_history:'Transaction History',
     },
     'km_KH': {
       TranslateConstants.khmerApp: 'ហាងខ្មែរ',
@@ -95,6 +102,12 @@ class Messages extends Translations {
       TranslateConstants.expense_type:'ប្រភេទចំនាយ',
       TranslateConstants.expense:'ការចំណាយ',
       TranslateConstants.manage_expense:'គ្របគ្រងចំណាយ',
+      TranslateConstants.history:'ប្រវត្តិការលក់',
+      TranslateConstants.sales_history:'ប្រវត្តិការលក់',
+      TranslateConstants.purchase_history:'ប្រវត្តិការទិញចូល',
+      TranslateConstants.review_sales:'ពិនិត្យមើលបញ្ជីវិក្កយបត្រ និងការលក់ទំនិញចេញ',
+      TranslateConstants.review_purchase:'ពិនិត្យមើលការបញ្ជាទិញស្តុកពីអ្នកផ្គត់ផ្គង់ (Supplier)',
+      TranslateConstants.transaction_history:'ប្រវត្តិប្រតិបត្តិការ'
 
     }
   };

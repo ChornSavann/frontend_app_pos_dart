@@ -7,6 +7,7 @@ import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
 import 'package:pos_inventory/partail/profile_screen.dart';
 import 'package:pos_inventory/partail/setting_screnn.dart';
+import 'package:pos_inventory/report/history/dashboard_history_screen.dart';
 
 class ButtonScreen extends StatelessWidget {
   final int
@@ -59,9 +60,7 @@ class ButtonScreen extends StatelessWidget {
                   if (currentIndex != 0) {
                     Navigator.pushReplacement(
                       context,
-                      _createRoute(
-                        const DashboardScreen(),
-                      ),
+                      _createRoute(const DashboardScreen()),
                     );
                   }
                 },
@@ -130,17 +129,53 @@ class ButtonScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(
-              width: 48,
-            ), // ទុកគម្លាតឱ្យ FloatingActionButton កណ្តាល
-            // 👤 Profile (Index 2)
+            const SizedBox(width: 48),
+            // // 👤 Profile (Index 2)
+            // Expanded(
+            //   child: InkWell(
+            //     onTap: () {
+            //       if (currentIndex != 2) {
+            //         Navigator.pushReplacement(
+            //           context,
+            //           _createRoute(const DashboardHistoryScreen()),
+            //         );
+            //       }
+            //     },
+            //     child: Column(
+            //       mainAxisAlignment: MainAxisAlignment.center,
+            //       children: [
+            //         Icon(
+            //           Icons.person_outline_rounded,
+            //           color: currentIndex == 2
+            //               ? Colors.blueAccent
+            //               : Colors.grey,
+            //           size: 24,
+            //         ),
+            //         Text(
+            //           TranslateConstants.profile.tr,
+            //           style: TextStyle(
+            //             fontSize: 10,
+            //             color: currentIndex == 2
+            //                 ? Colors.blueAccent
+            //                 : Colors.grey,
+            //             fontWeight: currentIndex == 2
+            //                 ? FontWeight.bold
+            //                 : FontWeight.normal,
+            //           ),
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ),
+
+            // 🟢 History / Report (Index 2)
             Expanded(
               child: InkWell(
                 onTap: () {
                   if (currentIndex != 2) {
                     Navigator.pushReplacement(
                       context,
-                      _createRoute(const ProfileScreen()),
+                      _createRoute(const DashboardHistoryScreen()),
                     );
                   }
                 },
@@ -148,14 +183,14 @@ class ButtonScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.person_outline_rounded,
+                      Icons.history_rounded,
                       color: currentIndex == 2
                           ? Colors.blueAccent
                           : Colors.grey,
                       size: 24,
                     ),
                     Text(
-                    TranslateConstants.profile.tr,
+                      TranslateConstants.history.tr,
                       style: TextStyle(
                         fontSize: 10,
                         color: currentIndex == 2

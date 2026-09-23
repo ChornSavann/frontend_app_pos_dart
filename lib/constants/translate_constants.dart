@@ -50,6 +50,12 @@ class TranslateConstants {
   static const String manage_exp='mg_expense_type';
   static const String expense='expense';
   static const String manage_expense='mg_expense';
+  static const String history='history';
+  static const String sales_history='sales_history';
+  static const String purchase_history='purchase_history';
+  static const String review_sales='review_sales';
+  static const String review_purchase='review_purchase';
+  static const String transaction_history='transaction_history';
 
 
 

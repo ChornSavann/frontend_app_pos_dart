@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
+import 'package:pos_inventory/partail/profile_screen.dart';
 import 'package:pos_inventory/profile/edit_profile_screen.dart';
+import 'package:pos_inventory/report/history/order_history_screen.dart';
 import 'package:pos_inventory/settings/about_screen.dart';
 import 'package:pos_inventory/settings/currency_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../settings/data_sync_screen.dart';
 import '../settings/printer_screen.dart';
-import 'app_bar_screen.dart';
 import 'button_screen.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -50,9 +51,7 @@ class _SettingScreenState extends State<SettingScreen> {
         ? const Color(0xFF121212)
         : const Color(0xFFF8F9FA);
     final cardColor = _isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = _isDarkMode
-        ? Colors.white
-        : const Color(0xFF1E293B);
+    final textColor = _isDarkMode ? Colors.white : const Color(0xFF1E293B);
     final subtitleColor = _isDarkMode ? Colors.grey[400] : Colors.grey[500];
 
     final tileBgColor = _isDarkMode
@@ -88,71 +87,88 @@ class _SettingScreenState extends State<SettingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 👤 Profile Card (រក្សាពណ៌ Gradient ព្រោះស្អាតស្រាប់)
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Colors.blueAccent, Color(0xFF448AFF)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.blueAccent.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
+              GestureDetector(
+                onTap: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfileScreen(),
                     ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundColor: Colors.white,
-                      backgroundImage: NetworkImage(_userAvatar),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _userName,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _userRole,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit_rounded, color: Colors.white),
-                      onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const EditProfileScreen(),
-                          ),
-                        );
+                  );
 
-                        if (result == true) {
-                          _loadUserData();
-                        }
-                      },
+                  if (result == true && mounted) {
+                    _loadUserData();
+                  }
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Colors.blueAccent, Color(0xFF448AFF)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.blueAccent.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundColor: Colors.white,
+                        backgroundImage: NetworkImage(_userAvatar),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _userName,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              _userRole,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // ប៊ូតុង Edit ដដែល (អាចទុក ឬលុបចេញបាន ព្រោះចុចលើ Card ហ្នឹងក៏បានដែរ)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const EditProfileScreen(),
+                            ),
+                          );
+
+                          if (result == true) {
+                            _loadUserData();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
@@ -229,6 +245,26 @@ class _SettingScreenState extends State<SettingScreen> {
                       arrowBgColor: arrowBgColor,
                       arrowIconColor: arrowIconColor,
                       onTap: () {},
+                    ),
+
+                    Divider(height: 1, indent: 68, color: dividerColor),
+                    _buildMenuTile(
+                      icon: Icons.history_rounded,
+                      title: "History Order",
+                      subtitle: "History Order product trigger",
+                      textColor: textColor,
+                      subtitleColor: subtitleColor,
+                      tileBgColor: tileBgColor,
+                      arrowBgColor: arrowBgColor,
+                      arrowIconColor: arrowIconColor,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => OrderHistoryScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

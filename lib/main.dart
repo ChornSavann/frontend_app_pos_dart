@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
-import 'package:pos_inventory/expenses/index_expense_screen.dart';
-import 'package:pos_inventory/expensetype/index_expensetype_sreen.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
 import 'package:pos_inventory/login/plash_screnn.dart';
-import 'package:pos_inventory/report/profit_lose/finance_chart_screen.dart';
-import 'package:pos_inventory/report/profit_lose/finance_report_screen.dart';
-import 'package:pos_inventory/stores/index_store_screen.dart';
 import 'package:pos_inventory/translations/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -26,6 +23,9 @@ void main() async {
       ? const DashboardScreen()
       : const SplashScreen();
   await NotificationService.initialize();
+  await Hive.initFlutter();
+  await Hive.openBox('offline_products');
+  await Hive.openBox('offline_transactions');
   runApp(MyApp(initialScreen: initialScreen));
 }
 
@@ -42,7 +42,7 @@ class MyApp extends StatelessWidget {
       locale: Locale(
         TranslateConstants.km,
         TranslateConstants.kh,
-      ), // translations will be displayed in that locale
+      ),
       fallbackLocale: Locale(TranslateConstants.en, TranslateConstants.us),
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
@@ -53,7 +53,7 @@ class MyApp extends StatelessWidget {
         // ),
       ),
       home: initialScreen,
-      // home: FinancialReportScreen()
+      // home: const GenerateStickerScreen(products: []),
     );
   }
 }

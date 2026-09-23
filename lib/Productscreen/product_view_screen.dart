@@ -651,7 +651,7 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                               childAspectRatio:
-                                  0.65,
+                                  0.73                                                                                                                                            ,
                             ),
                         itemBuilder: (context, index) {
                           final product = products[index];

@@ -200,6 +200,37 @@ class ApiPurchase {
       throw Exception('Error: $e');
     }
   }
+  Future<List<dynamic>> getAllPurchaseHistory({String? token}) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/purchases'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decodedData = jsonDecode(response.body);
+
+        List dataList = [];
+        if (decodedData is Map && decodedData.containsKey('data')) {
+          dataList = decodedData['data'];
+        } else if (decodedData is List) {
+          dataList = decodedData;
+        }
+
+        // 🟢 ឱ្យវាត្រឡប់ជា List ស្រាប់ (Map) តែម្តង ដើម្បីងាយស្រួលយកទៅប្រើក្នុង Dashboard History
+        return dataList;
+      } else {
+        throw Exception('Failed to load purchases. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error on getAllPurchases: $e');
+      throw Exception('Error: $e');
+    }
+  }
 
   Future<Map<String, dynamic>?> getPurchaseById(int purchaseId) async {
     try {

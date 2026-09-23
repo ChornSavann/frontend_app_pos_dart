@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:hive/hive.dart';
 import 'package:pos_inventory/api/api_purchase.dart';
 import 'package:pos_inventory/msg/appSnackBar.dart';
+import 'package:pos_inventory/purchase/scane_barcode/barcode_scanner_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/Product.dart';
@@ -13,11 +16,13 @@ class CreatePurchaseScreen extends StatefulWidget {
   final dynamic productId;
   final String? productName;
   final dynamic productQuantity;
+  final Function? onScan;
   const CreatePurchaseScreen({
     super.key,
     this.productId,
     this.productName,
     this.productQuantity,
+    this.onScan,
   });
 
   @override
@@ -46,14 +51,13 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
   final TextEditingController _itemPriceController = TextEditingController();
 
   String? _userId;
-  String _paymentMethod = 'cash';
-  String _status = 'completed';
+  final String _paymentMethod = 'cash';
+  final String _status = 'completed';
 
   List<dynamic> _products = [];
   String? _selectedProductId;
   String? _selectedProductName;
 
-  // 🛒 បញ្ជីទំនិញដែលបានជ្រើសរើសរួច (Cart Items)
   final List<Map<String, dynamic>> _purchaseItems = [];
 
   double _subtotal = 0.0;
@@ -111,7 +115,8 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                 'name': product.name,
                 'price': product.costPrice ?? 0.0,
                 'base_unit_name': product.unitName,
-                'image_url': product.imageUrl, // 🟢 ទាញយករូបភាពផលិតផល
+                'image_url': product.imageUrl,
+                'barcode': product.barcode,
               },
             )
             .toList();
@@ -141,7 +146,76 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     }
   }
 
-  // ➕ មុខងារបន្ថែម Product ចូលទៅក្នុង Cart List រួមទាំង Image URL
+  void _openScanner() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => BarcodeScannerScreen(
+          onScan: (scannedCode) {
+            _findAndAddProductByBarcode(scannedCode);
+          },
+        ),
+      ),
+    );
+  }
+
+  // 🔍 មុខងារស្វែងរកផលិតផលតាម Barcode (រួមបញ្ចូលទាំង Local Hive Cache ពេលអត់មានអ៊ិនធឺណិត)
+  void _findAndAddProductByBarcode(String barcode) {
+    // ១. ឆែកមើលក្នុង List បច្ចុប្បន្នមុន
+    var matchedProduct = _products.firstWhere(
+      (p) => p['barcode']?.toString() == barcode,
+      orElse: () => {},
+    );
+
+    // ២. បើរកមិនឃើញក្នុង List ទេ ព្យាយាមឆែកក្នុង Local Hive Box (Offline Mode)
+    if (matchedProduct.isEmpty) {
+      try {
+        var box = Hive.box('offline_products');
+        var cachedProduct = box.get(barcode);
+        if (cachedProduct != null) {
+          matchedProduct = Map<String, dynamic>.from(cachedProduct);
+        }
+      } catch (e) {
+        print("Hive error: $e");
+      }
+    }
+
+    if (matchedProduct.isNotEmpty) {
+      setState(() {
+        int existingIndex = _purchaseItems.indexWhere(
+          (item) =>
+              item['product_id'].toString() == matchedProduct['id'].toString(),
+        );
+
+        if (existingIndex >= 0) {
+          _purchaseItems[existingIndex]['quantity'] += 1.0;
+          _purchaseItems[existingIndex]['total_price'] =
+              _purchaseItems[existingIndex]['quantity'] *
+              _purchaseItems[existingIndex]['unit_cost'];
+        } else {
+          _purchaseItems.add({
+            'product_id': int.tryParse(matchedProduct['id'].toString()) ?? 0,
+            'product_name': matchedProduct['name'].toString(),
+            'unit_cost':
+                double.tryParse(matchedProduct['price'].toString()) ?? 0.0,
+            'quantity': 1.0,
+            'total_price':
+                double.tryParse(matchedProduct['price'].toString()) ?? 0.0,
+            'image_url': matchedProduct['image_url'],
+          });
+        }
+        _calculateTotals();
+      });
+      HapticFeedback.mediumImpact();
+      AppSnackBar.showSuccess(context, 'បានបន្ថែម: ${matchedProduct['name']}');
+    } else {
+      AppSnackBar.showError(
+        context,
+        'រកមិនឃើញផលិតផលដែលមាន Barcode នេះទេ: $barcode',
+      );
+    }
+  }
+
   void _addItemToCart() {
     if (_selectedProductId == null) {
       AppSnackBar.showError(context, 'សូមជ្រើសរើសទំនិញ (Product)');
@@ -155,7 +229,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
       return;
     }
 
-    // 🟢 ស្វែងរក Product ដែលបានជ្រើសរើសដោយកំណត់ប្រភេទ orElse ឱ្យបានត្រឹមត្រូវ
     var selectedProductData = _products.firstWhere(
       (p) => p['id'].toString() == _selectedProductId.toString(),
       orElse: () => <String, dynamic>{},
@@ -181,7 +254,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
           'total_price': qty * price,
           'image_url': selectedProductData.isNotEmpty
               ? selectedProductData['image_url']
-              : null, // 🟢 បញ្ចូល image_url ចូលក្នុង Cart
+              : null,
         });
       }
 
@@ -252,7 +325,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
 
         bool success = await apiPurchase.createPurchase(
           PurchaseModel.fromJson(purchaseDataMap),
-
         );
 
         setState(() => _isLoading = false);
@@ -305,12 +377,40 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
       appBar: AppBar(
         title: const Text(
           'Create Purchase',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: 0.5,
+          ),
         ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        elevation: 0,
+        elevation: 0.5,
         centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey.shade200, height: 2.0),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0, top: 8.0, bottom: 8.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade50,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.qr_code_scanner,
+                  color: Colors.indigo,
+                  size: 25,
+                ),
+                onPressed: _openScanner,
+                tooltip: 'Scan Barcode',
+              ),
+            ),
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -339,7 +439,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 🏢 Supplier Dropdown
               _isLoadingSuppliers
                   ? const Center(child: CircularProgressIndicator())
                   : DropdownButtonFormField<String>(
@@ -367,11 +466,22 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                     ),
               const SizedBox(height: 20),
               const Divider(),
-              const Text(
-                'Add Products',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Add Products',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  TextButton.icon(
+                    onPressed: _openScanner,
+                    icon: const Icon(Icons.camera_alt, size: 18),
+                    label: const Text('Scan Barcode'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // 📦 Product Dropdown
               _isLoadingProducts
@@ -465,7 +575,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 📋 បញ្ជីរាយមុខទំនិញដែលបានបន្ថែម (ជាមួយរូបភាពផលិតផល)
               if (_purchaseItems.isNotEmpty) ...[
                 const Text(
                   'Selected Items:',
@@ -490,7 +599,6 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
                           horizontal: 12,
                           vertical: 4,
                         ),
-                        // 🟢 បង្ហាញរូបភាពផលិតផលនៅផ្នែក Leading
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Container(

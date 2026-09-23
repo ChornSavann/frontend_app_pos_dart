@@ -13,10 +13,7 @@ import '../models/brand.dart';
 import '../models/category.dart';
 
 class ApiProduct {
-
   final String baseUrl = BaseUrlApi.baseurl;
-
-
 
   Future<List<Product>> fetchProducts({int? categoryId, int? brandId}) async {
     try {
@@ -51,21 +48,20 @@ class ApiProduct {
       var uri = Uri.parse('$baseUrl/products');
       var request = http.MultipartRequest('POST', uri);
 
-      request.headers.addAll({
-        'Accept': 'application/json',
-      });
+      request.headers.addAll({'Accept': 'application/json'});
 
-      request.fields['name']           = data['name']?.toString() ?? '';
-      request.fields['sku']            = data['sku']?.toString() ?? '';
-      request.fields['barcode']        = data['barcode']?.toString() ?? '';
-      request.fields['cost_price']     = data['cost_price']?.toString() ?? '0.0';
-      request.fields['selling_price']  = data['selling_price']?.toString() ?? '0.0';
-      request.fields['stock_quantity'] = data['stock_quantity']?.toString() ?? '0';
-      request.fields['category_id']    = data['category_id']?.toString() ?? '';
-      request.fields['brand_id']       = data['brand_id']?.toString() ?? '';
-      request.fields['unit_id']        = data['unit_id']?.toString() ?? '';
-      request.fields['description']    = data['description']?.toString() ?? '';
-
+      request.fields['name'] = data['name']?.toString() ?? '';
+      request.fields['sku'] = data['sku']?.toString() ?? '';
+      request.fields['barcode'] = data['barcode']?.toString() ?? '';
+      request.fields['cost_price'] = data['cost_price']?.toString() ?? '0.0';
+      request.fields['selling_price'] =
+          data['selling_price']?.toString() ?? '0.0';
+      request.fields['stock_quantity'] =
+          data['stock_quantity']?.toString() ?? '0';
+      request.fields['category_id'] = data['category_id']?.toString() ?? '';
+      request.fields['brand_id'] = data['brand_id']?.toString() ?? '';
+      request.fields['unit_id'] = data['unit_id']?.toString() ?? '';
+      request.fields['description'] = data['description']?.toString() ?? '';
 
       if (data['image'] != null && data['image'].toString().isNotEmpty) {
         request.files.add(
@@ -101,7 +97,8 @@ class ApiProduct {
         } catch (jsonErr) {
           return {
             'success': false,
-            'message': 'Server Error (${response.statusCode}): សូមពិនិត្យមើល Laravel Terminal របស់អ្នក!'
+            'message':
+                'Server Error (${response.statusCode}): សូមពិនិត្យមើល Laravel Terminal របស់អ្នក!',
           };
         }
       }
@@ -126,27 +123,26 @@ class ApiProduct {
     }
   }
 
-
   Future<Map<String, dynamic>> updateProduct(Map<String, dynamic> data) async {
     try {
       final productId = data['id'];
       final url = Uri.parse('$baseUrl/products/$productId');
       var request = http.MultipartRequest('POST', url);
 
-      request.headers.addAll({
-        'Accept': 'application/json',
-      });
+      request.headers.addAll({'Accept': 'application/json'});
 
-      request.fields['name']           = data['name']?.toString() ?? '';
-      request.fields['sku']            = data['sku']?.toString() ?? '';
-      request.fields['barcode']        = data['barcode']?.toString() ?? '';
-      request.fields['cost_price']     = data['cost_price']?.toString() ?? '0.0';
-      request.fields['selling_price']  = data['selling_price']?.toString() ?? '0.0';
-      request.fields['stock_quantity'] = data['stock_quantity']?.toString() ?? '0';
-      request.fields['category_id']    = data['category_id']?.toString() ?? '';
-      request.fields['brand_id']       = data['brand_id']?.toString() ?? '';
-      request.fields['unit_id']        = data['unit_id']?.toString() ?? '';
-      request.fields['description']    = data['description']?.toString() ?? '';
+      request.fields['name'] = data['name']?.toString() ?? '';
+      request.fields['sku'] = data['sku']?.toString() ?? '';
+      request.fields['barcode'] = data['barcode']?.toString() ?? '';
+      request.fields['cost_price'] = data['cost_price']?.toString() ?? '0.0';
+      request.fields['selling_price'] =
+          data['selling_price']?.toString() ?? '0.0';
+      request.fields['stock_quantity'] =
+          data['stock_quantity']?.toString() ?? '0';
+      request.fields['category_id'] = data['category_id']?.toString() ?? '';
+      request.fields['brand_id'] = data['brand_id']?.toString() ?? '';
+      request.fields['unit_id'] = data['unit_id']?.toString() ?? '';
+      request.fields['description'] = data['description']?.toString() ?? '';
 
       if (data['image'] != null) {
         if (data['image'] is File) {
@@ -154,7 +150,8 @@ class ApiProduct {
           request.files.add(
             await http.MultipartFile.fromPath('image', imageFile.path),
           );
-        } else if (data['image'] is String && data['image'].toString().isNotEmpty) {
+        } else if (data['image'] is String &&
+            data['image'].toString().isNotEmpty) {
           request.files.add(
             await http.MultipartFile.fromPath('image', data['image']),
           );
@@ -186,7 +183,11 @@ class ApiProduct {
           }
           return {'success': false, 'message': errorMessage};
         } catch (jsonErr) {
-          return {'success': false, 'message': 'Server Error (${response.statusCode}): ${response.body.substring(0, 100)}...'};
+          return {
+            'success': false,
+            'message':
+                'Server Error (${response.statusCode}): ${response.body.substring(0, 100)}...',
+          };
         }
       }
     } catch (e) {
@@ -215,7 +216,6 @@ class ApiProduct {
       return false;
     }
   }
-
 
   Future<List<CategoryModel>> fetchCategories() async {
     try {
@@ -247,7 +247,9 @@ class ApiProduct {
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        List<dynamic> list = decoded is List ? decoded : (decoded['data'] ?? []);
+        List<dynamic> list = decoded is List
+            ? decoded
+            : (decoded['data'] ?? []);
 
         return list.map((item) => BrandModel.fromJson(item)).toList();
       } else {
@@ -293,7 +295,9 @@ class ApiProduct {
         throw Exception('Product data not found in response');
       }
     } else {
-      throw Exception('Failed to load product details (Status Code: ${response.statusCode})');
+      throw Exception(
+        'Failed to load product details (Status Code: ${response.statusCode})',
+      );
     }
   }
 
@@ -325,14 +329,13 @@ class ApiProduct {
         };
       }
     } catch (e) {
-      return {
-        'success': false,
-        'message': 'Error: $e',
-      };
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
-  Future<List<ProductModelBanner>> fetchProductsandcategory({int? categoryId}) async {
+  Future<List<ProductModelBanner>> fetchProductsandcategory({
+    int? categoryId,
+  }) async {
     try {
       String url = (categoryId == null || categoryId == 0)
           ? '$baseUrl/products'
@@ -364,7 +367,7 @@ class ApiProduct {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         if (data['success'] == true) {
-          return data['data']; // ส่งคืนបញ្ជីទំនិញជិតអស់ស្តុក
+          return data['data'];
         }
       }
       return [];
@@ -373,5 +376,59 @@ class ApiProduct {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>?> getProductByBarcode(String barcode) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/barcode/$barcode'),
+        headers: {
+          'Accept': 'application/json',
+          // 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data;
+      }
+      return null;
+    } catch (e) {
+      debugPrint("❌ Error fetching product by barcode: $e");
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchProductInfoFromPublicBarcode(
+    String barcode,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://world.openfoodfacts.org/api/v0/product/$barcode.json',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // status == 1 មានន័យារកឃើញទំនិញក្នុង Database ពិភពលោក
+        if (data['status'] == 1 && data['product'] != null) {
+          final product = data['product'];
+
+          return {
+            'name':
+                product['product_name'] ??
+                product['brands'] ??
+                'Unknown Product',
+            'image_url': product['image_url'] ?? '',
+          };
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint("❌ Error fetching external barcode: $e");
+      return null;
+    }
+  }
+
 
 }
