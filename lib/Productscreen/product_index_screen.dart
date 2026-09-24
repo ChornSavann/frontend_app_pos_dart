@@ -552,11 +552,15 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: product.stockQuantity > 0
-                                                ? Colors.blue.withValues(
+                                            color: product.stockQuantity == 0
+                                                ? Colors.red.withValues(
                                                     alpha: 0.1,
                                                   )
-                                                : Colors.red.withValues(
+                                                : product.stockQuantity <= 10
+                                                ? Colors.orange.withValues(
+                                                    alpha: 0.1,
+                                                  )
+                                                : Colors.blue.withValues(
                                                     alpha: 0.1,
                                                   ),
                                             borderRadius: BorderRadius.circular(
@@ -566,9 +570,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                           child: Text(
                                             "Stock: ${product.stockQuantity}",
                                             style: TextStyle(
-                                              color: product.stockQuantity > 0
-                                                  ? Colors.blueAccent
-                                                  : Colors.red,
+                                              color: product.stockQuantity == 0
+                                                  ? Colors.red
+                                                  : product.stockQuantity <= 10
+                                                  ? Colors.orange
+                                                  : Colors.blueAccent,
                                               fontSize: 11,
                                               fontWeight: FontWeight.w500,
                                             ),

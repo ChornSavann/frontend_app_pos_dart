@@ -98,7 +98,7 @@ class ApiProduct {
           return {
             'success': false,
             'message':
-                'Server Error (${response.statusCode}): សូមពិនិត្យមើល Laravel Terminal របស់អ្នក!',
+                'Server Error (${response.statusCode}): Check Laravel Terminal API :!',
           };
         }
       }
@@ -427,6 +427,28 @@ class ApiProduct {
     } catch (e) {
       debugPrint("❌ Error fetching external barcode: $e");
       return null;
+    }
+  }
+
+  Future<List<Product>> getProductsWithMinQty() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/products/min-qty'),
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer YOUR_TOKEN',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        List<dynamic> data = jsonResponse['data'] ?? [];
+        return data.map((item) => Product.fromJson(item)).toList();
+      } else {
+        throw Exception('Failed to load products: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching products: $e');
     }
   }
 

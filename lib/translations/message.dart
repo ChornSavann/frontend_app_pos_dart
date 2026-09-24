@@ -56,6 +56,11 @@ class Messages extends Translations {
       TranslateConstants.review_sales:'Review the list of invoices and outgoing sales',
       TranslateConstants.review_purchase:'Review stock orders from suppliers.',
       TranslateConstants.transaction_history:'Transaction History',
+      TranslateConstants.manage_inventory:'Manage your inventory and sales quickly and easily here.',
+      TranslateConstants.overview:"Overview",
+      TranslateConstants.quick_actions:'Quick Actions',
+      TranslateConstants.real_time:'Real-time',
+
     },
     'km_KH': {
       TranslateConstants.khmerApp: 'ហាងខ្មែរ',
@@ -107,7 +112,11 @@ class Messages extends Translations {
       TranslateConstants.purchase_history:'ប្រវត្តិការទិញចូល',
       TranslateConstants.review_sales:'ពិនិត្យមើលបញ្ជីវិក្កយបត្រ និងការលក់ទំនិញចេញ',
       TranslateConstants.review_purchase:'ពិនិត្យមើលការបញ្ជាទិញស្តុកពីអ្នកផ្គត់ផ្គង់ (Supplier)',
-      TranslateConstants.transaction_history:'ប្រវត្តិប្រតិបត្តិការ'
+      TranslateConstants.transaction_history:'ប្រវត្តិប្រតិបត្តិការ',
+      TranslateConstants.manage_inventory:'គ្រប់គ្រងស្តុក និងការលក់របស់អ្នកយ៉ាងងាយស្រួល និងរហ័សនៅទីនេះ',
+      TranslateConstants.overview:'ទិដ្ឋភាពទូទៅ',
+      TranslateConstants.quick_actions:'សកម្មភាពរហ័ស',
+      TranslateConstants.real_time:'ពេលវេលាជាក់ស្តែង',
 
     }
   };

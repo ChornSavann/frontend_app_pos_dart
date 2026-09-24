@@ -56,6 +56,10 @@ class TranslateConstants {
   static const String review_sales='review_sales';
   static const String review_purchase='review_purchase';
   static const String transaction_history='transaction_history';
+  static const String manage_inventory='manage_inventory';
+  static const String overview='overview';
+  static const String quick_actions='auick_action';
+  static const String real_time='real_time';
 
 
 

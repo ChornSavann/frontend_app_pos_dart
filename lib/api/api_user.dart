@@ -6,7 +6,6 @@ import '../constants/baseurl/base_url_api.dart';
 import '../models/user.dart';
 
 class ApiUser {
-
   final String baseUrl = BaseUrlApi.baseurl;
 
   Future<List<User>> getAllUsers() async {
@@ -61,8 +60,7 @@ class ApiUser {
       var response = await http.Response.fromStream(streamedResponse);
       var data = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && data['success'] == true)
-      {
+      if (response.statusCode == 200 && data['success'] == true) {
         return {
           'success': true,
           'message': data['message'],

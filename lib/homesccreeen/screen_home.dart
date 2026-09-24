@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/CategoryScreen/category_index_screen.dart';
 import 'package:pos_inventory/CategoryScreen/create_categrory_screen.dart';
-import 'package:pos_inventory/Productscreen/banner_product_screen.dart';
 import 'package:pos_inventory/Productscreen/create_product_screen.dart';
 import 'package:pos_inventory/Productscreen/product_index_screen.dart';
 import 'package:pos_inventory/api/api_product.dart';
@@ -10,6 +9,8 @@ import 'package:pos_inventory/api/report/api_report.dart';
 import 'package:pos_inventory/brand/brand_index_screen.dart';
 import 'package:pos_inventory/brand/create_brand_screen.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
+import 'package:pos_inventory/customer/customer_create_screen.dart';
+import 'package:pos_inventory/customer/customer_index_screen.dart';
 import 'package:pos_inventory/expenses/create_expense_screen.dart';
 import 'package:pos_inventory/expenses/index_expense_screen.dart';
 import 'package:pos_inventory/expensetype/index_expensetype_sreen.dart';
@@ -62,8 +63,6 @@ class _ScreenHomeState extends State<ScreenHome> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -95,7 +94,6 @@ class _ScreenHomeState extends State<ScreenHome> {
               ),
               child: Stack(
                 children: [
-                  // 🎨 Background Decorative Circle (រង្វង់តុបតែងផ្ទៃខាងក្រោយឱ្យកាន់តែទាក់ទាញ)
                   Positioned(
                     right: -25,
                     bottom: -25,
@@ -153,7 +151,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              "គ្រប់គ្រងស្តុក និងការលក់របស់អ្នកយ៉ាងងាយស្រួល និងរហ័សនៅទីនេះ។",
+                              TranslateConstants.manage_inventory.tr,
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
                                 fontSize: 12.5,
@@ -167,7 +165,6 @@ class _ScreenHomeState extends State<ScreenHome> {
                       ),
                       const SizedBox(width: 14),
 
-                      // 🛒 រូបភាព Logo ខាងស្តាំ (មួយជាន់ ស្អាតដាច់គេ មិនបាច់មាន Container ក្រៅទ្រុប)
                       ClipRRect(
                         borderRadius: BorderRadius.circular(14),
                         child: Image.network(
@@ -188,20 +185,21 @@ class _ScreenHomeState extends State<ScreenHome> {
                               ),
                             );
                           },
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 52,
-                            height: 52,
-                            color: Colors.white.withOpacity(0.2),
-                            child: const Icon(
-                              Icons.storefront_rounded,
-                              color: Colors.white,
-                              size: 26,
-                            ),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                width: 52,
+                                height: 52,
+                                color: Colors.white.withOpacity(0.2),
+                                child: const Icon(
+                                  Icons.storefront_rounded,
+                                  color: Colors.white,
+                                  size: 26,
+                                ),
+                              ),
                         ),
                       ),
                     ],
-                  )
+                  ),
                 ],
               ),
             ),
@@ -214,8 +212,8 @@ class _ScreenHomeState extends State<ScreenHome> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Overview",
+                Text(
+                  TranslateConstants.overview.tr,
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -223,7 +221,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   ),
                 ),
                 Text(
-                  "Real-time",
+                  TranslateConstants.real_time.tr,
                   style: TextStyle(
                     fontSize: 11,
                     color: Colors.grey.shade500,
@@ -254,7 +252,8 @@ class _ScreenHomeState extends State<ScreenHome> {
                       String displayValue = "...";
                       if (snapshot.connectionState == ConnectionState.done) {
                         if (snapshot.hasData) {
-                          displayValue = "${snapshot.data} ${TranslateConstants.item.tr}";
+                          displayValue =
+                              "${snapshot.data} ${TranslateConstants.item.tr}";
                         } else {
                           displayValue = "0 Items";
                         }
@@ -273,8 +272,8 @@ class _ScreenHomeState extends State<ScreenHome> {
             ),
             const SizedBox(height: 24),
 
-            const Text(
-              "Quick Actions",
+            Text(
+              TranslateConstants.quick_actions.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -286,8 +285,7 @@ class _ScreenHomeState extends State<ScreenHome> {
             SizedBox(
               height: 90,
               child: ListView(
-                scrollDirection:
-                    Axis.horizontal,
+                scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 children: [
                   _buildQuickActionItem(
@@ -364,7 +362,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   const SizedBox(width: 10),
                   _buildQuickActionItem(
                     title: TranslateConstants.user.tr,
-                      icon: Icons.people_rounded,
+                    icon: Icons.people_rounded,
                     color: Colors.indigo,
                     onTap: () => Navigator.push(
                       context,
@@ -393,7 +391,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>  CreateExpensTypeScreen(),
+                        builder: (context) => CreateExpensTypeScreen(),
                       ),
                     ),
                   ),
@@ -406,7 +404,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>  CreateExpenseScreen(),
+                        builder: (context) => CreateExpenseScreen(),
                       ),
                     ),
                   ),
@@ -416,8 +414,8 @@ class _ScreenHomeState extends State<ScreenHome> {
             const SizedBox(height: 24),
 
             // 📂 Management Lists Section
-             Text(
-             TranslateConstants.management.tr,
+            Text(
+              TranslateConstants.management.tr,
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -459,7 +457,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   ),
                 ),
                 _buildModernActionCard(
-                  title:TranslateConstants.brand.tr,
+                  title: TranslateConstants.brand.tr,
                   subtitle: TranslateConstants.manageBrand.tr,
                   icon: Icons.storefront_rounded,
                   color: Colors.cyan,
@@ -521,7 +519,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                 _buildModernActionCard(
                   title: TranslateConstants.user.tr,
                   subtitle: TranslateConstants.manageUser.tr,
-                    icon: Icons.people_rounded,
+                  icon: Icons.people_rounded,
                   color: Colors.indigo,
                   onTap: () => Navigator.push(
                     context,
@@ -531,9 +529,21 @@ class _ScreenHomeState extends State<ScreenHome> {
                   ),
                 ),
                 _buildModernActionCard(
+                  title: TranslateConstants.user.tr,
+                  subtitle: TranslateConstants.manageUser.tr,
+                  icon: Icons.people_alt,
+                  color: Colors.indigo,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CustomerIndexScreen(),
+                    ),
+                  ),
+                ),
+                _buildModernActionCard(
                   title: TranslateConstants.expense_type.tr,
                   subtitle: TranslateConstants.manage_exp.tr,
-                  icon:  Icons.folder_open_rounded,
+                  icon: Icons.folder_open_rounded,
                   color: Colors.indigo,
                   onTap: () => Navigator.push(
                     context,
@@ -562,7 +572,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>const ReportDashboardScreen(),
+                      builder: (context) => const ReportDashboardScreen(),
                     ),
                   ),
                 ),
@@ -575,7 +585,6 @@ class _ScreenHomeState extends State<ScreenHome> {
     );
   }
 
-  // 🌟 Stat Card Widget
   Widget _buildModernStatCard({
     required String title,
     required String value,
@@ -764,5 +773,4 @@ class _ScreenHomeState extends State<ScreenHome> {
       ),
     );
   }
-
 }

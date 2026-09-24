@@ -10,6 +10,7 @@ import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../models/Product.dart';
+import '../msg/appSnackBar.dart';
 
 class CreateProductScreen extends StatefulWidget {
   const CreateProductScreen({super.key});
@@ -92,14 +93,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   }
 
   void _generateBarcode() {
-    final randomBarcode =
-        100000000000 + (DateTime.now().microsecondsSinceEpoch % 900000000000);
+    int randomNum =
+        10000000 + (DateTime.now().microsecondsSinceEpoch % 90000000);
     setState(() {
-      _barcodeController.text = randomBarcode.toString();
+      _barcodeController.text = 'P-$randomNum';
     });
   }
-
-
 
   Future<void> cacheProductsToLocal() async {
     var connectivityResult = await (Connectivity().checkConnectivity());
@@ -118,7 +117,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       }
     }
   }
-
 
   void _scanBarcode() {
     final MobileScannerController scannerController = MobileScannerController(
@@ -144,7 +142,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             centerTitle: true,
             iconTheme: const IconThemeData(color: Colors.white),
             actions: [
-              // 🔦 ប៊ូតុងបើក/បិទ Flash ពេលស្កេនទីងងឹត
               Container(
                 margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
                 decoration: BoxDecoration(
@@ -172,20 +169,16 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
           ),
           body: Stack(
             children: [
-              // 📷 កាមេរ៉ាស្កេន
               MobileScanner(
                 controller: scannerController,
                 onDetect: (capture) async {
                   final List<Barcode> barcodes = capture.barcodes;
                   for (final barcode in barcodes) {
                     if (barcode.rawValue != null) {
-                      final scannedCode = barcode.rawValue!;
+                      final scannedCode = barcode.rawValue!.trim();
 
-                      // 📳 បញ្ជាឱ្យទូរស័ព្ទញ័រតិចៗពេលស្កេនចំកូដភ្លាម
                       HapticFeedback.mediumImpact();
-
                       Navigator.pop(context);
-
                       setState(() {
                         _barcodeController.text = scannedCode;
                       });
@@ -219,12 +212,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                         ),
                       );
 
+                      // 3️⃣ ឆែកមើលក្នុង API ខាងក្រៅ
                       final publicProduct = await apiProduct
                           .fetchProductInfoFromPublicBarcode(scannedCode);
 
                       if (mounted) Navigator.pop(context);
 
-                      if (publicProduct != null) {
+                      if (publicProduct != null &&
+                          publicProduct['name'] != null) {
                         setState(() {
                           _nameController.text = publicProduct['name'];
                         });
@@ -244,18 +239,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                         }
                       } else {
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                'រកមិនឃើញទិន្នន័យផលិតផលនេះទេ សូមបញ្ចូលឈ្មោះដោយដៃ!',
-                              ),
-                              backgroundColor: Colors.orange.shade700,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          );
+                          _showQuickAddProductDialog(scannedCode);
                         }
                       }
 
@@ -265,7 +249,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                 },
               ),
 
-              // 🔲 ស៊ុមគោលដៅស្កេនកណ្តាលអេក្រង់ (Scan Frame Overlay)
+              // 🔲 Scan Frame Overlay
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -318,90 +302,109 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       ),
     );
   }
-  // void _scanBarcode() {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(
-  //       builder: (context) => Scaffold(
-  //         appBar: AppBar(
-  //           title: const Text('Scan External Barcode'),
-  //           backgroundColor: Colors.black,
-  //           foregroundColor: Colors.white,
-  //         ),
-  //         body: MobileScanner(
-  //           onDetect: (capture) async {
-  //             final List<Barcode> barcodes = capture.barcodes;
-  //             for (final barcode in barcodes) {
-  //               if (barcode.rawValue != null) {
-  //                 final scannedCode = barcode.rawValue!;
-  //                 Navigator.pop(context);
-  //                 setState(() {
-  //                   _barcodeController.text = scannedCode;
-  //                 });
-  //
-  //                 showDialog(
-  //                   context: context,
-  //                   barrierDismissible: false,
-  //                   builder: (context) => const Center(
-  //                     child: CircularProgressIndicator(
-  //                       color: Color(0xFF2563EB),
-  //                     ),
-  //                   ),
-  //                 );
-  //
-  //                 final publicProduct = await apiProduct
-  //                     .fetchProductInfoFromPublicBarcode(scannedCode);
-  //
-  //                 if (mounted) Navigator.pop(context);
-  //                 if (publicProduct != null) {
-  //                   setState(() {
-  //                     _nameController.text = publicProduct['name'];
-  //                   });
-  //                   if (mounted) {
-  //                     ScaffoldMessenger.of(context).showSnackBar(
-  //                       const SnackBar(
-  //                         content: Text(
-  //                           '✨ បានទាញយកឈ្មោះផលិតផលពីប្រព័ន្ធខាងក្រៅជោគជ័យ!',
-  //                         ),
-  //                         backgroundColor: Colors.green,
-  //                       ),
-  //                     );
-  //                   }
-  //                 } else {
-  //                   if (mounted) {
-  //                     ScaffoldMessenger.of(context).showSnackBar(
-  //                       const SnackBar(
-  //                         content: Text(
-  //                           'រកមិនឃើញទិន្នន័យផលិតផលនេះទេ សូមបញ្ចូលឈ្មោះដោយដៃ!',
-  //                         ),
-  //                         backgroundColor: Colors.orange,
-  //                       ),
-  //                     );
-  //                   }
-  //                 }
-  //
-  //                 break;
-  //               }
-  //             }
-  //           },
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
+
+  // 💡 មុខងារបង្ហាញ Dialog ឱ្យបញ្ចូលឈ្មោះផលិតផលថ្មីភ្លាមៗ ពេលស្កេនចំ Barcode គ្មានក្នុងប្រព័ន្ធ
+  void _showQuickAddProductDialog(String barcode) {
+    final TextEditingController quickNameController = TextEditingController();
+    final TextEditingController quickPriceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.add_shopping_cart,
+                color: Colors.orange,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text(
+              'រកមិនឃើញទំនិញ (New Product)',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Barcode: $barcode',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: quickNameController,
+              autofocus: true,
+              decoration: InputDecoration(
+                labelText: 'Product Name',
+                hintText: 'បញ្ចូលឈ្មោះទំនិញថ្មី...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: quickPriceController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Selling Price (\$)',
+                hintText: '0.00',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('បោះបង់', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onPressed: () {
+              if (quickNameController.text.trim().isNotEmpty) {
+                setState(() {
+                  _nameController.text = quickNameController.text.trim();
+                  if (quickPriceController.text.trim().isNotEmpty) {
+                    _sellingPriceController.text = quickPriceController.text
+                        .trim();
+                  }
+                });
+                Navigator.pop(context);
+                AppSnackBar.showSuccess(
+                  context,
+                  'បានបញ្ចូលឈ្មោះទំនិញថ្មីដោយជោគជ័យ!',
+                );
+              } else {
+                AppSnackBar.showError(context, 'សូមបញ្ចូលឈ្មោះទំនិញ!');
+              }
+            },
+            child: const Text('យល់ព្រម', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   void _submitProduct() async {
-    if (_selectedImages.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select at least one product image!'),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
-
     if (_formKey.currentState!.validate()) {
       showDialog(
         context: context,
@@ -538,7 +541,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
             letterSpacing: -0.3,
           ),
         ),
-
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
@@ -579,7 +581,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Product Image",
+                      "Product Image (Optional)",
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

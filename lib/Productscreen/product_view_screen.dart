@@ -147,7 +147,7 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
-       appBar: const AppBarScreen(),
+      appBar: const AppBarScreen(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -447,7 +447,6 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                 ),
 
                 // 🏷️ Brand Selector (Horizontal List)
-                // 🏷️ Brand Selector (Horizontal List)
                 SizedBox(
                   height: 90,
                   child: FutureBuilder<List<BrandModel>>(
@@ -524,48 +523,49 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                     child: Center(
                                       child: brand.name == "All"
                                           ? Icon(
-                                        Icons.grid_view_rounded,
-                                        size: 26,
-                                        color: isSelected
-                                            ? Colors.amber[800]
-                                            : Colors.black87,
-                                      )
-                                          : (imageUrl != null && imageUrl.isNotEmpty
-                                          ? ClipRRect(
-                                        borderRadius:
-                                        BorderRadius.circular(
-                                          100,
-                                        ),
-                                        child: Image.network(
-                                          imageUrl, // 🟢 ដាក់ Full URL ចូលផ្ទាល់
-                                          width: 38,
-                                          height: 38,
-                                          fit: BoxFit.cover,
-                                          errorBuilder:
-                                              (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                              ) => Icon(
-                                            Icons
-                                                .branding_watermark_rounded,
-                                            size: 24,
-                                            color: isSelected
-                                                ? Colors
-                                                .amber[800]
-                                                : Colors
-                                                .black87,
-                                          ),
-                                        ),
-                                      )
-                                          : Icon(
-                                        Icons
-                                            .branding_watermark_rounded,
-                                        size: 24,
-                                        color: isSelected
-                                            ? Colors.amber[800]
-                                            : Colors.black87,
-                                      )),
+                                              Icons.grid_view_rounded,
+                                              size: 26,
+                                              color: isSelected
+                                                  ? Colors.amber[800]
+                                                  : Colors.black87,
+                                            )
+                                          : (imageUrl != null &&
+                                                    imageUrl.isNotEmpty
+                                                ? ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          100,
+                                                        ),
+                                                    child: Image.network(
+                                                      imageUrl, // 🟢 ដាក់ Full URL ចូលផ្ទាល់
+                                                      width: 38,
+                                                      height: 38,
+                                                      fit: BoxFit.cover,
+                                                      errorBuilder:
+                                                          (
+                                                            context,
+                                                            error,
+                                                            stackTrace,
+                                                          ) => Icon(
+                                                            Icons
+                                                                .branding_watermark_rounded,
+                                                            size: 24,
+                                                            color: isSelected
+                                                                ? Colors
+                                                                      .amber[800]
+                                                                : Colors
+                                                                      .black87,
+                                                          ),
+                                                    ),
+                                                  )
+                                                : Icon(
+                                                    Icons
+                                                        .branding_watermark_rounded,
+                                                    size: 24,
+                                                    color: isSelected
+                                                        ? Colors.amber[800]
+                                                        : Colors.black87,
+                                                  )),
                                     ),
                                   ),
                                   const SizedBox(height: 6),
@@ -619,10 +619,14 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                       );
                     } else {
                       final allProducts = snapshot.data!;
+
+                      // 🟢 Logic ត្រងយកតែទំនិញណាដែលមានស្តុក >= 10 និងត្រូវនឹង Search Query
                       final products = allProducts.where((product) {
-                        return product.name.toLowerCase().contains(
-                          _searchQuery,
-                        );
+                        bool matchesSearch = product.name
+                            .toLowerCase()
+                            .contains(_searchQuery);
+                        bool hasEnoughStock = product.stockQuantity >= 10;
+                        return matchesSearch && hasEnoughStock;
                       }).toList();
 
                       if (products.isEmpty) {
@@ -650,12 +654,11 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
-                              childAspectRatio:
-                                  0.73                                                                                                                                            ,
+                              childAspectRatio: 0.73,
                             ),
                         itemBuilder: (context, index) {
                           final product = products[index];
-
+                          bool isAvailableToSell = product.stockQuantity >= 10;
                           return InkWell(
                             onTap: () {
                               Navigator.push(
@@ -686,12 +689,10 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // 🖼️ Product Image Section (កំណត់កម្ពស់ថេរ 130 ឱ្យរូបភាពពេញស្អាត)
                                   Stack(
                                     children: [
                                       Container(
-                                        height:
-                                            135, // 🟢 កំណត់កម្ពស់រូបភាពឱ្យថេរ ធានាថាគ្រប់កាតស្មើគ្នា
+                                        height: 135,
                                         width: double.infinity,
                                         margin: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
@@ -798,7 +799,6 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              // 🏷️ Product Name
                                               Text(
                                                 product.name,
                                                 maxLines: 1,
@@ -820,9 +820,9 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                     color: Colors.amber,
                                                   ),
                                                   const SizedBox(width: 3),
-                                                  Text(
-                                                    "4.8", // អាចដាក់ជា Rating ពិតប្រាកដ ឬរក្សាតាមតម្រូវការ
-                                                    style: const TextStyle(
+                                                  const Text(
+                                                    "4.8",
+                                                    style: TextStyle(
                                                       fontSize: 11,
                                                       fontWeight:
                                                           FontWeight.bold,
@@ -840,8 +840,6 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                 ],
                                               ),
                                               const SizedBox(height: 2),
-
-                                              // 📄 Description (Short)
                                               Text(
                                                 product.description ??
                                                     "Fresh & Delicious",
@@ -873,18 +871,22 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                 height: 30,
                                                 width: 30,
                                                 child: ElevatedButton(
-                                                  onPressed: () {
-                                                    CartManager.addProduct(
-                                                      product,
-                                                    );
-                                                    showTopSnackBar(
-                                                      context,
-                                                      product.name,
-                                                    );
-                                                  },
+                                                  onPressed: isAvailableToSell
+                                                      ? () {
+                                                          CartManager.addProduct(
+                                                            product,
+                                                          );
+                                                          showTopSnackBar(
+                                                            context,
+                                                            product.name,
+                                                          );
+                                                        }
+                                                      : null,
                                                   style: ElevatedButton.styleFrom(
                                                     backgroundColor:
                                                         const Color(0xFF0F766E),
+                                                    disabledBackgroundColor:
+                                                        Colors.grey.shade300,
                                                     foregroundColor:
                                                         Colors.white,
                                                     padding: EdgeInsets.zero,

@@ -24,7 +24,6 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
   bool _isLoading = false;
   final ImagePicker _picker = ImagePicker();
 
-  // Variables for Live Password Validation
   bool _hasMinLength = false;
   bool _hasUppercase = false;
   bool _hasNumber = false;
@@ -43,7 +42,6 @@ class _CreateUserScreenState extends State<CreateUserScreen> {
     }
   }
 
-  // 🚀 មុខងារបញ្ជូនទិន្នន័យទៅកាន់ Laravel API
   Future<void> _submitData() async {
     if (!_formKey.currentState!.validate()) return;
 

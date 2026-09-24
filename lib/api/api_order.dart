@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../constants/baseurl/base_url_api.dart';
-import '../order/card_manager.dart';
+
 
 class ApiOrder {
 
@@ -69,7 +69,6 @@ class ApiOrder {
   }
 
 
-// 🛒 យកប្រវត្តិនៃការលក់ទាំងអស់ (Get All Orders/Sales)
   Future<Map<String, dynamic>> getAllOrders({String? token}) async {
     try {
       final response = await http.get(
@@ -105,8 +104,6 @@ class ApiOrder {
     }
   }
 
-  // 🔍 យកព័ត៌មានលម្អិតតាម Order ID
-// 🔍 យកព័ត៌មានលម្អិតតាម Order ID
   Future<Map<String, dynamic>> getOrderById(int orderId, {String? token}) async {
     try {
       final response = await http.get(

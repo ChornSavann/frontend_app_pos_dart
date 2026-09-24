@@ -27,7 +27,7 @@ class ApiAuth {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/register'),
+        Uri.parse('$baseUrl/auth/create-user'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

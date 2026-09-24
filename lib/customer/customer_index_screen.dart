@@ -1,8 +1,9 @@
-
+import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/api/api_customer.dart';
 import 'package:pos_inventory/customer/customer_create_screen.dart';
 import 'package:pos_inventory/customer/customer_update_screen.dart';
+import 'package:pos_inventory/customer/customer_detail_screen.dart';
 import 'package:pos_inventory/models/customer.dart';
 
 class CustomerIndexScreen extends StatefulWidget {
@@ -14,7 +15,6 @@ class CustomerIndexScreen extends StatefulWidget {
 
 class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
   final ApiCustomer apiCustomer = ApiCustomer();
-
 
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
@@ -32,7 +32,6 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
     super.dispose();
   }
 
-  // 🔔 មុខងារបង្ហាញ SnackBar แจ้งលទ្ធផល
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -50,7 +49,6 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
     );
   }
 
-  // 🟢 មុខងារបង្ហាញ Success Dialog
   void _showSuccessDialog(String message, {VoidCallback? onDeleteOrClose}) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -135,7 +133,6 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
     );
   }
 
-  // ⚠️ មុខងារ Dialog បញ្ជាក់ការលុប
   void _showDeleteConfirmDialog(int customerId, String customerName) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -221,7 +218,6 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
           ? const Color(0xFF121212)
           : const Color(0xFFF8F9FA),
       appBar: AppBar(
-        // 🔍 ប្តូររវាង Title ធម្មតា និង TextField ពេល Search
         title: _isSearching
             ? TextField(
                 controller: _searchController,
@@ -260,7 +256,6 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
         elevation: 0.5,
         shadowColor: Colors.black.withValues(alpha: 0.2),
         actions: [
-          // 🔍 ប៊ូតុងបើក/បិទ Search
           Container(
             margin: const EdgeInsets.only(right: 4),
             decoration: BoxDecoration(
@@ -285,7 +280,6 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
               },
             ),
           ),
-          // 🔄 ប៊ូតុង Refresh
           Container(
             margin: const EdgeInsets.only(right: 8),
             decoration: BoxDecoration(
@@ -371,218 +365,318 @@ class _CustomerIndexScreenState extends State<CustomerIndexScreen> {
             );
           }
 
-          // 🔍 ត្រងយកទិន្នន័យតាម Search Query
           final allCustomers = snapshot.data!;
           final customers = allCustomers.where((cust) {
-            final nameLower = cust.name.toLowerCase();
-            final emailLower = cust.email.toLowerCase();
+            final nameLower = (cust.name ?? '').toLowerCase();
+            final emailLower = (cust.email ?? '').toLowerCase();
             return nameLower.contains(_searchQuery) ||
                 emailLower.contains(_searchQuery);
           }).toList();
 
-          if (customers.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.search_off_rounded,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    "រកមិនឃើញអតិថិជនដែលស្វែងរកទេ",
-                    style: TextStyle(
-                      fontFamily: 'KhmerOSBattambang',
-                      color: Colors.grey,
-                      fontSize: 15,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.all(16),
-            itemCount: customers.length,
-            itemBuilder: (context, index) {
-              final cust = customers[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: isDarkMode ? 0.3 : 0.04,
+                  color: Colors.blueAccent.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.blueAccent.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "ចំនួនអតិថិជនសរុប៖",
+                      style: TextStyle(
+                        fontFamily: 'KhmerOSBattambang',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.blueAccent,
                       ),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                    ),
+                    Text(
+                      "${customers.length} នាក់",
+                      style: const TextStyle(
+                        fontFamily: 'KhmerOSBattambang',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Colors.blueAccent,
+                      ),
                     ),
                   ],
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  leading: CircleAvatar(
-                    backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
-                    child: Text(
-                      cust.name.isNotEmpty ? cust.name[0].toUpperCase() : 'C',
-                      style: const TextStyle(
-                        color: Colors.blueAccent,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'KhmerOSBattambang',
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    cust.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                      fontFamily: 'KhmerOSBattambang',
-                      color: isDarkMode ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 4),
-                      Text(
-                        cust.email,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontFamily: 'KhmerOSBattambang',
-                          color: isDarkMode
-                              ? Colors.grey[400]
-                              : Colors.grey[600],
-                        ),
-                      ),
-                      if (cust.phone != null && cust.phone!.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          "ទូរស័ព្ទ៖ ${cust.phone}",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'KhmerOSBattambang',
-                            color: isDarkMode
-                                ? Colors.grey[400]
-                                : Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  trailing: SizedBox(
-                    width: 140,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 4,
+              ),
+
+              Expanded(
+                child: customers.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.search_off_rounded,
+                              size: 64,
+                              color: Colors.grey[400],
                             ),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              "${cust.points}ពិន្ទុ",
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Colors.amber,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 11,
+                            const SizedBox(height: 12),
+                            const Text(
+                              "រកមិនឃើញអតិថិជនដែលស្វែងរកទេ",
+                              style: TextStyle(
                                 fontFamily: 'KhmerOSBattambang',
+                                color: Colors.grey,
+                                fontSize: 15,
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.more_vert_rounded,
-                            color: Colors.grey,
-                          ),
-                          onSelected: (String value) async {
-                            if (value == 'edit') {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      CustomerUpdateScreen(customerId: cust.id),
-                                ),
-                              );
-
-                              if (result == true) {
-                                _showSnackBar(
-                                  "បានអាប់ដេតព័ត៌មានអតិថិជនដោយជោគជ័យ!",
-                                );
-                                setState(() {});
-                              }
-                            } else if (value == 'delete') {
-                              _showDeleteConfirmDialog(cust.id, cust.name);
-                            }
-                          },
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<String>>[
-                                const PopupMenuItem<String>(
-                                  value: 'edit',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.edit_rounded,
-                                        color: Colors.blueAccent,
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'កែសម្រួល',
-                                        style: TextStyle(
-                                          fontFamily: 'KhmerOSBattambang',
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
+                      )
+                    : ListView.builder(
+                        physics: const BouncingScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: customers.length,
+                        itemBuilder: (context, index) {
+                          final cust = customers[index];
+                          final customerName = cust.name ?? 'គ្មានឈ្មោះ';
+                          final customerEmail = cust.email ?? '';
+                          final int invoiceCount = cust.ordersCount ?? 0;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? const Color(0xFF1E1E1E)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(
+                                    alpha: isDarkMode ? 0.3 : 0.04,
                                   ),
-                                ),
-                                const PopupMenuItem<String>(
-                                  value: 'delete',
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.delete_rounded,
-                                        color: Colors.redAccent,
-                                        size: 20,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Text(
-                                        'លុប',
-                                        style: TextStyle(
-                                          fontFamily: 'KhmerOSBattambang',
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
+                            ),
+                            child: ListTile(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => CustomerDetailScreen(
+                                      customerId: cust.id,
+                                      customerName: customerName,
+                                    ),
+                                  ),
+                                );
+                              },
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.blueAccent.withValues(
+                                  alpha: 0.1,
+                                ),
+                                child: Text(
+                                  customerName.isNotEmpty
+                                      ? customerName[0].toUpperCase()
+                                      : 'C',
+                                  style: const TextStyle(
+                                    color: Colors.blueAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'KhmerOSBattambang',
+                                  ),
+                                ),
+                              ),
+                              title: Text(
+                                customerName,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  fontFamily: 'KhmerOSBattambang',
+                                  color: isDarkMode
+                                      ? Colors.white
+                                      : Colors.black87,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const SizedBox(height: 4),
+                                  if (customerEmail.isNotEmpty)
+                                    Text(
+                                      customerEmail,
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontFamily: 'KhmerOSBattambang',
+                                        color: isDarkMode
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  if (cust.phone != null &&
+                                      cust.phone!.isNotEmpty) ...[
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "ទូរស័ព្ទ៖ ${cust.phone}",
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontFamily: 'KhmerOSBattambang',
+                                        color: isDarkMode
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                  const SizedBox(height: 4),
+                                  // 🧾 បង្ហាញចំនួន Invoice របស់អតិថិជនម្នាក់ៗ
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      "វិក្កយបត្រ (Invoice): $invoiceCount",
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green,
+                                        fontFamily: 'KhmerOSBattambang',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              trailing: SizedBox(
+                                width: 130,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Flexible(
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withValues(
+                                            alpha: 0.15,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          "${cust.points}ពិន្ទុ",
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            color: Colors.amber,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11,
+                                            fontFamily: 'KhmerOSBattambang',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    PopupMenuButton<String>(
+                                      icon: const Icon(
+                                        Icons.more_vert_rounded,
+                                        color: Colors.grey,
+                                      ),
+                                      onSelected: (String value) async {
+                                        if (value == 'edit') {
+                                          final result = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  CustomerUpdateScreen(
+                                                    customerId: cust.id,
+                                                  ),
+                                            ),
+                                          );
+
+                                          if (result == true) {
+                                            _showSnackBar(
+                                              "បានអាប់ដេតព័ត៌មានអតិថិជនដោយជោគជ័យ!",
+                                            );
+                                            setState(() {});
+                                          }
+                                        } else if (value == 'delete') {
+                                          _showDeleteConfirmDialog(
+                                            cust.id,
+                                            customerName,
+                                          );
+                                        }
+                                      },
+                                      itemBuilder: (BuildContext context) =>
+                                          <PopupMenuEntry<String>>[
+                                            const PopupMenuItem<String>(
+                                              value: 'edit',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.edit_rounded,
+                                                    color: Colors.blueAccent,
+                                                    size: 20,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'កែសម្រួល',
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'KhmerOSBattambang',
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'delete',
+                                              child: Row(
+                                                children: [
+                                                  Icon(
+                                                    Icons.delete_rounded,
+                                                    color: Colors.redAccent,
+                                                    size: 20,
+                                                  ),
+                                                  SizedBox(width: 8),
+                                                  Text(
+                                                    'លុប',
+                                                    style: TextStyle(
+                                                      fontFamily:
+                                                          'KhmerOSBattambang',
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),

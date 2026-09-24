@@ -161,17 +161,25 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
 
   // 🔍 មុខងារស្វែងរកផលិតផលតាម Barcode (រួមបញ្ចូលទាំង Local Hive Cache ពេលអត់មានអ៊ិនធឺណិត)
   void _findAndAddProductByBarcode(String barcode) {
-    // ១. ឆែកមើលក្នុង List បច្ចុប្បន្នមុន
-    var matchedProduct = _products.firstWhere(
-      (p) => p['barcode']?.toString() == barcode,
-      orElse: () => {},
-    );
+    String cleanScannedBarcode = barcode.trim();
+    print("🔍 Scanned Barcode: '$cleanScannedBarcode'");
 
-    // ២. បើរកមិនឃើញក្នុង List ទេ ព្យាយាមឆែកក្នុង Local Hive Box (Offline Mode)
+    // ១. ឆែកមើលក្នុង List បច្ចុប្បន្ន
+    Map<String, dynamic> matchedProduct = {};
+    try {
+      matchedProduct = _products.firstWhere(
+            (p) => p['barcode']?.toString().trim() == cleanScannedBarcode,
+        orElse: () => <String, dynamic>{}, // 👈 កែតម្រូវ Type ត្រង់នេះឱ្យច្បាស់លាស់
+      );
+    } catch (e) {
+      matchedProduct = {};
+    }
+
+    // ២. បើរកមិនឃើញក្នុង List ទេ ឆែកក្នុង Local Hive Box (Offline Mode)
     if (matchedProduct.isEmpty) {
       try {
         var box = Hive.box('offline_products');
-        var cachedProduct = box.get(barcode);
+        var cachedProduct = box.get(cleanScannedBarcode);
         if (cachedProduct != null) {
           matchedProduct = Map<String, dynamic>.from(cachedProduct);
         }
@@ -180,27 +188,28 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
       }
     }
 
+    // ៣. បើរកឃើញ ធ្វើការ Add ចូល List
     if (matchedProduct.isNotEmpty) {
       setState(() {
         int existingIndex = _purchaseItems.indexWhere(
-          (item) =>
-              item['product_id'].toString() == matchedProduct['id'].toString(),
+              (item) =>
+          item['product_id'].toString() == matchedProduct['id'].toString(),
         );
 
         if (existingIndex >= 0) {
           _purchaseItems[existingIndex]['quantity'] += 1.0;
           _purchaseItems[existingIndex]['total_price'] =
               _purchaseItems[existingIndex]['quantity'] *
-              _purchaseItems[existingIndex]['unit_cost'];
+                  _purchaseItems[existingIndex]['unit_cost'];
         } else {
           _purchaseItems.add({
             'product_id': int.tryParse(matchedProduct['id'].toString()) ?? 0,
             'product_name': matchedProduct['name'].toString(),
             'unit_cost':
-                double.tryParse(matchedProduct['price'].toString()) ?? 0.0,
-            'quantity': 1.0,
+            double.tryParse(matchedProduct['price'].toString()) ?? 0.0,
+            'quantity': 10.0,
             'total_price':
-                double.tryParse(matchedProduct['price'].toString()) ?? 0.0,
+            double.tryParse(matchedProduct['price'].toString()) ?? 0.0,
             'image_url': matchedProduct['image_url'],
           });
         }
@@ -211,7 +220,7 @@ class _CreatePurchaseScreenState extends State<CreatePurchaseScreen> {
     } else {
       AppSnackBar.showError(
         context,
-        'រកមិនឃើញផលិតផលដែលមាន Barcode នេះទេ: $barcode',
+        'រកមិនឃើញផលិតផលដែលមាន Barcode: $cleanScannedBarcode',
       );
     }
   }

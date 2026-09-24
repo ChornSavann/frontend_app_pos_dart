@@ -2,6 +2,9 @@ import 'dart:core';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_order.dart';
+import '../api/api_customer.dart';
+import '../models/customer.dart';
+import 'addcustomer/add_customer_dialog.dart';
 import 'card_manager.dart';
 
 class CartScreen extends StatefulWidget {
@@ -12,8 +15,10 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
-
   int? _userId;
+  String phone = '';
+  String name = '';
+  final TextEditingController searchCustomersByName = TextEditingController();
 
   @override
   void initState() {
@@ -28,14 +33,33 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
+  // 🟢 ហៅ Dialog ពី File ខាងក្រៅមកប្រើ
+  void _showAddCustomerDialog(
+    BuildContext context,
+    StateSetter setStateSheet,
+    String initialName,
+    Function(int) onCustomerCreated,
+  ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AddCustomerDialog(
+          initialName: initialName,
+          onCustomerCreated: (newCustId) {
+            onCustomerCreated(newCustId);
+            setStateSheet(() {});
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: CartManager.cartItemCount,
       builder: (context, count, child) {
         final items = CartManager.cartItems;
-
-        // គណនាតម្លៃទឹកប្រាក់សរុប (Price * Quantity)
         double totalAmount = items.fold(
           0,
           (sum, item) => sum + (item.product.sellingPrice * item.quantity),
@@ -55,7 +79,6 @@ class _CartScreenState extends State<CartScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-
                 ),
               ),
               title: const Text(
@@ -104,20 +127,11 @@ class _CartScreenState extends State<CartScreen> {
                           color: Colors.grey.shade600,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "Add items to proceed to checkout",
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
                     ],
                   ),
                 )
               : Column(
                   children: [
-                    // 🟢 បញ្ជីទំនិញដែលបាន Add
                     Expanded(
                       child: ListView.builder(
                         itemCount: items.length,
@@ -146,7 +160,6 @@ class _CartScreenState extends State<CartScreen> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                // 🖼️ រូបភាព
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child:
@@ -164,7 +177,6 @@ class _CartScreenState extends State<CartScreen> {
                                       : _buildPlaceholderImage(),
                                 ),
                                 const SizedBox(width: 14),
-                                // 📄 ឈ្មោះនិងតម្លៃ
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
@@ -192,7 +204,6 @@ class _CartScreenState extends State<CartScreen> {
                                     ],
                                   ),
                                 ),
-                                // 🎛️ ប៊ូតុងបញ្ជា (Add/Remove/Delete)
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
@@ -274,8 +285,6 @@ class _CartScreenState extends State<CartScreen> {
                         },
                       ),
                     ),
-
-                    // 🟢 ផ្នែកសរុបទឹកប្រាក់ និងប៊ូតុងបង់ប្រាក់
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -318,76 +327,31 @@ class _CartScreenState extends State<CartScreen> {
                               ],
                             ),
                             const SizedBox(height: 20),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 52,
-                                    child: ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
-                                      ),
-                                      icon: const Icon(
-                                        Icons.payments_outlined,
-                                        size: 20,
-                                      ),
-                                      label: const Text(
-                                        "Pay Cash",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      onPressed: () => _showPaymentDialog(
-                                        context,
-                                        totalAmount,
-                                      ),
-                                    ),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4F46E5),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 52,
-                                    child: ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(
-                                          0xFF4F46E5,
-                                        ),
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            14,
-                                          ),
-                                        ),
-                                      ),
-                                      icon: const Icon(
-                                        Icons.qr_code_scanner,
-                                        size: 20,
-                                      ),
-                                      label: const Text(
-                                        "App Pay",
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      onPressed: () => _showKHQRPaymentDialog(
-                                        context,
-                                        totalAmount,
-                                      ),
+                                onPressed: () =>
+                                    _showAdvancedPaymentBottomSheet(
+                                      context,
+                                      totalAmount,
                                     ),
+                                child: const Text(
+                                  "Proceed to Payment",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
@@ -413,223 +377,796 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  void _showPaymentDialog(BuildContext parentContext, double totalAmount) {
-    final TextEditingController nameController = TextEditingController();
-    final TextEditingController phoneController = TextEditingController();
-    final TextEditingController cashGivenController = TextEditingController();
+  void _showAdvancedPaymentBottomSheet(
+    BuildContext parentContext,
+    double totalAmount,
+  ) {
+    String cashGivenStr = totalAmount.toStringAsFixed(2);
+    String paymentMethod = 'cash';
+    String orderType = 'dine_in';
+    String currencyType = 'USD';
+    const double exchangeRate = 4100.0;
 
-    showDialog(
+    int? selectedCustomerId;
+    final TextEditingController customerNameController = TextEditingController(
+      text: '',
+    );
+    final TextEditingController customerPhoneController =
+        TextEditingController();
+
+    showModalBottomSheet(
       context: parentContext,
-      builder: (BuildContext dialogContext) {
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext sheetContext) {
         return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            double cashGiven = double.tryParse(cashGivenController.text) ?? 0;
-            double change = cashGiven >= totalAmount
+          builder: (context, setStateSheet) {
+            double cashGiven = double.tryParse(cashGivenStr) ?? 0;
+
+            double changeUSD = cashGiven >= totalAmount
                 ? cashGiven - totalAmount
                 : 0;
+            double totalKHR = totalAmount * exchangeRate;
+            double cashGivenKHR = currencyType == 'KHR'
+                ? cashGiven
+                : (cashGiven * exchangeRate);
+            double changeKHR = cashGivenKHR >= totalKHR
+                ? cashGivenKHR - totalKHR
+                : 0;
 
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
+            void onKeyPressed(String value) {
+              setStateSheet(() {
+                if (value == 'C') {
+                  cashGivenStr = '0';
+                } else if (value == '⌫') {
+                  if (cashGivenStr.isNotEmpty && cashGivenStr != '0') {
+                    cashGivenStr = cashGivenStr.substring(
+                      0,
+                      cashGivenStr.length - 1,
+                    );
+                    if (cashGivenStr.isEmpty) cashGivenStr = '0';
+                  }
+                } else {
+                  if (cashGivenStr == '0') {
+                    cashGivenStr = value;
+                  } else {
+                    cashGivenStr += value;
+                  }
+                }
+              });
+            }
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.92,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
-              elevation: 0,
-              backgroundColor: Colors.white,
               child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: SizedBox(
-                  width: 400,
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "ការទូទាត់ប្រាក់ (Payment)",
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.payments_rounded,
-                                color: Colors.green,
-                                size: 26,
+                              const SizedBox(height: 2),
+                              Text(
+                                "ជ្រើសរើសប្រភេទ និងវិធីសាស្ត្រទូទាត់",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
                               ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
                             ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              "Cash Payment",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E293B),
+                              borderRadius: BorderRadius.circular(14),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Text(
+                                  "ទឹកប្រាក់ត្រូវបង់សរុប",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  "\$${totalAmount.toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                Text(
+                                  "= ${totalKHR.toStringAsFixed(0)}៛",
+                                  style: const TextStyle(
+                                    color: Colors.amberAccent,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildOrderTypeTab(
+                              "ញ៉ាំនៅហាង",
+                              Icons.restaurant,
+                              orderType == 'dine_in',
+                              () {
+                                setStateSheet(() => orderType = 'dine_in');
+                              },
+                            ),
+                            _buildOrderTypeTab(
+                              "ខ្ចប់",
+                              Icons.shopping_bag_outlined,
+                              orderType == 'take_away',
+                              () {
+                                setStateSheet(() => orderType = 'take_away');
+                              },
+                            ),
+                            _buildOrderTypeTab(
+                              "ដឹកជញ្ជូន",
+                              Icons.delivery_dining,
+                              orderType == 'delivery',
+                              () {
+                                setStateSheet(() => orderType = 'delivery');
+                              },
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                      ),
+                      const SizedBox(height: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(14),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
+                                  ),
+                                  child: TextField(
+                                    controller: customerNameController,
+                                    keyboardType: TextInputType.name,
+                                    decoration: const InputDecoration(
+                                      labelText:
+                                          "ស្វែងរកតាមឈ្មោះ (Customer Name)",
+                                      labelStyle: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                      prefixIcon: Icon(
+                                        Icons.person_search_outlined,
+                                        color: Color(0xFF4F46E5),
+                                        size: 18,
+                                      ),
+                                      border: InputBorder.none,
+                                    ),
+                                    onChanged: (val) {
+                                      setStateSheet(() {
+                                        name = val.trim();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF4F46E5),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                onPressed: () {
+                                  _showAddCustomerDialog(
+                                    context,
+                                    setStateSheet,
+                                    customerNameController.text.trim(),
+                                    (newCustId) {
+                                      setStateSheet(() {
+                                        selectedCustomerId = newCustId;
+                                        name = customerNameController.text
+                                            .trim();
+                                      });
+                                    },
+                                  );
+                                },
+                                child: const Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  size: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.grey.shade200),
+                            ),
+                            child: FutureBuilder<List<Customer>>(
+                              future: ApiCustomer().getAllCustomers().then((
+                                list,
+                              ) {
+                                if (name.isEmpty) return list;
+                                return list
+                                    .where(
+                                      (c) => (c.name ?? '')
+                                          .toLowerCase()
+                                          .contains(name.toLowerCase()),
+                                    )
+                                    .toList();
+                              }),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const LinearProgressIndicator(
+                                    color: Color(0xFF4F46E5),
+                                  );
+                                }
+                                final List<Customer> customers =
+                                    snapshot.data ?? [];
+
+                                final bool isValidCustomer =
+                                    selectedCustomerId == null ||
+                                    customers.any(
+                                      (cust) => cust.id == selectedCustomerId,
+                                    );
+
+                                return DropdownButtonFormField<int?>(
+                                  initialValue: isValidCustomer
+                                      ? selectedCustomerId
+                                      : null,
+                                  isDense: true,
+                                  dropdownColor: Colors.white,
+                                  decoration: const InputDecoration(
+                                    labelText: "អតិថិជន (Select Customer)",
+                                    labelStyle: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.person_outline,
+                                      color: Color(0xFF4F46E5),
+                                      size: 20,
+                                    ),
+                                    border: InputBorder.none,
+                                  ),
+                                  items: [
+                                    const DropdownMenuItem<int?>(
+                                      value: null,
+                                      child: Text(
+                                        "អតិថិជនទូទៅ (Guest)",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                    ...customers.map((cust) {
+                                      return DropdownMenuItem<int?>(
+                                        value: cust.id,
+                                        child: Text(
+                                          "${cust.name} (${cust.phone ?? 'No Phone'})",
+                                          style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      );
+                                    }),
+                                  ],
+                                  onChanged: (val) {
+                                    setStateSheet(() {
+                                      selectedCustomerId = val;
+                                      if (val != null) {
+                                        final matched = customers.firstWhere(
+                                          (c) => c.id == val,
+                                          orElse: () => customers.first,
+                                        );
+                                        customerNameController.text =
+                                            matched.name!;
+                                        customerPhoneController.text =
+                                            matched.phone ?? '';
+                                      } else {
+                                        customerNameController.text = '';
+                                        customerPhoneController.clear();
+                                      }
+                                    });
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.grey.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildMethodTab(
+                              "សាច់ប្រាក់",
+                              Icons.payments_rounded,
+                              paymentMethod == 'cash',
+                              () {
+                                setStateSheet(() => paymentMethod = 'cash');
+                              },
+                            ),
+                            _buildMethodTab(
+                              "KHQR",
+                              Icons.qr_code_2_rounded,
+                              paymentMethod == 'khqr',
+                              () {
+                                setStateSheet(() => paymentMethod = 'khqr');
+                              },
+                            ),
+                            _buildMethodTab(
+                              "កាត",
+                              Icons.credit_card,
+                              paymentMethod == 'card',
+                              () {
+                                setStateSheet(() => paymentMethod = 'card');
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      if (paymentMethod == 'cash') ...[
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.grey.shade200),
                           ),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text(
-                                    "Total to Pay:",
+                                    "រូបិយប័ណ្ណទូទាត់ (Currency)",
                                     style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black54,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF334155),
                                     ),
                                   ),
                                   Text(
-                                    "\$${totalAmount.toStringAsFixed(2)}",
+                                    "1\$ = ${exchangeRate.toStringAsFixed(0)}៛",
                                     style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF4F46E5),
+                                      fontSize: 11,
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 ],
                               ),
-                              const Divider(height: 16),
+                              const SizedBox(height: 8),
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text(
-                                    "Change:",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
+                                  _buildCurrencyTab(
+                                    "ដុល្លារអាមេរិក (\$)",
+                                    "🇺🇸",
+                                    'USD',
+                                    currencyType == 'USD',
+                                    () {
+                                      setStateSheet(() {
+                                        if (currencyType == 'KHR') {
+                                          double currentVal =
+                                              double.tryParse(cashGivenStr) ??
+                                              0;
+                                          double inUSD =
+                                              currentVal / exchangeRate;
+                                          cashGivenStr = inUSD.toStringAsFixed(
+                                            2,
+                                          );
+                                        }
+                                        currencyType = 'USD';
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(width: 8),
+                                  _buildCurrencyTab(
+                                    "ប្រាក់រៀលខ្មែរ (៛)",
+                                    "🇰🇭",
+                                    'KHR',
+                                    currencyType == 'KHR',
+                                    () {
+                                      setStateSheet(() {
+                                        if (currencyType == 'USD') {
+                                          double currentVal =
+                                              double.tryParse(cashGivenStr) ??
+                                              0;
+                                          double inKHR =
+                                              currentVal * exchangeRate;
+                                          cashGivenStr = inKHR.toStringAsFixed(
+                                            0,
+                                          );
+                                        }
+                                        currencyType = 'KHR';
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF8FAFC),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFF4F46E5),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            "ប្រាក់ទទួលបាន",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            currencyType == 'USD'
+                                                ? "\$$cashGivenStr"
+                                                : "$cashGivenStr៛",
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF4F46E5),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
-                                  Text(
-                                    "\$${change.toStringAsFixed(2)}",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: cashGiven >= totalAmount
-                                          ? Colors.green.shade700
-                                          : Colors.red,
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.shade50,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: Colors.green.shade200,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            "ប្រាក់អាប់",
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            currencyType == 'USD'
+                                                ? "\$${changeUSD.toStringAsFixed(2)}"
+                                                : "${changeKHR.toStringAsFixed(0)}៛",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green.shade700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 10),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: currencyType == 'USD'
+                                    ? [5, 10, 20, 50, 100].map((amt) {
+                                        return OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor:
+                                                Colors.grey.shade50,
+                                            minimumSize: const Size(54, 34),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            side: BorderSide(
+                                              color: Colors.grey.shade300,
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                          ),
+                                          onPressed: () => setStateSheet(
+                                            () => cashGivenStr = amt.toString(),
+                                          ),
+                                          child: Text(
+                                            "\$$amt",
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList()
+                                    : [10000, 20000, 50000, 100000].map((amt) {
+                                        return OutlinedButton(
+                                          style: OutlinedButton.styleFrom(
+                                            backgroundColor:
+                                                Colors.grey.shade50,
+                                            minimumSize: const Size(64, 34),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            side: BorderSide(
+                                              color: Colors.grey.shade300,
+                                            ),
+                                            padding: EdgeInsets.zero,
+                                          ),
+                                          onPressed: () => setStateSheet(
+                                            () => cashGivenStr = amt.toString(),
+                                          ),
+                                          child: Text(
+                                            "$amt៛",
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        _buildTextField(
-                          nameController,
-                          "Customer Name (Optional)",
-                          Icons.person_outline,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTextField(
-                          phoneController,
-                          "Phone Number (Optional)",
-                          Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTextField(
-                          cashGivenController,
-                          "Cash Given (\$)",
-                          Icons.attach_money,
-                          keyboardType: TextInputType.number,
-                          onChanged: (value) => setStateDialog(() {}),
-                        ),
-                        const SizedBox(height: 16),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [5, 10, 20, 50, 100].map((amount) {
-                            return ActionChip(
-                              label: Text("\$$amount"),
-                              backgroundColor: Colors.grey.shade100,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                side: BorderSide.none,
-                              ),
-                              onPressed: () {
-                                double currentCash =
-                                    double.tryParse(cashGivenController.text) ??
-                                    0;
-                                cashGivenController.text =
-                                    (currentCash + amount).toStringAsFixed(0);
-                                setStateDialog(() {});
-                              },
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: TextButton(
-                                  style: TextButton.styleFrom(
-                                    backgroundColor: Colors.grey.shade100,
-                                    foregroundColor: Colors.grey.shade700,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: GridView.count(
+                            crossAxisCount: 3,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            childAspectRatio: 2.7,
+                            crossAxisSpacing: 6,
+                            mainAxisSpacing: 6,
+                            children:
+                                [
+                                  '1',
+                                  '2',
+                                  '3',
+                                  '4',
+                                  '5',
+                                  '6',
+                                  '7',
+                                  '8',
+                                  '9',
+                                  '.',
+                                  '0',
+                                  '⌫',
+                                ].map((key) {
+                                  return ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.grey.shade50,
+                                      foregroundColor: const Color(0xFF1E293B),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      padding: EdgeInsets.zero,
+                                      side: BorderSide(
+                                        color: Colors.grey.shade200,
+                                      ),
                                     ),
-                                  ),
-                                  onPressed: () =>
-                                      Navigator.of(dialogContext).pop(),
-                                  child: const Text(
-                                    "Cancel",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                    onPressed: () => onKeyPressed(key),
+                                    child: Text(
+                                      key,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: SizedBox(
-                                height: 46,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(14),
+                                  );
+                                }).toList(),
+                          ),
+                        ),
+                      ] else ...[
+                        Container(
+                          height: 220,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
                                     ),
+                                    borderRadius: BorderRadius.circular(14),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.03,
+                                        ),
+                                        blurRadius: 6,
+                                      ),
+                                    ],
                                   ),
-                                  onPressed: () => _handlePaymentSubmission(
-                                    parentContext,
-                                    dialogContext,
-                                    totalAmount,
-                                    cashGivenController.text,
-                                    nameController.text,
-                                    phoneController.text,
-                                  ),
-                                  child: const Text(
-                                    "Confirm",
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
+                                  child: Image.asset(
+                                    "assets/qrcode.jpg",
+                                    height: 130,
+                                    width: 130,
+                                    errorBuilder: (c, e, s) => const Icon(
+                                      Icons.qr_code,
+                                      size: 70,
+                                      color: Colors.grey,
                                     ),
                                   ),
                                 ),
-                              ),
+                                const SizedBox(height: 10),
+                                const Text(
+                                  "សូមស្កេន QR Code ដើម្បីទូទាត់ប្រាក់",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF334155),
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ],
-                    ),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade600,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            elevation: 0,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(sheetContext);
+                            _handlePaymentSubmission(
+                              parentContext,
+                              totalAmount,
+                              cashGiven,
+                              currencyType == 'KHR'
+                                  ? (cashGiven / exchangeRate)
+                                  : cashGiven,
+                              paymentMethod,
+                              customerNameController.text.trim().isEmpty
+                                  ? 'Guest'
+                                  : customerNameController.text.trim(),
+                              customerPhoneController.text.trim(),
+                            );
+                          },
+                          child: Text(
+                            paymentMethod == 'cash'
+                                ? "បង់ប្រាក់ (\$${totalAmount.toStringAsFixed(2)})"
+                                : "បញ្ជាក់ការទូទាត់ QR",
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -640,37 +1177,133 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    IconData icon, {
-    TextInputType? keyboardType,
-    void Function(String)? onChanged,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF4F46E5), size: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+  Widget _buildOrderTypeTab(
+    String title,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF1E293B) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+                size: 15,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+      ),
+    );
+  }
+
+  Widget _buildMethodTab(
+    String title,
+    IconData icon,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 9),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.green.shade600 : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+                size: 16,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: isSelected ? Colors.white : Colors.grey.shade700,
+                ),
+              ),
+            ],
+          ),
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Color(0xFF4F46E5), width: 1.5),
-        ),
-        filled: true,
-        fillColor: Colors.grey.shade50,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+      ),
+    );
+  }
+
+  Widget _buildCurrencyTab(
+    String title,
+    String flagEmoji,
+    String type,
+    bool isSelected,
+    VoidCallback onTap,
+  ) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Colors.green.shade600 : Colors.grey.shade300,
+              width: isSelected ? 1.5 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.green.withValues(alpha: 0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : [],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(flagEmoji, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                    color: isSelected
+                        ? Colors.green.shade700
+                        : Colors.grey.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -678,14 +1311,14 @@ class _CartScreenState extends State<CartScreen> {
 
   Future<void> _handlePaymentSubmission(
     BuildContext parentContext,
-    BuildContext dialogContext,
     double totalAmount,
-    String cashGivenStr,
-    String name,
-    String phone,
+    double cashGiven,
+    double actualUSDReceived,
+    String paymentMethod,
+    String customerName,
+    String customerPhone,
   ) async {
-    double cashGiven = double.tryParse(cashGivenStr) ?? 0;
-    if (cashGiven < totalAmount) {
+    if (paymentMethod == 'cash' && actualUSDReceived < totalAmount) {
       ScaffoldMessenger.of(parentContext).showSnackBar(
         const SnackBar(
           content: Text("Insufficient cash given!"),
@@ -695,7 +1328,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    double changeAmount = cashGiven - totalAmount;
+    double changeAmount = actualUSDReceived - totalAmount;
     List<Map<String, dynamic>> orderItems = CartManager.cartItems.map((
       cartItem,
     ) {
@@ -708,13 +1341,10 @@ class _CartScreenState extends State<CartScreen> {
       };
     }).toList();
 
-    Navigator.of(dialogContext).pop(); // Close payment dialog
-
     showDialog(
       context: parentContext,
       barrierDismissible: false,
-      builder: (BuildContext loadingContext) =>
-          const Center(child: CircularProgressIndicator()),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     ApiOrder apiOrder = ApiOrder();
@@ -722,16 +1352,16 @@ class _CartScreenState extends State<CartScreen> {
     try {
       isSuccess = await apiOrder.createOrderWithPayment(
         orderNumber: "ORD-${DateTime.now().millisecondsSinceEpoch}",
-        customerName: name.trim().isEmpty ? 'Guest' : name.trim(),
-        customerPhone: phone.trim().isEmpty ? null : phone.trim(),
-        userId:_userId,
+        customerName: customerName.isEmpty ? 'Guest' : customerName,
+        customerPhone: customerPhone.isEmpty ? null : customerPhone,
+        userId: _userId ?? 1,
         subtotal: totalAmount,
         discount: 0.0,
         tax: 0.0,
         total: totalAmount,
-        paymentMethod: 'cash',
-        amountPaid: cashGiven,
-        changeAmount: changeAmount,
+        paymentMethod: paymentMethod,
+        amountPaid: paymentMethod == 'cash' ? actualUSDReceived : totalAmount,
+        changeAmount: paymentMethod == 'cash' ? changeAmount : 0.0,
         items: orderItems,
       );
     } catch (e) {
@@ -739,10 +1369,13 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     if (!parentContext.mounted) return;
-    Navigator.of(parentContext).pop(); // Close loading dialog
+    Navigator.pop(parentContext);
 
     if (isSuccess) {
-      _showSuccessDialog(parentContext, changeAmount);
+      _showSuccessDialog(
+        parentContext,
+        paymentMethod == 'cash' ? changeAmount : 0.0,
+      );
     } else {
       ScaffoldMessenger.of(parentContext).showSnackBar(
         const SnackBar(
@@ -752,67 +1385,75 @@ class _CartScreenState extends State<CartScreen> {
       );
     }
   }
-
   void _showSuccessDialog(BuildContext parentContext, double changeAmount) {
     showDialog(
       context: parentContext,
       barrierDismissible: false,
       builder: (BuildContext successContext) {
-        return Dialog(
+        return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          elevation: 0,
-          backgroundColor: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle_rounded,
-                    color: Colors.green,
-                    size: 50,
-                  ),
+          contentPadding: const EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 18),
-                const Text(
-                  "Payment Successful!",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF10B981),
+                  size: 56,
                 ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 16),
+
+              const Text(
+                "Payment Successful!",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 6),
+
+              const Text(
+                "ការទូទាត់ប្រាក់បានសម្រេចជោគជ័យ",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey,
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (changeAmount > 0) ...[
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.green.shade200),
                   ),
-                  child: Column(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        "Change Amount",
+                        "ប្រាក់អាប់ (Change):",
                         style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.green,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
                         ),
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         "\$${changeAmount.toStringAsFixed(2)}",
                         style: TextStyle(
-                          fontSize: 28,
+                          fontSize: 18,
                           fontWeight: FontWeight.w900,
                           color: Colors.green.shade700,
                         ),
@@ -820,260 +1461,41 @@ class _CartScreenState extends State<CartScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                const SizedBox(height: 20),
+              ],
+
+              // 🟢 ប៊ូតុង Done បញ្ចប់សកម្មភាព
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
-                    onPressed: () {
-                      Navigator.of(successContext).pop();
-                      CartManager.clearCart();
-                       Navigator.of(parentContext).pop(true); // Uncomment if returning to previous screen
-                    },
-                    child: const Text(
-                      "Done",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(successContext);
+                    CartManager.clearCart();
+                    Navigator.pop(parentContext, true);
+                  },
+                  child: const Text(
+                    "យល់ព្រម (Done)",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
     );
-  }
-
-  void _showKHQRPaymentDialog(BuildContext parentContext, double totalAmount) {
-    showDialog(
-      context: parentContext,
-      barrierDismissible: false,
-      builder: (BuildContext dialogContext) {
-        bool isChecking = false;
-
-        return StatefulBuilder(
-          builder: (context, setStateDialog) {
-            return Dialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              elevation: 0,
-              backgroundColor: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: SizedBox(
-                  width: 320,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.qr_code_2_rounded,
-                              color: Colors.redAccent,
-                              size: 26,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            "KHQR Payment",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        "Scan to pay",
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "\$${totalAmount.toStringAsFixed(2)}",
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF4F46E5),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Colors.grey.shade200,
-                            width: 1.5,
-                          ),
-                        ),
-                        child: SizedBox(
-                          height: 200,
-                          width: 200,
-                          child: Center(
-                            child: isChecking
-                                ? const CircularProgressIndicator()
-                                :
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                "assets/qrcode.jpg",
-                                fit: BoxFit.contain,
-                                errorBuilder: (context, error, stackTrace) => Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
-                                    Icon(
-                                      Icons.broken_image_outlined,
-                                      size: 40,
-                                      color: Colors.grey,
-                                    ),
-                                    SizedBox(height: 6),
-                                    Text(
-                                      "Image not found",
-                                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: SizedBox(
-                              height: 46,
-                              child: TextButton(
-                                style: TextButton.styleFrom(
-                                  backgroundColor: Colors.grey.shade100,
-                                  foregroundColor: Colors.grey.shade700,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                onPressed: () =>
-                                    Navigator.of(dialogContext).pop(),
-                                child: const Text(
-                                  "Cancel",
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: SizedBox(
-                              height: 46,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4F46E5),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                onPressed: () async {
-                                  setStateDialog(() => isChecking = true);
-                                  bool success = await _processKHQROrder(
-                                    totalAmount,
-                                  );
-
-                                  if (!dialogContext.mounted) return;
-                                  setStateDialog(() => isChecking = false);
-
-                                  if (!parentContext.mounted) return;
-                                  if (success) {
-                                    Navigator.of(dialogContext).pop();
-                                    _showSuccessDialog(parentContext, 0.0);
-                                  } else {
-                                    ScaffoldMessenger.of(
-                                      parentContext,
-                                    ).showSnackBar(
-                                      const SnackBar(
-                                        content: Text("Payment failed!"),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: const Text(
-                                  "Confirm",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-   Future<bool> _processKHQROrder(double totalAmount) async {
-    ApiOrder apiOrder = ApiOrder();
-    List<Map<String, dynamic>> orderItems = CartManager.cartItems.map((
-      cartItem,
-    ) {
-      return {
-        'product_id': cartItem.product.id,
-        'product_name': cartItem.product.name,
-        'unit_price': cartItem.product.sellingPrice,
-        'quantity': cartItem.quantity,
-        'total_price': cartItem.product.sellingPrice * cartItem.quantity,
-      };
-    }).toList();
-
-    try {
-      return await apiOrder.createOrderWithPayment(
-        orderNumber: "ORD-KHQR-${DateTime.now().millisecondsSinceEpoch}",
-        userId: 1,
-        subtotal: totalAmount,
-        discount: 0.0,
-        tax: 0.0,
-        total: totalAmount,
-        paymentMethod: 'khqr',
-        amountPaid: totalAmount,
-        changeAmount: 0.0,
-        items: orderItems,
-        customerName: 'KHQR Customer',
-      );
-    } catch (e) {
-      return false;
-    }
   }
 }
