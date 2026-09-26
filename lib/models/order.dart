@@ -8,6 +8,9 @@ class Order {
   final double taxAmount;
   final double totalAmount;
   final String status;
+  final String orderType;         // 👈 បន្ថែម Field ប្រភេទនៃការកុម្ម៉ង់ (dine_in, take_away, delivery)
+  final String? deliveryAddress;  // 👈 បន្ថែម Field អាសយដ្ឋានដឹកជញ្ជូន
+  final double deliveryFee;       // 👈 បន្ថែម Field ថ្លៃសេវាដឹកជញ្ជូន
 
   Order({
     required this.id,
@@ -19,6 +22,9 @@ class Order {
     required this.taxAmount,
     required this.totalAmount,
     required this.status,
+    required this.orderType,
+    this.deliveryAddress,
+    required this.deliveryFee,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -32,6 +38,12 @@ class Order {
       taxAmount: double.parse(json['tax_amount'].toString()),
       totalAmount: double.parse(json['total_amount'].toString()),
       status: json['status'] ?? 'completed',
+      // 🚚 맵តម្លៃថ្មីៗពី JSON Response របស់ Laravel
+      orderType: json['order_type'] ?? 'dine_in',
+      deliveryAddress: json['delivery_address'],
+      deliveryFee: json['delivery_fee'] != null
+          ? double.parse(json['delivery_fee'].toString())
+          : 0.00,
     );
   }
 }

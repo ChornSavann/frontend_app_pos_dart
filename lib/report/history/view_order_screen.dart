@@ -63,6 +63,13 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     final customer = _orderData?['customer'] as Map<String, dynamic>?;
     final payment = _orderData?['payment'] as Map<String, dynamic>?;
 
+    // 🚚 ទាញយកទិន្នន័យ Delivery (អាស្រ័យលើការរចនាតារាង Backend របស់អ្នក អាចជា 'delivery' ឬកប់ក្នុង Order ផ្ទាល់)
+    final delivery =
+        _orderData?['delivery'] as Map<String, dynamic>? ?? _orderData;
+    final String orderType =
+        (_orderData?['order_type'] ?? delivery?['order_type'] ?? 'dine_in')
+            .toLowerCase();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -146,6 +153,8 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                           padding: EdgeInsets.symmetric(vertical: 10),
                           child: Divider(height: 1),
                         ),
+                        _buildInfoRow('Order Type:', orderType.toUpperCase()),
+                        const SizedBox(height: 6),
                         _buildInfoRow(
                           'Date:',
                           _orderData!['created_at'] ?? 'N/A',
@@ -180,7 +189,59 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 👤 2. Customer Info Card
+                  // 🚚 2. Delivery Information Card (បង្ហាញเฉพาะពេល Order ជាប្រភេទ delivery)
+                  if (orderType == 'delivery') ...[
+                    const Text(
+                      'Delivery Information',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade500.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.orange.shade200),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildInfoRow(
+                            'Delivery Partner:',
+                            delivery?['delivery_partner'] ??
+                                delivery?['partner'] ??
+                                'N/A',
+                          ),
+                          const SizedBox(height: 6),
+                          _buildInfoRow(
+                            'Delivery Fee:',
+                            '\$${delivery?['delivery_fee'] ?? '0.00'}',
+                          ),
+                          const SizedBox(height: 6),
+                          _buildInfoRow(
+                            'Delivery Address:',
+                            delivery?['delivery_address'] ??
+                                delivery?['address'] ??
+                                'N/A',
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // 👤 3. Customer Info Card
                   if (customer != null) ...[
                     const Text(
                       'Customer Information',
@@ -220,7 +281,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 💳 3. Payment Info Card
+                  // 💳 4. Payment Info Card
                   if (payment != null) ...[
                     const Text(
                       'Payment Information',
@@ -266,7 +327,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 📦 4. Items / Details List with Image
+                  // 📦 5. Items / Details List with Image
                   const Text(
                     'Products Ordered',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -376,24 +437,31 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   Widget _buildInfoRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    Color? color,
-  }) {
+      String label,
+      String value, {
+        bool isBold = false,
+        Color? color,
+      }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
+        // 🔹 ป้ายຊື່ (Label) នៅខាងឆ្វេង
         Text(
           label,
           style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
-            fontSize: isBold ? 16 : 13,
-            color: color ?? const Color(0xFF1E293B),
+        const SizedBox(width: 12),
+        // 🔹 តម្លៃ (Value) នៅខាងស្តាំ ដាក់ក្នុង Expanded ដើម្បីការពារការ Overflow និងអាចចុះបន្ទាត់បាន
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
+              fontSize: isBold ? 16 : 13,
+              color: color ?? const Color(0xFF1E293B),
+            ),
           ),
         ),
       ],

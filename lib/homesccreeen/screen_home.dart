@@ -519,7 +519,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                 _buildModernActionCard(
                   title: TranslateConstants.user.tr,
                   subtitle: TranslateConstants.manageUser.tr,
-                  icon: Icons.people_rounded,
+                  icon: Icons.supervisor_account_sharp,
                   color: Colors.indigo,
                   onTap: () => Navigator.push(
                     context,
@@ -529,9 +529,9 @@ class _ScreenHomeState extends State<ScreenHome> {
                   ),
                 ),
                 _buildModernActionCard(
-                  title: TranslateConstants.user.tr,
-                  subtitle: TranslateConstants.manageUser.tr,
-                  icon: Icons.people_alt,
+                  title: TranslateConstants.customer.tr,
+                  subtitle: TranslateConstants.manage_customer.tr,
+                  icon: Icons.people_alt_rounded,
                   color: Colors.indigo,
                   onTap: () => Navigator.push(
                     context,

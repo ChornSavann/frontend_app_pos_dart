@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/Productscreen/scanncheck/price_checker_screen.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
+import 'package:pos_inventory/order/delivery/delivery_orders_screen.dart';
 import 'package:pos_inventory/partail/app_bar_screen.dart';
 import '../../order/cart_screen.dart';
 import '../../partail/button_screen.dart';
@@ -80,6 +81,24 @@ class DashboardHistoryScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const PriceCheckerScreen(),
+                ),
+              );
+            },
+
+          ),
+          const SizedBox(height: 12),
+          _buildHistoryMenuCard(
+            context,
+            title: 'Manage Delivery',
+            subtitle: TranslateConstants.review_purchase.tr,
+            icon: Icons.local_shipping_rounded,
+            iconColor: Colors.blue,
+            backgroundColor: Colors.blue.shade50,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DeliveryOrdersScreen(),
                 ),
               );
             },

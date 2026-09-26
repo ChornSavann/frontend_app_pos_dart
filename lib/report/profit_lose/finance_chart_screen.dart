@@ -14,7 +14,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
   final ApiReport _apiReport = ApiReport();
   bool isLoading = true;
 
-  // 🔄 0: ចំណូល, 1: ចំណាយទូទៅ, 2: ចំណាយស្តុក
+  // 🔄 0: ចំណូល, 1: ចំណាយទូទៅ, 2: ចំណាយស្តុក, 3: ចំណាយសរុប
   int selectedTab = 0;
 
   String? startDate;
@@ -65,14 +65,29 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
       items = reportData['expense_breakdown'];
       titleLabel = 'ការចំណាយទូទៅតាមប្រភេទ';
       currentTotal =
-          double.tryParse(reportData['total_expense'].toString()) ?? 1.0;
-      themeColor = Colors.orange;
-    } else {
+          double.tryParse(reportData['general_expenses'].toString()) ?? 1.0;
+      themeColor = Colors.orange.shade700;
+    } else if (selectedTab == 2) {
       items = reportData['expense_by_category'];
       titleLabel = 'ការចំណាយតាម Category ផលិតផល';
       currentTotal =
-          double.tryParse(reportData['total_expense'].toString()) ?? 1.0;
+          double.tryParse(reportData['purchase_expenses'].toString()) ?? 1.0;
       themeColor = Colors.red;
+    } else {
+      items = [
+        {
+          'category_name': 'ចំណាយទូទៅ',
+          'total_amount': reportData['general_expenses'],
+        },
+        {
+          'category_name': 'ចំណាយស្តុក',
+          'total_amount': reportData['purchase_expenses'],
+        },
+      ];
+      titleLabel = 'សង្ខេបការចំណាយសរុប';
+      currentTotal =
+          double.tryParse(reportData['total_expense'].toString()) ?? 1.0;
+      themeColor = Colors.deepOrange;
     }
 
     return Scaffold(
@@ -98,9 +113,9 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // 🔘 Modern Segmented Tabs ទាំង ៣
+                // 🔘 Segmented Tabs ទាំង ៤ (រៀបចំឱ្យរអិលមើលបាន ឬធំទូលាយស្អាត)
                 Container(
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(18),
@@ -112,29 +127,24 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                       ),
                     ],
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildTabButton('ចំណូល', 0, Colors.green),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: _buildTabButton(
-                          'ចំណាយទូទៅ',
-                          1,
-                          Colors.orange.shade700,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: _buildTabButton('ចំណាយស្តុក', 2, Colors.red),
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildTabButton('ចំណូល', 0, Colors.green),
+                        const SizedBox(width: 8),
+                        _buildTabButton('ចំណាយទូទៅ', 1, Colors.orange.shade700),
+                        const SizedBox(width: 8),
+                        _buildTabButton('ចំណាយស្តុក', 2, Colors.red),
+                        const SizedBox(width: 8),
+                        _buildTabButton('ចំណាយសរុប', 3, Colors.deepOrange),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
 
-                // 📊 ផ្នែក Donut Chart Card ជាមួយ Center Text
+                // 📊 ផ្នែក Donut Chart Card
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -172,7 +182,6 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                                       ),
                                     ),
                                   ),
-                                  // 💡 បង្ហាញទឹកប្រាក់សរុបចំកណ្តាលរង្វង់ Donut
                                   Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
@@ -201,7 +210,6 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                               ),
                       ),
                       const SizedBox(height: 16),
-                      // 🏷️ Dynamic Legends (បង្ហាញពណ៌តំណាង Category នីមួយៗ)
                       if (items.isNotEmpty)
                         Wrap(
                           spacing: 12,
@@ -289,16 +297,15 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                           } else if (selectedTab == 1) {
                             name = item['expense_type']?['name'] ?? 'ផ្សេងៗ';
                             imageUrl = item['expense_type']?['image'];
-                          } else {
+                          } else if (selectedTab == 2) {
                             name = item['category_name'] ?? 'ផ្សេងៗ';
                             imageUrl = item['image'];
+                          } else {
+                            name = item['category_name'] ?? '';
                           }
 
-                          // 🟢 ប្រើប្រាស់ BaseImageUrl.BaseimageUrl ជំនួសវិញដើម្បីភាពបត់បែនពេល Deploy
                           const String baseServerUrl =
                               BaseImageUrl.BaseimageUrl;
-
-                          // 🟢 រៀបចំល្វែងលิงក៍រូបភាពឱ្យស្អាតស្អំ (Dynamic Handling)
                           String? finalImageUrl;
                           if (imageUrl != null && imageUrl.trim().isNotEmpty) {
                             if (imageUrl.startsWith('http://') ||
@@ -447,7 +454,10 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
     return GestureDetector(
       onTap: () => setState(() => selectedTab = index),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        constraints: const BoxConstraints(
+          minWidth: 85,
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? activeColor : Colors.transparent,
@@ -456,9 +466,9 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey.shade600,
+            color: isSelected ? Colors.white : Colors.grey.shade700,
             fontWeight: FontWeight.bold,
-            fontSize: 12,
+            fontSize: 12.5,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -490,13 +500,13 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
 
   Color _getColor(int index) {
     const colors = [
-      Color(0xFF2563EB), // Blue
-      Color(0xFF10B981), // Green
-      Color(0xFFF59E0B), // Amber
-      Color(0xFFEF4444), // Red
-      Color(0xFF8B5CF6), // Purple
-      Color(0xFFEC4899), // Pink
-      Color(0xFF14B8A6), // Teal
+      Color(0xFF2563EB),
+      Color(0xFF10B981),
+      Color(0xFFF59E0B),
+      Color(0xFFEF4444),
+      Color(0xFF8B5CF6),
+      Color(0xFFEC4899),
+      Color(0xFF14B8A6),
     ];
     return colors[index % colors.length];
   }

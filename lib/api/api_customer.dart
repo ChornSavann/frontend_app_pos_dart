@@ -39,7 +39,7 @@ class ApiCustomer {
           return Customer.fromJson(jsonResponse['data']);
         }
       }
-      return null; // រកមិនឃើញ ឬ Error
+      return null;
     } catch (e) {
       print('Error fetching customer by phone: $e');
       return null;
@@ -83,29 +83,47 @@ class ApiCustomer {
     }
   }
 
-  Future<bool> postCustomer(Map<String, dynamic> customerData) async {
+  // Future<bool> postCustomer(Map<String, dynamic> customerData) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/customers'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Accept': 'application/json',
+  //       },
+  //       body: jsonEncode(customerData),
+  //     );
+  //     print('Response Code: ${response.statusCode}');
+  //     print('Response Body: ${response.body}');
+  //
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return true;
+  //     } else {
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print('API Error: $e');
+  //     return false;
+  //   }
+  // }
+  Future<int?> postCustomer(Map<String, dynamic> data) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/customers'), // អាស្រ័យលើ Route របស់អ្នក
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(customerData),
+        Uri.parse('$baseUrl/customers'),
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        body: jsonEncode(data),
       );
-
-      // 🟢 បន្ថែម print ត្រង់នេះដើម្បីមើល Error ច្បាស់ពី Laravel
       print('Response Code: ${response.statusCode}');
       print('Response Body: ${response.body}');
-
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return true;
-      } else {
-        return false;
+        final jsonResponse = jsonDecode(response.body);
+        if (jsonResponse['success'] == true && jsonResponse['data'] != null) {
+          return jsonResponse['data']['id'];
+        }
       }
+      return null;
     } catch (e) {
-      print('API Error: $e');
-      return false;
+      return null;
     }
   }
 
@@ -145,12 +163,10 @@ class ApiCustomer {
         },
       );
 
-      // Status 200 ឬ 204 មានន័យថាលុបជោគជ័យ
       if (response.statusCode == 200 || response.statusCode == 204) {
         return true;
       }
 
-      // ប្រសិនបើ API មានສົ່ງ Response មកជា JSON ត្រឡប់វិញ
       if (response.body.isNotEmpty) {
         final jsonResponse = jsonDecode(response.body);
         if (jsonResponse['success'] == true) {
@@ -165,13 +181,10 @@ class ApiCustomer {
     }
   }
 
-  // 🔍 មុខងារស្វែងរកអតិថិជនតាមឈ្មោះពី Backend API
   Future<List<Customer>> searchCustomersByName(String name) async {
     try {
       final response = await http.get(
-        Uri.parse(
-          '$baseUrl/customers/search?name=$name',
-        ), // សូមកែសម្រួល Endpoints ឱ្យត្រូវនឹង Backend របស់អ្នក (ឧ. /customers?name=$name ជាដើម)
+        Uri.parse('$baseUrl/customers/search?name=$name'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -180,8 +193,6 @@ class ApiCustomer {
 
       if (response.statusCode == 200) {
         final jsonResponse = jsonDecode(response.body);
-
-        // ពិនិត្យមើលទ្រង់ទ្រាយ JSON Response របស់អ្នក (ឧ. ຖ້າទិន្នន័យស្ថិតក្នុង data key)
         List<dynamic> data = jsonResponse['data'] ?? jsonResponse;
 
         return data.map((json) => Customer.fromJson(json)).toList();

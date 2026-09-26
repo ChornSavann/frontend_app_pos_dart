@@ -63,7 +63,7 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
         CarouselSlider(
           carouselController: _controller,
           options: CarouselOptions(
-            height: 220,
+            height: 200,
             autoPlay: true,
             enlargeCenterPage: true,
             viewportFraction: 0.99,
@@ -104,14 +104,15 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width,
+                    // 🟢 កាត់បន្ថយ Margin សងខាងឱ្យនៅតូច ដើម្បីកុំឱ្យគែមឆ្ងាយពេក
                     margin: const EdgeInsets.symmetric(horizontal: 4.0),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(22),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.indigo.withOpacity(0.22),
-                          blurRadius: 14,
-                          offset: const Offset(0, 7),
+                          color: Colors.indigo.withValues(alpha: 0.15),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
@@ -122,47 +123,47 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                         children: [
                           imageUrl.isNotEmpty
                               ? Container(
-                                  color: Colors.grey.shade900,
-                                  child: CachedNetworkImage(
-                                    imageUrl: imageUrl,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Container(
-                                      color: Colors.grey.shade100,
-                                      child: const Center(
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    errorWidget: (context, url, error) =>
-                                        Container(
-                                          color: Colors.grey.shade200,
-                                          child: const Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                  ),
-                                )
-                              : Container(
-                                  color: const Color(
-                                    0xFF4F46E5,
-                                  ).withOpacity(0.1),
-                                  child: const Icon(
-                                    Icons.shopping_bag,
-                                    size: 50,
-                                    color: Color(0xFF4F46E5),
+                            color: Colors.grey.shade900,
+                            child: CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Container(
+                                color: Colors.grey.shade100,
+                                child: const Center(
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
                                   ),
                                 ),
+                              ),
+                              errorWidget: (context, url, error) =>
+                                  Container(
+                                    color: Colors.grey.shade200,
+                                    child: const Icon(
+                                      Icons.image_not_supported,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                            ),
+                          )
+                              : Container(
+                            color: const Color(
+                              0xFF4F46E5,
+                            ).withValues(alpha: 0.1),
+                            child: const Icon(
+                              Icons.shopping_bag,
+                              size: 50,
+                              color: Color(0xFF4F46E5),
+                            ),
+                          ),
 
                           // 🌑 Smooth Premium Gradient Overlay
                           Container(
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  Colors.black.withOpacity(0.05),
-                                  Colors.black.withOpacity(0.4),
-                                  Colors.black.withOpacity(0.85),
+                                  Colors.black.withValues(alpha: 0.05),
+                                  Colors.black.withValues(alpha: 0.4),
+                                  Colors.black.withValues(alpha: 0.85),
                                 ],
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
@@ -170,9 +171,9 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                             ),
                           ),
 
-                          // 🏷️ Glassmorphism Badge (បង្ហាញ Brand ឬ Category របស់ Product)
+                          // 🏷️ Glassmorphism Badge
                           Positioned(
-                            top: 14,
+                            top: 12,
                             left: 14,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(20),
@@ -183,14 +184,14 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                 ),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
+                                    horizontal: 10,
+                                    vertical: 5,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
+                                      color: Colors.white.withValues(alpha: 0.3),
                                       width: 1.0,
                                     ),
                                   ),
@@ -200,17 +201,17 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                       const Icon(
                                         Icons.auto_awesome,
                                         color: Colors.amberAccent,
-                                        size: 13,
+                                        size: 12,
                                       ),
-                                      const SizedBox(width: 5),
+                                      const SizedBox(width: 4),
                                       Text(
                                         (product.categoryName ??
-                                                product.brandName ??
-                                                'FEATURED')
+                                            product.brandName ??
+                                            'FEATURED')
                                             .toUpperCase(),
                                         style: const TextStyle(
                                           color: Colors.white,
-                                          fontSize: 10,
+                                          fontSize: 9,
                                           fontWeight: FontWeight.bold,
                                           letterSpacing: 0.8,
                                         ),
@@ -222,22 +223,22 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                             ),
                           ),
 
-                          // 💰 Price Tag (បើមានតម្លៃ)
+                          // 💰 Price Tag
                           if (price.isNotEmpty)
                             Positioned(
-                              top: 14,
+                              top: 12,
                               right: 14,
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
+                                  horizontal: 10,
+                                  vertical: 5,
                                 ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF4F46E5),
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
+                                      color: Colors.black.withValues(alpha: 0.2),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -247,18 +248,18 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                   price,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                               ),
                             ),
 
-                          // 📝 Title & Subtitle with Clean Layout
+                          // 📝 Title & Subtitle
                           Positioned(
-                            bottom: 16,
-                            left: 16,
-                            right: 16,
+                            bottom: 12,
+                            left: 14,
+                            right: 14,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -268,19 +269,19 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
-                                    fontSize: 18,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 0.4,
                                   ),
                                 ),
-                                const SizedBox(height: 3),
+                                const SizedBox(height: 2),
                                 Text(
                                   subtitle,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
-                                    fontSize: 12.5,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 11.5,
                                     fontWeight: FontWeight.w400,
                                   ),
                                 ),
@@ -296,7 +297,7 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
             );
           }).toList(),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 10),
 
         // 🔘 Modern Indicator Dots
         Row(
@@ -307,11 +308,11 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
               onTap: () => _controller.animateToPage(entry.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: isActive ? 24.0 : 8.0,
-                height: 8.0,
-                margin: const EdgeInsets.symmetric(horizontal: 3.5),
+                width: isActive ? 20.0 : 6.0,
+                height: 6.0,
+                margin: const EdgeInsets.symmetric(horizontal: 3.0),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(3),
                   color: isActive
                       ? const Color(0xFF4F46E5)
                       : Colors.grey.shade300,

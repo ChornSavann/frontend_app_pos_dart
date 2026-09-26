@@ -436,7 +436,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(16),
-
                         onTap: () {
                           Navigator.push(
                             context,
@@ -458,8 +457,8 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                         product.imageUrl!.isNotEmpty
                                     ? CachedNetworkImage(
                                         imageUrl: product.imageUrl!,
-                                        width: 70,
-                                        height: 70,
+                                        width: 60,
+                                        height: 60,
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) =>
                                             const SizedBox(
@@ -474,8 +473,8 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                             ),
                                         errorWidget: (context, url, error) {
                                           return Container(
-                                            width: 70,
-                                            height: 70,
+                                            width: 60,
+                                            height: 60,
                                             color: Colors.grey.shade100,
                                             child: const Icon(
                                               Icons
@@ -486,19 +485,19 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                         },
                                       )
                                     : Container(
-                                        width: 70,
-                                        height: 70,
+                                        width: 60,
+                                        height: 60,
                                         color: Colors.blue.withValues(
                                           alpha: 0.1,
                                         ),
                                         child: const Icon(
                                           Icons.shopping_bag_outlined,
                                           color: Colors.blueAccent,
-                                          size: 32,
+                                          size: 28,
                                         ),
                                       ),
                               ),
-                              const SizedBox(width: 14),
+                              const SizedBox(width: 10),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -509,7 +508,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 15,
+                                        fontSize: 14,
                                         color: Colors.black87,
                                       ),
                                     ),
@@ -519,15 +518,17 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                       style: const TextStyle(
                                         color: Colors.green,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 14,
+                                        fontSize: 13,
                                       ),
                                     ),
                                     const SizedBox(height: 6),
-                                    Row(
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
                                       children: [
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
+                                            horizontal: 6,
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
@@ -540,15 +541,14 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                             "SKU: ${product.sku}",
                                             style: TextStyle(
                                               color: Colors.grey.shade700,
-                                              fontSize: 11,
+                                              fontSize: 9,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
+                                            horizontal: 6,
                                             vertical: 2,
                                           ),
                                           decoration: BoxDecoration(
@@ -575,7 +575,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                                   : product.stockQuantity <= 10
                                                   ? Colors.orange
                                                   : Colors.blueAccent,
-                                              fontSize: 11,
+                                              fontSize: 10,
                                               fontWeight: FontWeight.w500,
                                             ),
                                           ),
@@ -585,6 +585,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                   ],
                                 ),
                               ),
+                              const SizedBox(width: 6),
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -605,24 +606,24 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                                     },
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
-                                      padding: const EdgeInsets.all(6),
+                                      padding: const EdgeInsets.all(4),
                                       child: Icon(
                                         Icons.edit_outlined,
                                         color: Colors.blue.shade600,
-                                        size: 20,
+                                        size: 18,
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 6),
                                   InkWell(
                                     onTap: () => _confirmDelete(product),
                                     borderRadius: BorderRadius.circular(8),
                                     child: Padding(
-                                      padding: const EdgeInsets.all(6),
+                                      padding: const EdgeInsets.all(4),
                                       child: Icon(
                                         Icons.delete_outline,
                                         color: Colors.red.shade400,
-                                        size: 20,
+                                        size: 18,
                                       ),
                                     ),
                                   ),
@@ -649,7 +650,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
   }
 }
 
-// 🔎 Search Delegate
+// 🔎 Search Delegate (Responsive & Safe)
 class ProductSearchDelegate extends SearchDelegate<Product?> {
   final List<Product> products;
   final VoidCallback onRefresh;
@@ -736,15 +737,15 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                         product.imageUrl != null && product.imageUrl!.isNotEmpty
                         ? CachedNetworkImage(
                             imageUrl: product.imageUrl!,
-                            width: 70,
-                            height: 70,
+                            width: 60,
+                            height: 60,
                             fit: BoxFit.cover,
                             errorWidget: (context, url, error) =>
                                 const Icon(Icons.image_not_supported),
                           )
                         : Container(
-                            width: 70,
-                            height: 70,
+                            width: 60,
+                            height: 60,
                             color: Colors.blue.withValues(alpha: 0.1),
                             child: const Icon(
                               Icons.shopping_bag_outlined,
@@ -752,7 +753,7 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                             ),
                           ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,7 +764,7 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
+                            fontSize: 14,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -772,15 +773,59 @@ class ProductSearchDelegate extends SearchDelegate<Product?> {
                           style: const TextStyle(
                             color: Colors.green,
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          "SKU: ${product.sku} | Stock: ${product.stockQuantity}",
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 11,
-                          ),
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                "SKU: ${product.sku}",
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: product.stockQuantity == 0
+                                    ? Colors.red.withValues(alpha: 0.1)
+                                    : product.stockQuantity <= 10
+                                    ? Colors.orange.withValues(alpha: 0.1)
+                                    : Colors.blue.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                "Stock: ${product.stockQuantity}",
+                                style: TextStyle(
+                                  color: product.stockQuantity == 0
+                                      ? Colors.red
+                                      : product.stockQuantity <= 10
+                                      ? Colors.orange
+                                      : Colors.blueAccent,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../api/api_customer.dart';
-import '../../models/customer.dart';
 
 class AddCustomerDialog extends StatefulWidget {
   final String initialName;
@@ -21,14 +20,36 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
-  final TextEditingController pointController = TextEditingController(text: '1');
+  final TextEditingController pointController = TextEditingController(
+    text: '1',
+  );
 
   bool _isLoading = false;
+  bool _isEmailManuallyEdited = false;
 
   @override
   void initState() {
     super.initState();
     nameController = TextEditingController(text: widget.initialName);
+
+    if (widget.initialName.isNotEmpty) {
+      _generateEmailFromName(widget.initialName);
+    }
+  }
+
+
+  void _generateEmailFromName(String name) {
+    if (!_isEmailManuallyEdited) {
+      String sanitized = name.trim().toLowerCase().replaceAll(
+        RegExp(r'\s+'),
+        '',
+      );
+      if (sanitized.isNotEmpty) {
+        emailController.text = "$sanitized@gmail.com";
+      } else {
+        emailController.text = "";
+      }
+    }
   }
 
   @override
@@ -47,7 +68,9 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
         emailController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("សូមបំពេញឈ្មោះ លេខទូរស័ព្ទ និងអ៊ីមែលឱ្យបានគ្រប់គ្រាន់!"),
+          content: Text(
+            "សូមបំពេញឈ្មោះ លេខទូរស័ព្ទ និងអ៊ីមែលឱ្យបានគ្រប់គ្រាន់!",
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -57,7 +80,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
     setState(() => _isLoading = true);
 
     try {
-      bool success = await ApiCustomer().postCustomer({
+      int? newCustomerId = await ApiCustomer().postCustomer({
         'name': nameController.text.trim(),
         'phone': phoneController.text.trim(),
         'email': emailController.text.trim(),
@@ -65,20 +88,8 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
         'points': int.tryParse(pointController.text.trim()) ?? 1,
       });
 
-      if (success) {
-        List<Customer> allCustomers = await ApiCustomer().getAllCustomers();
-        Customer? newCust;
-        try {
-          newCust = allCustomers.firstWhere(
-                (c) => c.phone == phoneController.text.trim(),
-          );
-        } catch (_) {
-          if (allCustomers.isNotEmpty) newCust = allCustomers.last;
-        }
-
-        if (newCust != null) {
-          widget.onCustomerCreated(newCust.id);
-        }
+      if (newCustomerId != null) {
+        widget.onCustomerCreated(newCustomerId);
 
         if (mounted) {
           Navigator.pop(context);
@@ -124,6 +135,9 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
           children: [
             TextField(
               controller: nameController,
+              onChanged: (value) {
+                _generateEmailFromName(value);
+              },
               decoration: const InputDecoration(
                 labelText: "ឈ្មោះអតិថិជន (Name)*",
                 prefixIcon: Icon(Icons.person),
@@ -142,6 +156,11 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
             TextField(
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
+              onChanged: (value) {
+                setState(() {
+                  _isEmailManuallyEdited = value.isNotEmpty;
+                });
+              },
               decoration: const InputDecoration(
                 labelText: "អ៊ីមែល (Email)*",
                 prefixIcon: Icon(Icons.email),
@@ -180,13 +199,13 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
           onPressed: _isLoading ? null : _saveCustomer,
           child: _isLoading
               ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              color: Colors.white,
-              strokeWidth: 2,
-            ),
-          )
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
               : const Text("រក្សាទុក"),
         ),
       ],

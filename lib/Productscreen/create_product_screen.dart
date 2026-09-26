@@ -177,11 +177,15 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     if (barcode.rawValue != null) {
                       final scannedCode = barcode.rawValue!.trim();
 
+                      // ១. បិទកាមេរ៉ា និងកំណត់ Barcode ទុកមុន
                       HapticFeedback.mediumImpact();
                       Navigator.pop(context);
+
                       setState(() {
                         _barcodeController.text = scannedCode;
                       });
+
+                      // ២. បង្ហាញ Dialog "កំពុងស្វែងរក"
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -212,32 +216,36 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                         ),
                       );
 
-                      // 3️⃣ ឆែកមើលក្នុង API ខាងក្រៅ
-                      final publicProduct = await apiProduct
-                          .fetchProductInfoFromPublicBarcode(scannedCode);
+                      // ៣. ឆែកមើលក្នុង API ខាងក្រៅ ដោយកំណត់ Timeout ត្រឹម 0.5 វិនាទី (500 ms)
+                      dynamic publicProduct;
+                      try {
+                        publicProduct = await apiProduct
+                            .fetchProductInfoFromPublicBarcode(scannedCode)
+                            .timeout(const Duration(milliseconds: 500), onTimeout: () {
+                          return null; // បើហួស 0.5 វិនាទី ចាត់ទុកว่าរកមិនឃើញ
+                        });
+                      } catch (e) {
+                        publicProduct = null;
+                      }
 
+                      // ៤. បិទ Dialog "កំពុងស្វែងរក" វិញ
                       if (mounted) Navigator.pop(context);
 
+                      // ៥. ពិនិត្យលទ្ធផល
                       if (publicProduct != null &&
-                          publicProduct['name'] != null) {
+                          publicProduct['name'] != null &&
+                          publicProduct['name'].toString().isNotEmpty) {
                         setState(() {
                           _nameController.text = publicProduct['name'];
                         });
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text(
-                                '✨ បានទាញយកឈ្មោះផលិតផលពីប្រព័ន្ធខាងក្រៅជោគជ័យ!',
-                              ),
-                              backgroundColor: Colors.green.shade600,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                          AppSnackBar.showSuccess(
+                            context,
+                            '✨ បានទាញយកឈ្មោះផលិតផលពីប្រព័ន្ធខាងក្រៅជោគជ័យ!',
                           );
                         }
                       } else {
+                        // ៦. បើរកអត់ឃើញ ឬ Timeout 0.5s គឺលោត Dialog ឱ្យបំពេញឈ្មោះទំនិញថ្មីភ្លាមៗ
                         if (mounted) {
                           _showQuickAddProductDialog(scannedCode);
                         }
@@ -303,13 +311,15 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     );
   }
 
-  // 💡 មុខងារបង្ហាញ Dialog ឱ្យបញ្ចូលឈ្មោះផលិតផលថ្មីភ្លាមៗ ពេលស្កេនចំ Barcode គ្មានក្នុងប្រព័ន្ធ
+
   void _showQuickAddProductDialog(String barcode) {
     final TextEditingController quickNameController = TextEditingController();
-    final TextEditingController quickPriceController = TextEditingController();
+    final TextEditingController quickCostPriceController = TextEditingController();
+    final TextEditingController quickSellingPriceController = TextEditingController();
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
@@ -327,77 +337,112 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'រកមិនឃើញទំនិញ (New Product)',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            const Expanded(
+              child: Text(
+                'រកមិនឃើញទំនិញ (New Product)',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Barcode: $barcode',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: quickNameController,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Product Name',
-                hintText: 'បញ្ចូលឈ្មោះទំនិញថ្មី...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Barcode: $barcode',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: quickPriceController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Selling Price (\$)',
-                hintText: '0.00',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: quickNameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Product Name',
+                    hintText: 'បញ្ចូលឈ្មោះទំនិញថ្មី...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: quickCostPriceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Cost Price (\$)',
+                    hintText: '0.00',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: quickSellingPriceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: 'Selling Price (\$)',
+                    hintText: '0.00',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('បោះបង់', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('បោះបង់', style: TextStyle(color: Colors.grey)),
+                ),
               ),
-            ),
-            onPressed: () {
-              if (quickNameController.text.trim().isNotEmpty) {
-                setState(() {
-                  _nameController.text = quickNameController.text.trim();
-                  if (quickPriceController.text.trim().isNotEmpty) {
-                    _sellingPriceController.text = quickPriceController.text
-                        .trim();
-                  }
-                });
-                Navigator.pop(context);
-                AppSnackBar.showSuccess(
-                  context,
-                  'បានបញ្ចូលឈ្មោះទំនិញថ្មីដោយជោគជ័យ!',
-                );
-              } else {
-                AppSnackBar.showError(context, 'សូមបញ្ចូលឈ្មោះទំនិញ!');
-              }
-            },
-            child: const Text('យល់ព្រម', style: TextStyle(color: Colors.white)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (quickNameController.text.trim().isNotEmpty) {
+                      setState(() {
+                        _nameController.text = quickNameController.text.trim();
+                        if (quickCostPriceController.text.trim().isNotEmpty) {
+                          _costPriceController.text = quickCostPriceController.text.trim();
+                        }
+                        if (quickSellingPriceController.text.trim().isNotEmpty) {
+                          _sellingPriceController.text = quickSellingPriceController.text.trim();
+                        }
+                      });
+                      Navigator.pop(context);
+                      AppSnackBar.showSuccess(
+                        context,
+                        'បានបញ្ចូលព័ត៌មានទំនិញថ្មីដោយជោគជ័យ!',
+                      );
+                    } else {
+                      AppSnackBar.showError(context, 'សូមបញ្ចូលឈ្មោះទំនិញ!');
+                    }
+                  },
+                  child: const Text('យល់ព្រម', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
           ),
         ],
       ),

@@ -60,6 +60,8 @@ class TranslateConstants {
   static const String overview='overview';
   static const String quick_actions='auick_action';
   static const String real_time='real_time';
+  static const String customer='customer';
+  static const String manage_customer='manage_customer';
 
 
 

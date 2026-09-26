@@ -60,6 +60,8 @@ class Messages extends Translations {
       TranslateConstants.overview:"Overview",
       TranslateConstants.quick_actions:'Quick Actions',
       TranslateConstants.real_time:'Real-time',
+      TranslateConstants.customer:'Customers',
+      TranslateConstants.manage_customer:'Manage Customers',
 
     },
     'km_KH': {
@@ -117,6 +119,8 @@ class Messages extends Translations {
       TranslateConstants.overview:'ទិដ្ឋភាពទូទៅ',
       TranslateConstants.quick_actions:'សកម្មភាពរហ័ស',
       TranslateConstants.real_time:'ពេលវេលាជាក់ស្តែង',
+      TranslateConstants.customer:'អតិថិជន',
+      TranslateConstants.manage_customer:"ការគ្របគ្រងអតិថិជន"
 
     }
   };

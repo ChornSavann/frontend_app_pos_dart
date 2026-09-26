@@ -1,5 +1,6 @@
 import 'dart:core';
 import 'package:flutter/material.dart';
+import 'package:pos_inventory/order/delivery/delivery_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_order.dart';
 import '../api/api_customer.dart';
@@ -33,26 +34,6 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-  // 🟢 ហៅ Dialog ពី File ខាងក្រៅមកប្រើ
-  void _showAddCustomerDialog(
-    BuildContext context,
-    StateSetter setStateSheet,
-    String initialName,
-    Function(int) onCustomerCreated,
-  ) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AddCustomerDialog(
-          initialName: initialName,
-          onCustomerCreated: (newCustId) {
-            onCustomerCreated(newCustId);
-            setStateSheet(() {});
-          },
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -394,6 +375,30 @@ class _CartScreenState extends State<CartScreen> {
     final TextEditingController customerPhoneController =
         TextEditingController();
 
+    // 🚚 Variables សម្រាប់ເກັບទិន្នន័យដឹកជញ្ជូន
+    String deliveryAddress = '';
+    double deliveryFee = 0.0;
+    String? deliveryPartner;
+    String? receiverName;
+    String? receiverPhone;
+    String? deliveryNote;
+
+    void showAddCustomerModal(StateSetter setStateSheet) {
+      showDialog(
+        context: parentContext,
+        builder: (BuildContext dialogContext) {
+          return AddCustomerDialog(
+            initialName: customerNameController.text.trim(),
+            onCustomerCreated: (newCustId) {
+              setStateSheet(() {
+                selectedCustomerId = newCustId;
+              });
+            },
+          );
+        },
+      );
+    }
+
     showModalBottomSheet(
       context: parentContext,
       isScrollControlled: true,
@@ -401,12 +406,14 @@ class _CartScreenState extends State<CartScreen> {
       builder: (BuildContext sheetContext) {
         return StatefulBuilder(
           builder: (context, setStateSheet) {
+            double finalTotalAmount =
+                totalAmount + (orderType == 'delivery' ? deliveryFee : 0.0);
             double cashGiven = double.tryParse(cashGivenStr) ?? 0;
 
-            double changeUSD = cashGiven >= totalAmount
-                ? cashGiven - totalAmount
+            double changeUSD = cashGiven >= finalTotalAmount
+                ? cashGiven - finalTotalAmount
                 : 0;
-            double totalKHR = totalAmount * exchangeRate;
+            double totalKHR = finalTotalAmount * exchangeRate;
             double cashGivenKHR = currencyType == 'KHR'
                 ? cashGiven
                 : (cashGiven * exchangeRate);
@@ -511,7 +518,7 @@ class _CartScreenState extends State<CartScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  "\$${totalAmount.toStringAsFixed(2)}",
+                                  "\$${finalTotalAmount.toStringAsFixed(2)}",
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -532,6 +539,8 @@ class _CartScreenState extends State<CartScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
+
+                      // 🚚 Order Type Selection Tabs
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -562,13 +571,122 @@ class _CartScreenState extends State<CartScreen> {
                               Icons.delivery_dining,
                               orderType == 'delivery',
                               () {
-                                setStateSheet(() => orderType = 'delivery');
+                                setStateSheet(() {
+                                  orderType = 'delivery';
+                                });
+
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DeliveryScreen(
+                                      totalAmount: totalAmount,
+                                      onConfirmDelivery: (deliveryData) {
+                                        setStateSheet(() {
+                                          deliveryAddress =
+                                              deliveryData['address'];
+                                          deliveryFee =
+                                              deliveryData['delivery_fee'];
+                                          customerNameController.text =
+                                              deliveryData['name'];
+                                          customerPhoneController.text =
+                                              deliveryData['phone'];
+                                          deliveryPartner =
+                                              deliveryData['delivery_partner'];
+                                          receiverName = deliveryData['name'];
+                                          receiverPhone = deliveryData['phone'];
+                                          deliveryNote = deliveryData['note'];
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                );
                               },
                             ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 12),
+
+                      // 📍 បង្ហាញព័ត៌មាន Delivery
+                      if (orderType == 'delivery' &&
+                          deliveryAddress.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade50,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.orange.shade200),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.location_on,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      "អាសយដ្ឋានដឹកជញ្ជូន៖",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                        color: Colors.orange,
+                                      ),
+                                    ),
+                                    Text(
+                                      deliveryAddress,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  size: 18,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => DeliveryScreen(
+                                        totalAmount: totalAmount,
+                                        onConfirmDelivery: (deliveryData) {
+                                          setStateSheet(() {
+                                            deliveryAddress =
+                                                deliveryData['address'];
+                                            deliveryFee =
+                                                deliveryData['delivery_fee'];
+                                            customerNameController.text =
+                                                deliveryData['name'];
+                                            customerPhoneController.text =
+                                                deliveryData['phone'];
+                                            deliveryPartner =
+                                                deliveryData['delivery_partner'];
+                                            receiverName = deliveryData['name'];
+                                            receiverPhone =
+                                                deliveryData['phone'];
+                                            deliveryNote = deliveryData['note'];
+                                          });
+                                        },
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -626,18 +744,7 @@ class _CartScreenState extends State<CartScreen> {
                                   elevation: 0,
                                 ),
                                 onPressed: () {
-                                  _showAddCustomerDialog(
-                                    context,
-                                    setStateSheet,
-                                    customerNameController.text.trim(),
-                                    (newCustId) {
-                                      setStateSheet(() {
-                                        selectedCustomerId = newCustId;
-                                        name = customerNameController.text
-                                            .trim();
-                                      });
-                                    },
-                                  );
+                                  showAddCustomerModal(setStateSheet);
                                 },
                                 child: const Icon(
                                   Icons.person_add_alt_1_outlined,
@@ -687,7 +794,7 @@ class _CartScreenState extends State<CartScreen> {
                                     );
 
                                 return DropdownButtonFormField<int?>(
-                                  initialValue: isValidCustomer
+                                  value: isValidCustomer
                                       ? selectedCustomerId
                                       : null,
                                   isDense: true,
@@ -1140,24 +1247,50 @@ class _CartScreenState extends State<CartScreen> {
                             elevation: 0,
                           ),
                           onPressed: () {
+                            if (orderType == 'delivery' &&
+                                deliveryAddress.isEmpty) {
+                              ScaffoldMessenger.of(parentContext).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "សូមបំពេញព័ត៌មាន និងអាសយដ្ឋានដឹកជញ្ជូនសិន!",
+                                  ),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                              return;
+                            }
+
                             Navigator.pop(sheetContext);
                             _handlePaymentSubmission(
                               parentContext,
-                              totalAmount,
+                              finalTotalAmount,
                               cashGiven,
                               currencyType == 'KHR'
                                   ? (cashGiven / exchangeRate)
                                   : cashGiven,
                               paymentMethod,
+                              selectedCustomerId,
                               customerNameController.text.trim().isEmpty
                                   ? 'Guest'
                                   : customerNameController.text.trim(),
                               customerPhoneController.text.trim(),
+                              orderType,
+                              deliveryAddress,
+                              deliveryFee,
+                              pickupAddress: "Store Location",
+                              deliveryPartner: deliveryPartner ?? "Standard",
+                              receiverName:
+                                  receiverName ??
+                                  customerNameController.text.trim(),
+                              receiverPhone:
+                                  receiverPhone ??
+                                  customerPhoneController.text.trim(),
+                              note: deliveryNote,
                             );
                           },
                           child: Text(
                             paymentMethod == 'cash'
-                                ? "បង់ប្រាក់ (\$${totalAmount.toStringAsFixed(2)})"
+                                ? "បង់ប្រាក់ (\$${finalTotalAmount.toStringAsFixed(2)})"
                                 : "បញ្ជាក់ការទូទាត់ QR",
                             style: const TextStyle(
                               fontSize: 15,
@@ -1309,29 +1442,94 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  // ⚠️ មុខងារបង្ហាញ Dialog ព្រមានពេលប្រាក់មិនគ្រប់ (មិនបិទ BottomSheet ឡើយ)
+  void _showInsufficientCashDialog(BuildContext context, double shortAmount) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // មិនឱ្យចុចក្រៅដើម្បីបិទ
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Row(
+            children: const [
+              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+              SizedBox(width: 8),
+              Text(
+                "ប្រាក់មិនគ្រប់គ្រាន់!",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'KhmerOSBattambang',
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            "⚠️ ប្រាក់បានបង់មិនទាន់គ្រប់គ្រាន់សម្រាប់ការទូទាត់ទេ!\nសូមបញ្ចូលទឹកប្រាក់បន្ថែមឱ្យបានស្មើ ឬច្រើនជាងទឹកប្រាក់សរុប។",
+            style: const TextStyle(
+              fontSize: 13,
+              fontFamily: 'KhmerOSBattambang',
+              color: Colors.black87,
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade600,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () {
+                // 🟢 បិទតែ Dialog ព្រមាននេះទេ ដោយប្រើ dialogContext ផ្ទាល់
+                Navigator.of(dialogContext).pop();
+              },
+              child: const Text(
+                "យល់ព្រម (OK)",
+                style: TextStyle(fontFamily: 'KhmerOSBattambang'),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // 💳 មុខងារបញ្ជូនទិន្នន័យទូទាត់ប្រាក់
   Future<void> _handlePaymentSubmission(
-    BuildContext parentContext,
-    double totalAmount,
-    double cashGiven,
-    double actualUSDReceived,
-    String paymentMethod,
-    String customerName,
-    String customerPhone,
-  ) async {
+      BuildContext parentContext,
+      double totalAmount,
+      double cashGiven,
+      double actualUSDReceived,
+      String paymentMethod,
+      int? customerId,
+      String customerName,
+      String customerPhone,
+      String orderType,
+      String deliveryAddress,
+      double deliveryFee, {
+        String? pickupAddress,
+        String? deliveryPartner,
+        String? receiverName,
+        String? receiverPhone,
+        String? note,
+      }) async {
+    // 🛑 ពិនិត្យប្រាក់សាច់ប្រាក់ ប្រសិនបើតិចជាងទឹកប្រាក់សរុប ឱ្យលោត Dialog ព្រមាន
     if (paymentMethod == 'cash' && actualUSDReceived < totalAmount) {
-      ScaffoldMessenger.of(parentContext).showSnackBar(
-        const SnackBar(
-          content: Text("Insufficient cash given!"),
-          backgroundColor: Colors.red,
-        ),
+      _showInsufficientCashDialog(
+        parentContext,
+        totalAmount - actualUSDReceived,
       );
-      return;
+      return; // ឈប់ដំណើរការ មិនឱ្យបង្កើត Order និងមិនឱ្យបិទ Sheet ទេ
     }
 
     double changeAmount = actualUSDReceived - totalAmount;
     List<Map<String, dynamic>> orderItems = CartManager.cartItems.map((
-      cartItem,
-    ) {
+        cartItem,
+        ) {
       return {
         'product_id': cartItem.product.id,
         'product_name': cartItem.product.name,
@@ -1352,16 +1550,25 @@ class _CartScreenState extends State<CartScreen> {
     try {
       isSuccess = await apiOrder.createOrderWithPayment(
         orderNumber: "ORD-${DateTime.now().millisecondsSinceEpoch}",
+        customerId: customerId,
         customerName: customerName.isEmpty ? 'Guest' : customerName,
         customerPhone: customerPhone.isEmpty ? null : customerPhone,
         userId: _userId ?? 1,
-        subtotal: totalAmount,
+        subtotal: totalAmount - (orderType == 'delivery' ? deliveryFee : 0),
         discount: 0.0,
         tax: 0.0,
         total: totalAmount,
         paymentMethod: paymentMethod,
         amountPaid: paymentMethod == 'cash' ? actualUSDReceived : totalAmount,
         changeAmount: paymentMethod == 'cash' ? changeAmount : 0.0,
+        orderType: orderType,
+        deliveryAddress: orderType == 'delivery' ? deliveryAddress : null,
+        deliveryFee: orderType == 'delivery' ? deliveryFee : 0.0,
+        pickupAddress: pickupAddress,
+        deliveryPartner: deliveryPartner,
+        receiverName: receiverName,
+        receiverPhone: receiverPhone,
+        note: note,
         items: orderItems,
       );
     } catch (e) {
@@ -1369,7 +1576,7 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     if (!parentContext.mounted) return;
-    Navigator.pop(parentContext);
+    Navigator.pop(parentContext); // បិទ Loading Indicator
 
     if (isSuccess) {
       _showSuccessDialog(
@@ -1385,6 +1592,7 @@ class _CartScreenState extends State<CartScreen> {
       );
     }
   }
+
   void _showSuccessDialog(BuildContext parentContext, double changeAmount) {
     showDialog(
       context: parentContext,
@@ -1411,7 +1619,6 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               const Text(
                 "Payment Successful!",
                 style: TextStyle(
@@ -1421,19 +1628,18 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-
               const Text(
                 "ការទូទាត់ប្រាក់បានសម្រេចជោគជ័យ",
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey),
               ),
               const SizedBox(height: 20),
               if (changeAmount > 0) ...[
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12,
+                    horizontal: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
                     borderRadius: BorderRadius.circular(14),
@@ -1463,8 +1669,6 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(height: 20),
               ],
-
-              // 🟢 ប៊ូតុង Done បញ្ចប់សកម្មភាព
               SizedBox(
                 width: double.infinity,
                 height: 48,
