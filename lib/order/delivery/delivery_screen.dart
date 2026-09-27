@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:pos_inventory/api/api_order.dart'; // 🟢 ត្រូវប្រាកដថាបាន import ApiOrder
+import 'package:pos_inventory/api/api_order.dart';
 import '../../msg/appSnackBar.dart';
 import '../card_manager.dart';
 import 'map_picker_screen.dart';
-import 'order_tracking_screen.dart';
 
 class DeliveryScreen extends StatefulWidget {
   final double totalAmount;
@@ -21,8 +20,8 @@ class DeliveryScreen extends StatefulWidget {
 
 class _DeliveryScreenState extends State<DeliveryScreen> {
   final _formKey = GlobalKey<FormState>();
-  final ApiOrder _apiOrder = ApiOrder(); // 🟢 កំណត់ Object សម្រាប់ហៅ API
-  bool _isSubmitting = false; // សម្រាប់បង្ហាញ Loading ពេលកំពុងបង្កើត Order
+  final ApiOrder _apiOrder = ApiOrder();
+  bool _isSubmitting = false;
 
   final TextEditingController _pickupController = TextEditingController(
     text: 'ហាងលក់ទំនិញរបស់អ្នក (Store Location)',
@@ -39,6 +38,12 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
 
   String _selectedService = 'Grab Express';
   double _deliveryFee = 2.50;
+
+  // 🗺️ កូអរដោនេពិតប្រាកដ (Default ទុកនៅទីតាំងជាក់ស្តែងក្នុងរាជធានីភ្នំពេញ)
+  double _storeLat = 11.5564;
+  double _storeLng = 104.9282;
+  double _customerLat = 11.5650;
+  double _customerLng = 104.9150;
 
   final List<Map<String, dynamic>> _deliveryServices = [
     {
@@ -94,7 +99,6 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     );
   }
 
-
   Future<void> _submitDeliveryOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -114,6 +118,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
         };
       }).toList();
 
+      // 🟢 បញ្ជូនកូអរដោនេ Lat & Lng ចូលទៅក្នុង Function ហៅ API
       bool isSuccess = await _apiOrder.createOrderWithPayment(
         orderNumber: orderNumber,
         userId: 1,
@@ -130,8 +135,18 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
         orderType: 'delivery',
         deliveryAddress: _addressController.text.trim(),
         deliveryFee: _deliveryFee,
+        pickupAddress: _pickupController.text.trim(),
+        deliveryPartner: _selectedService,
+        receiverName: _nameController.text.trim(),
+        receiverPhone: _phoneController.text.trim(),
         note: _noteController.text.trim(),
         items: itemsList,
+
+        // 🗺️ បន្ថែមប៉ារ៉ាម៉ែត្រកូអរដោនេទីតាំង
+        storeLat: _storeLat,
+        storeLng: _storeLng,
+        customerLat: _customerLat,
+        customerLng: _customerLng,
       );
 
       if (isSuccess) {
@@ -145,6 +160,10 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
           'delivery_partner': _selectedService,
           'delivery_fee': _deliveryFee,
           'grand_total': widget.totalAmount + _deliveryFee,
+          'store_lat': _storeLat,
+          'store_lng': _storeLng,
+          'customer_lat': _customerLat,
+          'customer_lng': _customerLng,
         };
 
         widget.onConfirmDelivery(deliveryData);
@@ -161,7 +180,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        AppSnackBar.showError(context, "មានបញ្ហាក្នុងการបញ្ជាទិញ: $e");
+        AppSnackBar.showError(context, "មានបញ្ហាក្នុងការបញ្ជាទិញ: $e");
       }
     } finally {
       if (mounted) {
@@ -345,6 +364,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                 ),
                 child: Column(
                   children: [
+                    // Pickup Address Map Picker
                     Row(
                       children: [
                         Container(
@@ -394,7 +414,21 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                             );
                             if (result != null && result is Map) {
                               setState(() {
-                                _pickupController.text = result['address'];
+                                _pickupController.text =
+                                    result['address'] ?? '';
+                                if (result['lat'] != null &&
+                                    result['lng'] != null) {
+                                  _storeLat =
+                                      double.tryParse(
+                                        result['lat'].toString(),
+                                      ) ??
+                                      _storeLat;
+                                  _storeLng =
+                                      double.tryParse(
+                                        result['lng'].toString(),
+                                      ) ??
+                                      _storeLng;
+                                }
                               });
                             }
                           },
@@ -422,6 +456,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                         ),
                       ),
                     ),
+                    // Delivery Address Map Picker
                     Row(
                       children: [
                         Container(
@@ -464,7 +499,21 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
                             );
                             if (result != null && result is Map) {
                               setState(() {
-                                _addressController.text = result['address'];
+                                _addressController.text =
+                                    result['address'] ?? '';
+                                if (result['lat'] != null &&
+                                    result['lng'] != null) {
+                                  _customerLat =
+                                      double.tryParse(
+                                        result['lat'].toString(),
+                                      ) ??
+                                      _customerLat;
+                                  _customerLng =
+                                      double.tryParse(
+                                        result['lng'].toString(),
+                                      ) ??
+                                      _customerLng;
+                                }
                               });
                             }
                           },

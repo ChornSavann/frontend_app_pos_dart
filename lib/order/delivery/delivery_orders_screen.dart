@@ -85,7 +85,7 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
               ],
             ),
             content: const Text(
-              "តើអ្នកពិតជាចង់បោះបង់ការបញ្ជាទិញនេះមែនទេ? ទិន្នន័យទឹកប្រាក់នឹងត្រូវកែសម្រួលមកជា 0 និងคืนสตុកទំនិញវិញ។",
+              "តើអ្នកពិតជាចង់បោះបង់ការបញ្ជាទិញនេះមែនទេ? ទិន្នន័យទឹកប្រាក់នឹងត្រូវកែសម្រួលមកជា 0 និងសងស្តុកទំនិញវិញ។",
               style: TextStyle(color: Colors.black87, fontSize: 14),
             ),
             actions: [
@@ -420,7 +420,7 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
                   ],
                 ),
 
-                // 🚀 Action Buttons (ສະដែងเฉพาะสถานะທີ່ຍັງບໍ່ທັນ Completed/Cancelled)
+                // 🚀 Action Buttons
                 if (delivery['status'] == 'pending' ||
                     delivery['status'] == 'on_the_way') ...[
                   const SizedBox(height: 16),
@@ -468,7 +468,17 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
                                               'Driver',
                                           'phone':
                                               delivery['receiver_phone'] ?? '',
-                                          'delivery_partner': 'POS Express',
+                                          'delivery_partner':
+                                              delivery['delivery_partner'] ??
+                                              'POS Express',
+
+                                          // 🗺️ បញ្ជូន Lat និង Lng ពី Database ទៅកាន់ OrderTrackingScreen យ៉ាងជាក់លាក់
+                                          'store_lat': delivery['store_lat'],
+                                          'store_lng': delivery['store_lng'],
+                                          'customer_lat':
+                                              delivery['customer_lat'],
+                                          'customer_lng':
+                                              delivery['customer_lng'],
                                         },
                                       ),
                                     ),

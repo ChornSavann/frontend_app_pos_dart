@@ -6,6 +6,89 @@ import '../constants/baseurl/base_url_api.dart';
 class ApiOrder {
   final String baseUrl = BaseUrlApi.baseurl;
 
+  // Future<bool> createOrderWithPayment({
+  //   required String orderNumber,
+  //   required int? userId,
+  //   required double subtotal,
+  //   required double discount,
+  //   required double tax,
+  //   required double total,
+  //   required String paymentMethod,
+  //   required double amountPaid,
+  //   required double changeAmount,
+  //   required List<Map<String, dynamic>> items,
+  //   String? customerName,
+  //   String? customerPhone,
+  //   String? customerEmail,
+  //   String? customerAddress,
+  //   int? customerId,
+  //   String orderType = 'dine_in',
+  //   String? deliveryAddress,
+  //   double deliveryFee = 0.00,
+  //
+  //   // 🛵 បន្ថែម Parameter សម្រាប់ Delivery ពេញលេញ
+  //   String? pickupAddress,
+  //   String? deliveryPartner,
+  //   String? receiverName,
+  //   String? receiverPhone,
+  //   String? note,
+  // }) async {
+  //   try {
+  //     print("🚀 កំពុងផ្ញើទិន្នន័យទៅកាន់: $baseUrl/orders");
+  //
+  //     final response = await http
+  //         .post(
+  //           Uri.parse('$baseUrl/orders'),
+  //           headers: {
+  //             'Content-Type': 'application/json',
+  //             'Accept': 'application/json',
+  //           },
+  //           body: jsonEncode({
+  //             'order_number': orderNumber,
+  //             'user_id': userId,
+  //             'subtotal': subtotal,
+  //             'discount_amount': discount,
+  //             'tax_amount': tax,
+  //             'total_amount': total,
+  //             'payment_method': paymentMethod,
+  //             'amount_paid': amountPaid,
+  //             'change_amount': changeAmount,
+  //             'customer_id': customerId,
+  //             'customer_name': customerName,
+  //             'customer_phone': customerPhone,
+  //             'customer_email': customerEmail,
+  //             'customer_address': customerAddress,
+  //
+  //             // 🚚 ផ្ញើតម្លៃ Order Type និង Delivery ទៅកាន់ Laravel Backend
+  //             'order_type': orderType,
+  //             'delivery_address': deliveryAddress,
+  //             'delivery_fee': deliveryFee,
+  //             'pickup_address': pickupAddress,
+  //             'delivery_partner': deliveryPartner,
+  //             'receiver_name': receiverName,
+  //             'receiver_phone': receiverPhone,
+  //             'note': note,
+  //
+  //             'items': items,
+  //           }),
+  //         )
+  //         .timeout(const Duration(seconds: 15));
+  //
+  //     print("📥 Status Code: ${response.statusCode}");
+  //     print("📥 Response Body: ${response.body}");
+  //     print("Order Type ທີ່ເລືອກ: $orderType");
+  //
+  //     if (response.statusCode == 201 || response.statusCode == 200) {
+  //       return true;
+  //     } else {
+  //       print("❌ API Error Response: ${response.body}");
+  //       return false;
+  //     }
+  //   } catch (e) {
+  //     print("❌ Payment Exception Error: $e");
+  //     return false;
+  //   }
+  // }
   Future<bool> createOrderWithPayment({
     required String orderNumber,
     required int? userId,
@@ -26,57 +109,68 @@ class ApiOrder {
     String? deliveryAddress,
     double deliveryFee = 0.00,
 
-    // 🛵 បន្ថែម Parameter សម្រាប់ Delivery ពេញលេញ
+    // 🛵 Parameter សម្រាប់ Delivery
     String? pickupAddress,
     String? deliveryPartner,
     String? receiverName,
     String? receiverPhone,
     String? note,
+
+    // 🗺️ បន្ថែម Parameter សម្រាប់កូអរដោនេ Latitude & Longitude
+    double? storeLat,
+    double? storeLng,
+    double? customerLat,
+    double? customerLng,
   }) async {
     try {
       print("🚀 កំពុងផ្ញើទិន្នន័យទៅកាន់: $baseUrl/orders");
 
       final response = await http
           .post(
-            Uri.parse('$baseUrl/orders'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode({
-              'order_number': orderNumber,
-              'user_id': userId,
-              'subtotal': subtotal,
-              'discount_amount': discount,
-              'tax_amount': tax,
-              'total_amount': total,
-              'payment_method': paymentMethod,
-              'amount_paid': amountPaid,
-              'change_amount': changeAmount,
-              'customer_id': customerId,
-              'customer_name': customerName,
-              'customer_phone': customerPhone,
-              'customer_email': customerEmail,
-              'customer_address': customerAddress,
+        Uri.parse('$baseUrl/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'order_number': orderNumber,
+          'user_id': userId,
+          'subtotal': subtotal,
+          'discount_amount': discount,
+          'tax_amount': tax,
+          'total_amount': total,
+          'payment_method': paymentMethod,
+          'amount_paid': amountPaid,
+          'change_amount': changeAmount,
+          'customer_id': customerId,
+          'customer_name': customerName,
+          'customer_phone': customerPhone,
+          'customer_email': customerEmail,
+          'customer_address': customerAddress,
 
-              // 🚚 ផ្ញើតម្លៃ Order Type និង Delivery ទៅកាន់ Laravel Backend
-              'order_type': orderType,
-              'delivery_address': deliveryAddress,
-              'delivery_fee': deliveryFee,
-              'pickup_address': pickupAddress,
-              'delivery_partner': deliveryPartner,
-              'receiver_name': receiverName,
-              'receiver_phone': receiverPhone,
-              'note': note,
+          // 🚚 ផ្ញើតម្លៃ Order Type និង Delivery
+          'order_type': orderType,
+          'delivery_address': deliveryAddress,
+          'delivery_fee': deliveryFee,
+          'pickup_address': pickupAddress,
+          'delivery_partner': deliveryPartner,
+          'receiver_name': receiverName,
+          'receiver_phone': receiverPhone,
+          'note': note,
 
-              'items': items,
-            }),
-          )
+          // 🗺️ ផ្ញើរក្សាទុកកូអរដោនេទីតាំងទៅកាន់ Backend
+          'store_lat': storeLat ?? 11.5564,
+          'store_lng': storeLng ?? 104.9282,
+          'customer_lat': customerLat ?? 11.5650,
+          'customer_lng': customerLng ?? 104.9150,
+
+          'items': items,
+        }),
+      )
           .timeout(const Duration(seconds: 15));
 
       print("📥 Status Code: ${response.statusCode}");
       print("📥 Response Body: ${response.body}");
-      print("Order Type ທີ່ເລືອກ: $orderType");
 
       if (response.statusCode == 201 || response.statusCode == 200) {
         return true;

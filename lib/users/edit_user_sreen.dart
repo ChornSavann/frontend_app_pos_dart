@@ -20,8 +20,10 @@ class _EditUserScreenState extends State<EditUserScreen> {
   late TextEditingController _nameController;
   late TextEditingController _emailController;
   late TextEditingController _phoneController;
-  final TextEditingController _passwordController =
-      TextEditingController(); // Optional ពេល Edit
+  final TextEditingController _passwordController = TextEditingController();
+
+  // 👁️ State សម្រាប់គ្រប់គ្រងការបង្ហាញ/លាក់ Password
+  bool _obscurePassword = true;
 
   final ApiUser _apiUser = ApiUser();
   File? _imageFile;
@@ -31,13 +33,11 @@ class _EditUserScreenState extends State<EditUserScreen> {
   @override
   void initState() {
     super.initState();
-    // 📝 ដាក់តម្លៃចាស់ចូលក្នុង Controller ស្រាប់ៗ
     _nameController = TextEditingController(text: widget.user.name);
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(text: widget.user.phone);
   }
 
-  // 🖼️ ជ្រើសរើសរូបភាពថ្មី
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -76,10 +76,7 @@ class _EditUserScreenState extends State<EditUserScreen> {
           context,
           result['message'] ?? 'User updated successfully!',
         );
-        Navigator.pop(
-          context,
-          true,
-        ); // 🟢 ផ្ញើ true กลับไปเพื่อ Refresh หน้า List
+        Navigator.pop(context, true);
       } else {
         AppSnackBar.showError(
           context,
@@ -107,10 +104,16 @@ class _EditUserScreenState extends State<EditUserScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Edit User'),
+        title: const Text(
+          'Edit User',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         backgroundColor: const Color(0xFF4F46E5),
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -118,112 +121,190 @@ class _EditUserScreenState extends State<EditUserScreen> {
           key: _formKey,
           child: Column(
             children: [
-              // 🖼️ Profile Image Preview
+              // 🖼️ Profile Image Preview with Modern Design
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 55,
-                      backgroundColor: Colors.grey[200],
-                      backgroundImage: _imageFile != null
-                          ? FileImage(_imageFile!) as ImageProvider<Object>?
-                          : (widget.user.image != null &&
-                                widget.user.image!.isNotEmpty)
-                          ? NetworkImage(widget.user.image!)
-                                as ImageProvider<Object>?
-                          : null,
-                      child:
-                          (_imageFile == null &&
-                              (widget.user.image == null ||
-                                  widget.user.image!.isEmpty))
-                          ? const Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Colors.grey,
-                            )
-                          : null,
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: const Color(0xFF4F46E5).withValues(alpha: 0.3),
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.grey[100],
+                        backgroundImage: _imageFile != null
+                            ? FileImage(_imageFile!) as ImageProvider<Object>?
+                            : (widget.user.image != null &&
+                                  widget.user.image!.isNotEmpty)
+                            ? NetworkImage(widget.user.image!)
+                                  as ImageProvider<Object>?
+                            : null,
+                        child:
+                            (_imageFile == null &&
+                                (widget.user.image == null ||
+                                    widget.user.image!.isEmpty))
+                            ? const Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Color(0xFF4F46E5),
+                              )
+                            : null,
+                      ),
                     ),
                     Positioned(
                       bottom: 0,
                       right: 0,
-                      child: CircleAvatar(
-                        backgroundColor: const Color(0xFF4F46E5),
-                        radius: 18,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.camera_alt,
-                            size: 16,
+                      child: InkWell(
+                        onTap: _pickImage,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4F46E5),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 18,
                             color: Colors.white,
                           ),
-                          onPressed: _pickImage,
                         ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 30),
 
-              // 📝 Name Field
-              TextFormField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  prefixIcon: const Icon(Icons.person_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+              // 📝 Input Fields Container
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter full name'
-                    : null,
-              ),
-              const SizedBox(height: 16),
+                child: Column(
+                  children: [
+                    // Name Field
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        prefixIcon: const Icon(
+                          Icons.person_outline,
+                          color: Color(0xFF4F46E5),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter full name'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
 
-              // 📧 Email Field
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  labelText: 'Email Address',
-                  prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) => value == null || !value.contains('@')
-                    ? 'Please enter a valid email'
-                    : null,
-              ),
-              const SizedBox(height: 16),
+                    // Email Field
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: InputDecoration(
+                        labelText: 'Email Address',
+                        prefixIcon: const Icon(
+                          Icons.email_outlined,
+                          color: Color(0xFF4F46E5),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (value) =>
+                          value == null || !value.contains('@')
+                          ? 'Please enter a valid email'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
 
-              // 📞 Phone Field
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  prefixIcon: const Icon(Icons.phone_outlined),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                validator: (value) => value == null || value.isEmpty
-                    ? 'Please enter phone number'
-                    : null,
-              ),
-              const SizedBox(height: 16),
+                    // Phone Field
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      decoration: InputDecoration(
+                        labelText: 'Phone Number',
+                        prefixIcon: const Icon(
+                          Icons.phone_outlined,
+                          color: Color(0xFF4F46E5),
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter phone number'
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
 
-              // 🔒 Password Field (Optional ពេល Edit)
-              TextFormField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: InputDecoration(
-                  labelText: 'New Password (Leave blank to keep old)',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                    // 🔒 Password Field (with Show/Hide Toggle)
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: 'New Password (Leave blank)',
+                        prefixIcon: const Icon(
+                          Icons.lock_outline,
+                          color: Color(0xFF4F46E5),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                            color: Colors.grey,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                        filled: true,
+                        fillColor: Colors.grey.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 30),
@@ -231,17 +312,25 @@ class _EditUserScreenState extends State<EditUserScreen> {
               // 🚀 Update Button
               SizedBox(
                 width: double.infinity,
-                height: 50,
+                height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4F46E5),
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   onPressed: _isLoading ? null : _updateData,
                   child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
                       : const Text(
                           'Update User',
                           style: TextStyle(

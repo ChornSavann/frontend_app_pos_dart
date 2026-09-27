@@ -660,7 +660,7 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                               childAspectRatio:
-                                  0.65, // កែសម្រួលសមាមាត្រឱ្យត្រូវជាមួយគ្រប់ទូរសព្ទ
+                                  0.69,
                             ),
                             itemBuilder: (context, index) {
                               final product = products[index];
@@ -868,16 +868,13 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                   ),
                                                   const SizedBox(height: 2),
                                                   Text(
-                                                    product.description ??
-                                                        "Fresh & Delicious",
-                                                    maxLines: 1,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
+                                                    product.description ?? "Fresh & Delicious",
+                                                    maxLines: 3,
+                                                    overflow: TextOverflow.ellipsis,
                                                     style: TextStyle(
                                                       fontSize: 10.5,
                                                       color: Colors.grey[400],
-                                                      fontWeight:
-                                                          FontWeight.w400,
+                                                      fontWeight: FontWeight.w400,
                                                     ),
                                                   ),
                                                 ],

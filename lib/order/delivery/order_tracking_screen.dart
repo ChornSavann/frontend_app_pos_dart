@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:pos_inventory/api/api_order.dart';
 import '../../msg/appSnackBar.dart';
 
@@ -21,17 +22,65 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   late AnimationController _controller;
   late Animation<double> _animation;
 
-  final int _animationSeconds = 15; // ⏱️ កំណត់ ១៥ វិនាទីសម្រាប់ការតេស្តចលនា
+  final int _animationSeconds = 15;
   double _totalMinutes = 2.0;
   int _currentDisplayMinutes = 2;
   bool _isArrived = false;
   final ApiOrder _apiOrder = ApiOrder();
 
+  GoogleMapController? _mapController;
+  late LatLng _storeLocation;
+  late LatLng _customerLocation;
+
+  final BitmapDescriptor _driverIcon = BitmapDescriptor.defaultMarkerWithHue(
+    BitmapDescriptor.hueAzure,
+  );
+
   @override
   void initState() {
     super.initState();
+    final data = widget.deliveryData;
 
-    _totalMinutes = (widget.deliveryData['estimated_minutes'] ?? 2).toDouble();
+    double storeLat =
+        double.tryParse(
+          data['store_lat']?.toString() ??
+              data['pickup_lat']?.toString() ??
+              data['latitude']?.toString() ??
+              '11.5564',
+        ) ??
+        11.5564;
+
+    double storeLng =
+        double.tryParse(
+          data['store_lng']?.toString() ??
+              data['pickup_lng']?.toString() ??
+              data['longitude']?.toString() ??
+              '104.9282',
+        ) ??
+        104.9282;
+
+    double customerLat =
+        double.tryParse(
+          data['customer_lat']?.toString() ??
+              data['delivery_lat']?.toString() ??
+              data['lat']?.toString() ??
+              '11.5650',
+        ) ??
+        11.5650;
+
+    double customerLng =
+        double.tryParse(
+          data['customer_lng']?.toString() ??
+              data['delivery_lng']?.toString() ??
+              data['lng']?.toString() ??
+              '104.9150',
+        ) ??
+        104.9150;
+
+    _storeLocation = LatLng(storeLat, storeLng);
+    _customerLocation = LatLng(customerLat, customerLng);
+
+    _totalMinutes = (data['estimated_minutes'] ?? 2).toDouble();
     _currentDisplayMinutes = _totalMinutes.ceil();
 
     _controller = AnimationController(
@@ -41,7 +90,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
 
     _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
 
-    // ⏱️ ធ្វើសមកាលកម្ម (Sync) រវាងនាទី និងចលនារត់របស់ម៉ូតូ
     _controller.addListener(() {
       double progress = _controller.value;
       double remainingTime = _totalMinutes * (1.0 - progress);
@@ -74,7 +122,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     super.dispose();
   }
 
-  // 💳 ផ្ទាំង Bottom Sheet ទូទាត់ប្រាក់ពេលដល់គោលដៅ
+  // 💳 ផ្ទាំង Bottom Sheet ទូទាត់ប្រាក់ (មានប្តូរប្រាក់ USD / KHR 🇺🇸/🇰🇭 យ៉ាងស្អាត)
   void _showCartPaymentBottomSheet(BuildContext parentContext) {
     double totalAmount =
         widget.deliveryData['grand_total'] ??
@@ -110,15 +158,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
         return StatefulBuilder(
           builder: (context, setStateSheet) {
             double cashGiven = double.tryParse(cashGivenStr) ?? 0;
-            double changeUSD = cashGiven >= totalAmount
-                ? cashGiven - totalAmount
-                : 0;
             double totalKHR = totalAmount * exchangeRate;
             double cashGivenKHR = currencyType == 'KHR'
                 ? cashGiven
                 : (cashGiven * exchangeRate);
             double changeKHR = cashGivenKHR >= totalKHR
                 ? cashGivenKHR - totalKHR
+                : 0;
+            double changeUSD = cashGiven >= totalAmount
+                ? cashGiven - totalAmount
                 : 0;
 
             void onKeyPressed(String value) {
@@ -146,11 +194,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
             return Container(
               height: MediaQuery.of(context).size.height * 0.94,
               decoration: const BoxDecoration(
-                color: Color(0xFFF1F5F9),
+                color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
               ),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -164,7 +212,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -218,22 +266,15 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                   fontSize: 14,
                                 ),
                               ),
-                              Text(
-                                "= ${totalKHR.toStringAsFixed(0)}៛",
-                                style: const TextStyle(
-                                  color: Colors.amberAccent,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
                             ],
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                    // Payment Method Tabs
                     Container(
-                      padding: const EdgeInsets.all(3),
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -253,23 +294,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                             paymentMethod == 'khqr',
                             () => setStateSheet(() => paymentMethod = 'khqr'),
                           ),
-                          _buildMethodTab(
-                            "កាត",
-                            Icons.credit_card,
-                            paymentMethod == 'card',
-                            () => setStateSheet(() => paymentMethod = 'card'),
-                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           children: [
                             if (paymentMethod == 'cash') ...[
                               Container(
-                                padding: const EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(14),
@@ -307,7 +342,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                         _buildCurrencyTab(
                                           "ដុល្លារ (\$)",
                                           "🇺🇸",
-                                          'USD',
                                           currencyType == 'USD',
                                           () {
                                             setStateSheet(() {
@@ -329,7 +363,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                         _buildCurrencyTab(
                                           "ប្រាក់រៀល (៛)",
                                           "🇰🇭",
-                                          'KHR',
                                           currencyType == 'KHR',
                                           () {
                                             setStateSheet(() {
@@ -349,19 +382,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                         ),
                                       ],
                                     ),
-                                    const SizedBox(height: 8),
+                                    const SizedBox(height: 10),
                                     Row(
                                       children: [
                                         Expanded(
                                           child: Container(
-                                            padding: const EdgeInsets.all(8),
+                                            padding: const EdgeInsets.all(10),
                                             decoration: BoxDecoration(
                                               color: const Color(0xFFF8FAFC),
                                               borderRadius:
                                                   BorderRadius.circular(10),
                                               border: Border.all(
                                                 color: const Color(0xFF4F46E5),
-                                                width: 1.2,
                                               ),
                                             ),
                                             child: Column(
@@ -394,7 +426,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Container(
-                                            padding: const EdgeInsets.all(8),
+                                            padding: const EdgeInsets.all(10),
                                             decoration: BoxDecoration(
                                               color: Colors.green.shade50,
                                               borderRadius:
@@ -436,9 +468,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                   ],
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               Container(
-                                padding: const EdgeInsets.all(6),
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(14),
@@ -450,9 +482,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                   crossAxisCount: 3,
                                   shrinkWrap: true,
                                   physics: const NeverScrollableScrollPhysics(),
-                                  childAspectRatio: 3.2,
-                                  crossAxisSpacing: 4,
-                                  mainAxisSpacing: 4,
+                                  childAspectRatio: 2.8,
+                                  crossAxisSpacing: 6,
+                                  mainAxisSpacing: 6,
                                   children:
                                       [
                                         '1',
@@ -478,9 +510,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                             elevation: 0,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(8),
+                                                  BorderRadius.circular(10),
                                             ),
-                                            padding: EdgeInsets.zero,
                                           ),
                                           onPressed: () => onKeyPressed(key),
                                           child: Text(
@@ -506,7 +537,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                 ),
                                 child: const Center(
                                   child: Text(
-                                    "សូមស្កេន QR Code ឬទូទាត់តាមកាត",
+                                    "សូមស្កេន KHQR ដើម្បីទូទាត់",
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
@@ -520,16 +551,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
-                      height: 48,
+                      height: 50,
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green.shade600,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           elevation: 0,
                         ),
@@ -540,15 +571,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                             double actualUSDReceived = currencyType == 'KHR'
                                 ? (cashGiven / exchangeRate)
                                 : cashGiven;
-
-                            if (paymentMethod == 'cash' &&
-                                actualUSDReceived < totalAmount) {
-                              AppSnackBar.showError(
-                                parentContext,
-                                "⚠️ ប្រាក់បានបង់មិនទាន់គ្រប់គ្រាន់ទេ!",
-                              );
-                              return;
-                            }
 
                             double finalChange = paymentMethod == 'cash'
                                 ? (actualUSDReceived - totalAmount)
@@ -584,11 +606,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                           }
                         },
                         child: Text(
-                          paymentMethod == 'cash'
-                              ? "ទូទាត់ប្រាក់ និងបញ្ចប់ការដឹក (\$${totalAmount.toStringAsFixed(2)})"
-                              : "បញ្ជាក់ការទូទាត់ QR",
+                          "ទូទាត់ប្រាក់ និងបញ្ចប់ការដឹក (\$${totalAmount.toStringAsFixed(2)})",
                           style: const TextStyle(
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'KhmerOSBattambang',
                           ),
@@ -648,7 +668,6 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   Widget _buildCurrencyTab(
     String title,
     String flagEmoji,
-    String type,
     bool isSelected,
     VoidCallback onTap,
   ) {
@@ -656,10 +675,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
           decoration: BoxDecoration(
             color: isSelected ? Colors.white : Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(10),
             border: Border.all(
               color: isSelected ? Colors.green.shade600 : Colors.grey.shade300,
               width: isSelected ? 1.5 : 1,
@@ -668,20 +687,17 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(flagEmoji, style: const TextStyle(fontSize: 16)),
+              Text(flagEmoji, style: const TextStyle(fontSize: 14)),
               const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  title,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                    color: isSelected
-                        ? Colors.green.shade700
-                        : Colors.grey.shade700,
-                    fontFamily: 'KhmerOSBattambang',
-                  ),
+              Text(
+                title,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  color: isSelected
+                      ? Colors.green.shade700
+                      : Colors.grey.shade700,
+                  fontFamily: 'KhmerOSBattambang',
                 ),
               ),
             ],
@@ -695,6 +711,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
   Widget build(BuildContext context) {
     String partnerName =
         widget.deliveryData['delivery_partner'] ?? 'Grab Express';
+    String driverName =
+        widget.deliveryData['name'] ??
+        widget.deliveryData['driver_name'] ??
+        "Budi Santoso";
+    String driverPhone =
+        widget.deliveryData['phone'] ??
+        widget.deliveryData['driver_phone'] ??
+        '0987654321';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -705,236 +729,198 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          "តាមដានការដឹកជញ្ជូន ($partnerName)",
-          style: const TextStyle(
+        title: const Text(
+          "Order Tracking",
+          style: TextStyle(
             color: Color(0xFF1E293B),
             fontWeight: FontWeight.bold,
-            fontSize: 16,
-            fontFamily: 'KhmerOSBattambang',
+            fontSize: 17,
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCartPaymentBottomSheet(context),
-        backgroundColor: Colors.green.shade600,
-        icon: const Icon(Icons.payment, color: Colors.white),
-        label: const Text(
-          "ទូទាត់ប្រាក់ (Payment)",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'KhmerOSBattambang',
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.support_agent_rounded,
+              color: Color(0xFF1E293B),
+            ),
+            onPressed: () {},
           ),
-        ),
+        ],
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // 📊 Top Status Header
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            color: Colors.white,
+            child: Column(
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      widget.orderId,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFD1FAE5),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        _isArrived
-                            ? "បានដឹកជញ្ជូនរួចរាល់"
-                            : "កំពុងធ្វើដំណើរចេញ",
-                        style: const TextStyle(
-                          color: Color(0xFF047857),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 11,
-                          fontFamily: 'KhmerOSBattambang',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const Text(
-                        "Estimated Time",
-                        style: TextStyle(fontSize: 11, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _isArrived ? "Arrived" : "$_currentDisplayMinutes នាទី",
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF047857),
-                          fontFamily: 'KhmerOSBattambang',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStepItem(
-                  icon: Icons.inventory_2_outlined,
-                  title: "បានទទួល",
-                  isCompleted: true,
-                ),
-                _buildLine(isCompleted: true),
-                _buildStepItem(
-                  icon: Icons.route_outlined,
-                  title: "តាមផ្លូវ",
-                  isCompleted: true,
-                ),
-                _buildLine(isCompleted: true),
-                _buildStepItem(
-                  icon: Icons.delivery_dining,
-                  title: "កំពុងផ្ញើ",
-                  isCompleted: true,
-                ),
-                _buildLine(isCompleted: _isArrived),
-                _buildStepItem(
-                  icon: Icons.check_circle_outline,
-                  title: "ដល់គោលដៅ",
-                  isCompleted: _isArrived,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                return LayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.maxWidth;
-                    final height = constraints.maxHeight;
-
-                    double startX = 40;
-                    double startY = height - 50;
-                    double endX = width - 40;
-                    double endY = 50;
-
-                    double progress = _animation.value;
-                    double currentX = startX + (endX - startX) * progress;
-                    double currentY = startY + (endY - startY) * progress;
-
-                    return Stack(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Text(
+                          widget.orderId,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                         Container(
-                          width: double.infinity,
-                          height: double.infinity,
-                          color: const Color(0xFFEEF2F6),
-                          child: CustomPaint(painter: _MapRoutePainter()),
-                        ),
-                        Positioned(
-                          bottom: 30,
-                          left: 25,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: Colors.black12, blurRadius: 4),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.store,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            "Out for Delivery",
+                            style: TextStyle(
                               color: Color(0xFF059669),
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: 30,
-                          right: 35,
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: Colors.black12, blurRadius: 4),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.location_on,
-                              color: Colors.redAccent,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          top: currentY - 20,
-                          left: currentX - 20,
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF059669),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.green.withValues(alpha: 0.4),
-                                  blurRadius: 10,
-                                  spreadRadius: 2,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.two_wheeler,
-                              color: Colors.white,
-                              size: 22,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
                             ),
                           ),
                         ),
                       ],
-                    );
-                  },
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Estimated Arrival",
+                            style: TextStyle(fontSize: 10, color: Colors.grey),
+                          ),
+                          Text(
+                            _isArrived
+                                ? "Arrived"
+                                : "$_currentDisplayMinutes minutes",
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF059669),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _buildTimelineStep(
+                      title: "Picked Up",
+                      time: "10:15 AM",
+                      isCompleted: true,
+                    ),
+                    _buildTimelineLine(isCompleted: true),
+                    _buildTimelineStep(
+                      title: "In Transit",
+                      time: "10:32 AM",
+                      isCompleted: true,
+                    ),
+                    _buildTimelineLine(isCompleted: true),
+                    _buildTimelineStep(
+                      title: "Out for Delivery",
+                      time: "10:45 AM",
+                      isCompleted: true,
+                    ),
+                    _buildTimelineLine(isCompleted: _isArrived),
+                    _buildTimelineStep(
+                      title: "Delivered",
+                      time: "Pending",
+                      isCompleted: _isArrived,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // 🗺️ Google Maps View
+          Expanded(
+            child: AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                double progress = _animation.value;
+                double currentLat =
+                    _storeLocation.latitude +
+                    (_customerLocation.latitude - _storeLocation.latitude) *
+                        progress;
+                double currentLng =
+                    _storeLocation.longitude +
+                    (_customerLocation.longitude - _storeLocation.longitude) *
+                        progress;
+                LatLng currentDriverPos = LatLng(currentLat, currentLng);
+
+                return Stack(
+                  children: [
+                    GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: _storeLocation,
+                        zoom: 14.0,
+                      ),
+                      markers: {
+                        Marker(
+                          markerId: const MarkerId('store'),
+                          position: _storeLocation,
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueGreen,
+                          ),
+                        ),
+                        Marker(
+                          markerId: const MarkerId('customer'),
+                          position: _customerLocation,
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                            BitmapDescriptor.hueRed,
+                          ),
+                        ),
+                        Marker(
+                          markerId: const MarkerId('driver'),
+                          position: currentDriverPos,
+                          icon: _driverIcon,
+                        ),
+                      },
+                      polylines: {
+                        Polyline(
+                          polylineId: const PolylineId('route'),
+                          points: [_storeLocation, _customerLocation],
+                          color: const Color(0xFF059669),
+                          width: 5,
+                        ),
+                      },
+                      zoomControlsEnabled: false,
+                      myLocationButtonEnabled: false,
+                      onMapCreated: (GoogleMapController controller) {
+                        _mapController = controller;
+                      },
+                    ),
+                  ],
                 );
               },
             ),
           ),
+
+          // 🛵🎨 Modern Bottom Driver Card (Exactly matching UI reference)
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: const BorderRadius.vertical(
@@ -942,52 +928,128 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, -4),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, -6),
                 ),
               ],
             ),
             child: SafeArea(
               top: false,
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: Colors.green.shade100,
-                    child: const Icon(
-                      Icons.delivery_dining,
-                      size: 28,
-                      color: Color(0xFF059669),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.deliveryData['name'] ?? "Mock Driver",
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
+                  Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade100,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.green.shade300,
+                            width: 1.5,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "$partnerName • ${widget.deliveryData['phone'] ?? '0889986767'}",
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                          ),
+                        child: const Icon(
+                          Icons.person,
+                          size: 30,
+                          color: Color(0xFF059669),
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              driverName,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                  size: 13,
+                                ),
+                                const SizedBox(width: 3),
+                                const Text(
+                                  "4.9",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const Text(
+                                  " (320 reviews)",
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              "Honda Beat • B 1234 KLM",
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _buildActionIconButton(
+                        icon: Icons.phone_rounded,
+                        color: const Color(0xFF10B981),
+                        bgColor: Colors.green.shade50,
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 8),
+                      _buildActionIconButton(
+                        icon: Icons.chat_bubble_rounded,
+                        color: const Color(0xFF10B981),
+                        bgColor: Colors.green.shade50,
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showCartPaymentBottomSheet(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.payment_rounded, size: 18),
+                      label: const Text(
+                        "ទូទាត់ប្រាក់ និងបញ្ចប់ការដឹក (Payment)",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'KhmerOSBattambang',
+                        ),
+                      ),
                     ),
                   ),
-                  _buildCircleActionButton(Icons.phone, () {}),
-                  const SizedBox(width: 8),
-                  _buildCircleActionButton(Icons.chat_bubble, () {}),
                 ],
               ),
             ),
@@ -997,99 +1059,76 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
     );
   }
 
-  Widget _buildStepItem({
-    required IconData icon,
+  Widget _buildTimelineStep({
     required String title,
+    required String time,
     required bool isCompleted,
   }) {
-    return Column(
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: isCompleted
-                ? const Color(0xFF059669)
-                : const Color(0xFFE2E8F0),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(
-            icon,
-            color: isCompleted ? Colors.white : Colors.grey.shade500,
-            size: 16,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'KhmerOSBattambang',
-            color: isCompleted ? const Color(0xFF1E293B) : Colors.grey.shade400,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLine({required bool isCompleted}) {
     return Expanded(
-      child: Container(
-        margin: const EdgeInsets.only(top: 15),
-        height: 2,
-        color: isCompleted ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
+      child: Column(
+        children: [
+          Container(
+            width: 26,
+            height: 26,
+            decoration: BoxDecoration(
+              color: isCompleted
+                  ? const Color(0xFF059669)
+                  : const Color(0xFFE2E8F0),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isCompleted ? Icons.check : Icons.circle,
+              color: Colors.white,
+              size: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: isCompleted
+                  ? const Color(0xFF1E293B)
+                  : Colors.grey.shade400,
+            ),
+          ),
+          Text(
+            time,
+            style: TextStyle(fontSize: 9, color: Colors.grey.shade500),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildCircleActionButton(IconData icon, VoidCallback onTap) {
+  Widget _buildTimelineLine({required bool isCompleted}) {
+    return Container(
+      width: 20,
+      height: 2,
+      margin: const EdgeInsets.only(bottom: 24),
+      color: isCompleted ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
+    );
+  }
+
+  Widget _buildActionIconButton({
+    required IconData icon,
+    required Color color,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: const BoxDecoration(
-          color: Color(0xFFD1FAE5),
-          shape: BoxShape.circle,
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFF059669), size: 18),
+        child: Icon(icon, color: color, size: 20),
       ),
     );
   }
-}
-
-class _MapRoutePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final roadPaint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 14
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    canvas.drawLine(
-      Offset(40, size.height - 50),
-      Offset(size.width - 40, 50),
-      roadPaint,
-    );
-
-    final routePaint = Paint()
-      ..color = const Color(0xFF059669)
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final path = Path();
-    path.moveTo(40, size.height - 50);
-    path.lineTo(size.width * 0.4, size.height * 0.5);
-    path.lineTo(size.width * 0.6, size.height * 0.5);
-    path.lineTo(size.width - 40, 50);
-
-    canvas.drawPath(path, routePaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
