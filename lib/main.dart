@@ -10,6 +10,8 @@ import 'package:pos_inventory/translations/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'Productscreen/notication/notication_service.dart';
+import 'Productscreen/offline/product_sync_service.dart';
+
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -25,7 +27,13 @@ void main() async {
   await NotificationService.initialize();
   await Hive.initFlutter();
   await Hive.openBox('offline_products');
+  await Hive.openBox('offline_pending_products');
   await Hive.openBox('offline_transactions');
+  await Hive.openBox('offline_products');
+  await Hive.openBox('offline_categories');
+  await Hive.openBox('offline_brands');
+  await Hive.openBox('offline_units');
+  ProductSyncService.instance.initializeSyncListener();
   runApp(MyApp(initialScreen: initialScreen));
 }
 

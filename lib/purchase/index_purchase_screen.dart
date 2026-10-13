@@ -176,7 +176,7 @@ class _IndexPurchaseScreenState extends State<IndexPurchaseScreen> {
                           'Total Qty',
                           totalProductsQuantity % 1 == 0
                               ? totalProductsQuantity.toInt().toString()
-                              : totalProductsQuantity.toStringAsFixed(1),
+                              : totalProductsQuantity.toStringAsFixed(2),
                           Icons.inventory_2_rounded,
                         ),
                       ],

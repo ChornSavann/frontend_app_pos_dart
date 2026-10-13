@@ -1,5 +1,8 @@
+import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import '../msg/appSnackBar.dart';
 
 class PrinterScreen extends StatefulWidget {
   const PrinterScreen({super.key});
@@ -10,25 +13,36 @@ class PrinterScreen extends StatefulWidget {
 
 class _PrinterScreenState extends State<PrinterScreen> {
   bool isScanning = false;
+  List<Map<String, dynamic>> devices = [];
 
-  // ឧទាហរណ៍បញ្ជីម៉ាស៊ីនព្រីនដែលរកឃើញ
-  final List<Map<String, dynamic>> devices = [
-    {'name': 'POS-80 Printer', 'address': '00:11:22:33:44:55', 'isConnected': true},
-    {'name': 'RP58-Bluetooth', 'address': 'AA:BB:CC:DD:EE:FF', 'isConnected': false},
-    {'name': 'Epson TM-P20', 'address': '11:22:33:44:55:66', 'isConnected': false},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _startScan();
+  }
 
-  void _startScan() {
+  void _startScan() async {
     setState(() {
       isScanning = true;
     });
-    // จำลองเวลา Scan រកឧបករណ៍ (២ វិនាទី)
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() {
-          isScanning = false;
-        });
-      }
+
+    List<BluetoothDevice> results = [];
+    try {
+      results = await BlueThermalPrinter.instance.getBondedDevices() ?? [];
+    } catch (e) {
+      debugPrint("Error scanning printers: $e");
+    }
+
+    setState(() {
+      devices = results.map((d) {
+        return {
+          'name': d.name ?? 'Unknown Printer',
+          'address': d.address ?? '',
+          'isConnected': false,
+          'device': d,
+        };
+      }).toList();
+      isScanning = false;
     });
   }
 
@@ -54,14 +68,14 @@ class _PrinterScreenState extends State<PrinterScreen> {
           IconButton(
             icon: isScanning
                 ? const SizedBox(
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Color(0xFF2563EB),
-              ),
-            )
-                : const Icon(Icons.refresh_rounded, color: Color(0xFF2563EB)),
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF10B981),
+                    ),
+                  )
+                : const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
             onPressed: isScanning ? null : _startScan,
           ),
         ],
@@ -75,19 +89,22 @@ class _PrinterScreenState extends State<PrinterScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.08),
+                color: const Color(0xFF10B981).withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.2),
+                  color: const Color(0xFF10B981).withValues(alpha: 0.2),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, color: Color(0xFF2563EB)),
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: Color(0xFF10B981),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'បើកប៊្លូធូសក្នុងទូរស័ព្ទរបស់អ្នក ដើម្បីស្វែងរកម៉ាស៊ីនព្រីនវិក្កយបត្រ (80mm / 58mm)។',
+                      'សូមបើក Bluetooth និង Pair ជាមួយម៉ាស៊ីនព្រីន (80mm / 58mm) ជាមុនសិន ទើបវារកឃើញទីនេះ។',
                       style: TextStyle(
                         fontSize: 12,
                         color: const Color(0xFF1E293B).withValues(alpha: 0.8),
@@ -100,7 +117,6 @@ class _PrinterScreenState extends State<PrinterScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 📋 Section Title
             const Text(
               'ឧបករណ៍ដែលបានរកឃើញ (Available Devices)',
               style: TextStyle(
@@ -113,60 +129,88 @@ class _PrinterScreenState extends State<PrinterScreen> {
             const SizedBox(height: 12),
 
             // 📋 Devices List Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: devices.length,
-                  separatorBuilder: (context, index) =>
-                      Divider(height: 1, indent: 68, color: Colors.grey.shade100),
-                  itemBuilder: (context, index) {
-                    final device = devices[index];
-                    bool isConnected = device['isConnected'];
+            devices.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Text(
+                        isScanning
+                            ? 'កំពុងស្វែងរកម៉ាស៊ីនព្រីន...'
+                            : 'រកមិនឃើញម៉ាស៊ីនព្រីន Bluetooth ទេ។\nសូមពិនិត្យការតភ្ជាប់ក្នុងទូរស័ព្ទរបស់អ្នក។',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey.shade500,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  )
+                : Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: devices.length,
+                        separatorBuilder: (context, index) => Divider(
+                          height: 1,
+                          indent: 68,
+                          color: Colors.grey.shade100,
+                        ),
+                        itemBuilder: (context, index) {
+                          final device = devices[index];
+                          bool isConnected = device['isConnected'];
 
-                    return _buildPrinterTile(
-                      name: device['name'],
-                      address: device['address'],
-                      isConnected: isConnected,
-                      onTap: () {
-                        setState(() {
-                          for (var d in devices) {
-                            d['isConnected'] = false;
-                          }
-                          device['isConnected'] = true;
-                        });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'បានតភ្ជាប់ទៅកាន់ ${device['name']} ជោគជ័យ!',
-                              style: const TextStyle(fontFamily: 'KantumruyPro'),
-                            ),
-                            backgroundColor: Colors.green,
-                            behavior: SnackBarBehavior.floating,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ),
+                          return _buildPrinterTile(
+                            name: device['name'],
+                            address: device['address'],
+                            isConnected: isConnected,
+                            onTap: () async {
+                              try {
+                                BluetoothDevice myDevice = device['device'];
+                                await BlueThermalPrinter.instance.connect(
+                                  myDevice,
+                                );
+
+                                setState(() {
+                                  for (var d in devices) {
+                                    d['isConnected'] = false;
+                                  }
+                                  device['isConnected'] = true;
+                                });
+
+                                if (context.mounted) {
+                                  AppSnackBar.showSuccess(
+                                    context,
+                                    'បានតភ្ជាប់ទៅកាន់ ${device['name']} ជោគជ័យ!',
+                                  );
+                                }
+                              } catch (e) {
+                                debugPrint("Connection failed: $e");
+                                if (context.mounted) {
+                                  AppSnackBar.showError(
+                                    context,
+                                    'ការតភ្ជាប់បរាជ័យ: $e',
+                                  );
+                                }
+                              }
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ),
           ],
         ),
       ),
@@ -192,13 +236,15 @@ class _PrinterScreenState extends State<PrinterScreen> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: isConnected
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : const Color(0xFF2563EB).withValues(alpha: 0.08),
+                      ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                      : const Color(0xFF10B981).withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   Icons.print_rounded,
-                  color: isConnected ? Colors.green : const Color(0xFF2563EB),
+                  color: isConnected
+                      ? const Color(0xFF10B981)
+                      : const Color(0xFF10B981),
                   size: 22,
                 ),
               ),
@@ -228,10 +274,13 @@ class _PrinterScreenState extends State<PrinterScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: isConnected
-                      ? Colors.green.withValues(alpha: 0.1)
+                      ? const Color(0xFF10B981).withValues(alpha: 0.12)
                       : Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -240,7 +289,9 @@ class _PrinterScreenState extends State<PrinterScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: isConnected ? Colors.green : Colors.grey.shade600,
+                    color: isConnected
+                        ? const Color(0xFF10B981)
+                        : Colors.grey.shade600,
                   ),
                 ),
               ),

@@ -73,7 +73,7 @@ class ApiPurchase {
           'Accept': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(payload), // 🟢 យក payload ដែលបាន cast រួចมา encode
+        body: jsonEncode(payload),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -89,7 +89,7 @@ class ApiPurchase {
     }
   }
 
-  // 🗑️ មុខងារ Delete Purchase (DELETE Request)
+
   Future<bool> deletePurchase(dynamic id, {String? token}) async {
     try {
       final response = await http.delete(
@@ -220,8 +220,6 @@ class ApiPurchase {
         } else if (decodedData is List) {
           dataList = decodedData;
         }
-
-        // 🟢 ឱ្យវាត្រឡប់ជា List ស្រាប់ (Map) តែម្តង ដើម្បីងាយស្រួលយកទៅប្រើក្នុង Dashboard History
         return dataList;
       } else {
         throw Exception('Failed to load purchases. Status code: ${response.statusCode}');

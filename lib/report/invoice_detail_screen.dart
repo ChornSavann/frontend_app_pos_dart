@@ -1,12 +1,391 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/models/reports/report_daily.dart';
-import 'package:share_plus/share_plus.dart'; // 🟢 Import package សម្រាប់ Share
+import 'package:path_provider/path_provider.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class InvoiceDetailScreen extends StatelessWidget {
   final ReportDaily order;
 
   const InvoiceDetailScreen({super.key, required this.order});
+
+  Future<void> _shareInvoiceAsPDF(BuildContext context) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storeName = prefs.getString('store_name') ?? 'Khmer Store';
+      final branchName = prefs.getString('branch_name') ?? 'Main Branch';
+
+      final pdf = pw.Document();
+      final cashierName = order.user?.name ?? 'Admin / Cashier';
+
+      double subtotal = 0.0;
+      for (var detail in order.details) {
+        subtotal += detail.price * detail.quantity; // 🟢 Fixed multiplication
+      }
+
+      // 🏷️ ទាញយកតម្លៃ Discount និង Tax ពី order (សូមពិនិត្យមើលឈ្មោះ field ក្នុង ReportDaily របស់បង)
+      double discountAmount = order.discountAmount;
+      double taxAmount = order.taxAmount;
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(32),
+          build: (pw.Context context) {
+            return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                // Header Store Info
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          storeName,
+                          style: pw.TextStyle(
+                            fontSize: 20,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.teal800,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          branchName,
+                          style: const pw.TextStyle(
+                            fontSize: 12,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'INVOICE',
+                          style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                        pw.SizedBox(height: 4),
+                        pw.Text(
+                          'No: ${order.orderNumber}',
+                          style: const pw.TextStyle(
+                            fontSize: 12,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
+                        pw.Text(
+                          'Status: ${order.status.toUpperCase()}',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.green800,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 20),
+                pw.Divider(color: PdfColors.grey300),
+                pw.SizedBox(height: 10),
+
+                // Customer, Cashier & Date Info
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(
+                          'BILL TO:',
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey500,
+                          ),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          order.customer?.name ?? 'Guest Customer',
+                          style: pw.TextStyle(
+                            fontSize: 14,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.end,
+                      children: [
+                        pw.Text(
+                          'Date: ${order.createdAt.contains('T') ? order.createdAt.split('T').first : order.createdAt}',
+                          style: const pw.TextStyle(fontSize: 11),
+                        ),
+                        pw.Text(
+                          'Payment: ${order.payment?.paymentMethod ?? 'Cash'}',
+                          style: const pw.TextStyle(fontSize: 11),
+                        ),
+                        pw.SizedBox(height: 2),
+                        pw.Text(
+                          'Cashier: $cashierName',
+                          style: pw.TextStyle(
+                            fontSize: 11,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.teal700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                pw.SizedBox(height: 25),
+
+                // Items Table Header
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
+                  ),
+                  color: PdfColors.grey800,
+                  child: pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 3,
+                        child: pw.Text(
+                          'Item',
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Text(
+                          'Qty',
+                          textAlign: pw.TextAlign.center,
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Text(
+                          'Rate',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Text(
+                          'Amount',
+                          textAlign: pw.TextAlign.right,
+                          style: pw.TextStyle(
+                            color: PdfColors.white,
+                            fontWeight: pw.FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Items List
+                ...order.details.map((detail) {
+                  final productName = detail.product?.name ?? 'Product';
+                  final itemTotal = detail.price * detail.quantity;
+                  return pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 8,
+                    ),
+                    decoration: const pw.BoxDecoration(
+                      border: pw.Border(
+                        bottom: pw.BorderSide(color: PdfColors.grey200),
+                      ),
+                    ),
+                    child: pw.Row(
+                      children: [
+                        pw.Expanded(
+                          flex: 3,
+                          child: pw.Text(
+                            productName,
+                            style: const pw.TextStyle(fontSize: 11),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Text(
+                            '${detail.quantity.toInt()}',
+                            textAlign: pw.TextAlign.center,
+                            style: const pw.TextStyle(fontSize: 11),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 2,
+                          child: pw.Text(
+                            '\$${detail.price.toStringAsFixed(2)}',
+                            textAlign: pw.TextAlign.right,
+                            style: const pw.TextStyle(fontSize: 11),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 2,
+                          child: pw.Text(
+                            '\$${itemTotal.toStringAsFixed(2)}',
+                            textAlign: pw.TextAlign.right,
+                            style: pw.TextStyle(
+                              fontSize: 11,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+
+                pw.SizedBox(height: 25),
+
+                // Total Summary with Subtotal, Discount, Tax & Grand Total
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.end,
+                  children: [
+                    pw.SizedBox(
+                      width: 220,
+                      child: pw.Column(
+                        children: [
+                          pw.Row(
+                            mainAxisAlignment:
+                                pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text(
+                                'Subtotal:',
+                                style: pw.TextStyle(
+                                  fontSize: 11,
+                                  color: PdfColors.grey700,
+                                ),
+                              ),
+                              pw.Text(
+                                '\$${subtotal.toStringAsFixed(2)}',
+                                style: const pw.TextStyle(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Row(
+                            mainAxisAlignment:
+                                pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text(
+                                'Discount:',
+                                style: pw.TextStyle(
+                                  fontSize: 11,
+                                  color: PdfColors.grey700,
+                                ),
+                              ),
+                              pw.Text(
+                                '-\$${discountAmount.toStringAsFixed(2)}',
+                                style: const pw.TextStyle(
+                                  fontSize: 11,
+                                  color: PdfColors.red700,
+                                ),
+                              ),
+                            ],
+                          ),
+                          pw.SizedBox(height: 4),
+                          pw.Row(
+                            mainAxisAlignment:
+                                pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text(
+                                'Order Tax:',
+                                style: pw.TextStyle(
+                                  fontSize: 11,
+                                  color: PdfColors.grey700,
+                                ),
+                              ),
+                              pw.Text(
+                                '\$${taxAmount.toStringAsFixed(2)}',
+                                style: const pw.TextStyle(fontSize: 11),
+                              ),
+                            ],
+                          ),
+                          pw.Divider(color: PdfColors.grey300),
+                          pw.Row(
+                            mainAxisAlignment:
+                                pw.MainAxisAlignment.spaceBetween,
+                            children: [
+                              pw.Text(
+                                'Grand Total:',
+                                style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              pw.Text(
+                                '\$${order.totalAmount.toStringAsFixed(2)}',
+                                style: pw.TextStyle(
+                                  fontWeight: pw.FontWeight.bold,
+                                  fontSize: 13,
+                                  color: PdfColors.teal800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                pw.Spacer(),
+                pw.Center(
+                  child: pw.Text(
+                    'Thank you for your business!',
+                    style: const pw.TextStyle(
+                      fontSize: 12,
+                      color: PdfColors.grey600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      );
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/Invoice_${order.orderNumber}.pdf");
+      await file.writeAsBytes(await pdf.save());
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: '📄 វិក្កយបត្រ (Invoice) លេខ #${order.orderNumber}',
+        subject: 'Invoice ${order.orderNumber}',
+      );
+    } catch (e) {
+      debugPrint("Error generating or sharing PDF: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +410,19 @@ class InvoiceDetailScreen extends StatelessWidget {
         ? order.createdAt.split('T').first
         : order.createdAt;
 
+    final cashierName = order.user?.name ?? 'Admin / Cashier';
+
+    double subtotal = 0.0;
+    for (var detail in order.details) {
+      subtotal += detail.price * detail.quantity; // 🟢 Fixed multiplication
+    }
+    debugPrint("🧮 Subtotal: $subtotal");
+    debugPrint("💰 TotalAmount from order: ${order.totalAmount}");
+
+    // 🏷️ ទាញយកតម្លៃ Discount និង Tax ពី order ផ្ទាល់
+    double discountAmount = order.discountAmount;
+    double taxAmount = order.taxAmount;
+
     return CupertinoPageScaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       navigationBar: CupertinoNavigationBar(
@@ -54,23 +446,7 @@ class InvoiceDetailScreen extends StatelessWidget {
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: () {
-            print("Button Share Clicked!");
-            String shareText =
-                '''
-                  🧾 *INVOICE DETAILS*
-                  -----------------------------------
-                  🆔 Invoice No: ${order.orderNumber}
-                  👤 Customer: ${order.customer?.name ?? 'Guest'}
-                  📅 Date: $formattedDate
-                  💰 Total Amount: \$${order.totalAmount.toStringAsFixed(2)}
-                  📌 Status: ${order.status.toUpperCase()}
-                  -----------------------------------
-                  សូមអរគុណ! (Thank you!)
-                  ''';
-
-            Share.share(shareText, subject: 'Invoice ${order.orderNumber}');
-          },
+          onPressed: () => _shareInvoiceAsPDF(context),
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -105,7 +481,7 @@ class InvoiceDetailScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🏷️ Top Section: Company Logo & Invoice Meta
+                // 🏷️ Top Section
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +505,7 @@ class InvoiceDetailScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'POS Store',
+                              'Khmer Store',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
@@ -197,12 +573,11 @@ class InvoiceDetailScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 24),
                 Divider(color: Colors.grey.shade200, height: 1),
                 const SizedBox(height: 16),
 
-                // 👤 Bill To & Date Info Card
+                // Bill To, Cashier & Date Info
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
@@ -250,16 +625,17 @@ class InvoiceDetailScreen extends StatelessWidget {
                               'Pay:',
                               order.payment?.paymentMethod ?? 'Cash',
                             ),
+                            const SizedBox(height: 4),
+                            _buildDetailRow('Cashier:', cashierName),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 24),
 
-                // 📊 Table Header
+                // Table Header
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -338,7 +714,7 @@ class InvoiceDetailScreen extends StatelessWidget {
                   ),
                 ),
 
-                // 📋 Table Body
+                // Table Body
                 order.details.isEmpty
                     ? const Padding(
                         padding: EdgeInsets.symmetric(vertical: 30),
@@ -361,7 +737,9 @@ class InvoiceDetailScreen extends StatelessWidget {
                           final detail = order.details[index];
                           final productName =
                               detail.product?.name ?? 'Product #${index + 1}';
-                          final itemTotal = detail.price * detail.quantity;
+                          final itemTotal =
+                              detail.price *
+                              detail.quantity; // 🟢 Fixed multiplication
 
                           return Container(
                             padding: const EdgeInsets.symmetric(
@@ -440,32 +818,31 @@ class InvoiceDetailScreen extends StatelessWidget {
                           );
                         },
                       ),
-
                 const SizedBox(height: 20),
 
-                // 💵 Summary Section
+                // Summary Section (Subtotal, Discount, Tax & Grand Total)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     SizedBox(
-                      width: 210,
+                      width: 230,
                       child: Column(
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'Sub Total',
+                                'Subtotal',
                                 style: TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   color: Color(0xFF64748B),
                                   decoration: TextDecoration.none,
                                 ),
                               ),
                               Text(
-                                '\$${order.totalAmount.toStringAsFixed(2)}',
+                                '\$${subtotal.toStringAsFixed(2)}',
                                 style: const TextStyle(
-                                  fontSize: 13,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: Color(0xFF0F172A),
                                   decoration: TextDecoration.none,
@@ -473,12 +850,61 @@ class InvoiceDetailScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               const Text(
-                                'Total',
+                                'Discount',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              Text(
+                                '-\$${discountAmount.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red.shade600,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Order Tax',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                              Text(
+                                '\$${taxAmount.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF0F172A),
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 6),
+                            child: Divider(height: 1, thickness: 0.8),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Grand Total',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.bold,
@@ -489,9 +915,9 @@ class InvoiceDetailScreen extends StatelessWidget {
                               Text(
                                 '\$${order.totalAmount.toStringAsFixed(2)}',
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF059669),
                                   decoration: TextDecoration.none,
                                 ),
                               ),
@@ -501,46 +927,6 @@ class InvoiceDetailScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Balance Due Box
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F766E).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF0F766E).withOpacity(0.2),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Balance ',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F766E),
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                      Text(
-                        '\$${order.totalAmount.toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF0F766E),
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ],
             ),

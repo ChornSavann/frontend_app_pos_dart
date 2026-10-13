@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:pos_inventory/api/stores/api_store.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
+import 'package:pos_inventory/settings/about_screen.dart';
 import 'package:pos_inventory/stores/models/store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -74,8 +75,8 @@ class _AppBarScreenState extends State<AppBarScreen> {
   Widget build(context) {
     final Store store =
         widget.store ??
-            _fetchedStore ??
-            Store(id: null, name: '', imageUrl: '');
+        _fetchedStore ??
+        Store(id: null, name: '', imageUrl: '');
 
     return AppBar(
       toolbarHeight: 75,
@@ -87,121 +88,140 @@ class _AppBarScreenState extends State<AppBarScreen> {
       titleSpacing: 16,
       title: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.blue.shade100, width: 1.2),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.withValues(alpha: 0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(13),
-              child: Builder(
-                builder: (context) {
-                  if (_isLoadingStore) {
-                    return const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF2563EB),
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutScreen()),
+              );
+            },
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.blue.shade100, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(13),
+                child: Builder(
+                  builder: (context) {
+                    if (_isLoadingStore) {
+                      return const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF2563EB),
+                          ),
                         ),
-                      ),
-                    );
-                  }
-
-                  return (store.imageUrl != null && store.imageUrl!.isNotEmpty)
-                      ? CachedNetworkImage(
-                    imageUrl: store.imageUrl!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => const Center(
-                      child: SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF2563EB),
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) {
-                      return const Icon(
-                        Icons.storefront_rounded,
-                        color: Color(0xFF2563EB),
-                        size: 24,
                       );
-                    },
-                  )
-                      : const Icon(
-                    Icons.storefront_rounded,
-                    color: Color(0xFF2563EB),
-                    size: 24,
-                  );
-                },
+                    }
+
+                    return (store.imageUrl != null &&
+                            store.imageUrl!.isNotEmpty)
+                        ? CachedNetworkImage(
+                            imageUrl: store.imageUrl!,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) {
+                              return const Icon(
+                                Icons.storefront_rounded,
+                                color: Color(0xFF2563EB),
+                                size: 24,
+                              );
+                            },
+                          )
+                        : const Icon(
+                            Icons.storefront_rounded,
+                            color: Color(0xFF2563EB),
+                            size: 24,
+                          );
+                  },
+                ),
               ),
             ),
           ),
           const SizedBox(width: 12),
 
-          // 📝 Store Name & User Info Section
+          // 📝 Store Name & User Info Section (ចុចលើឈ្មោះហាង ក៏លោតចូល AboutScreen ដែរ)
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  store.name.isNotEmpty
-                      ? store.name
-                      : TranslateConstants.khmerApp.tr,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF10B981),
-                        shape: BoxShape.circle,
-                      ),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AboutScreen()),
+                );
+              },
+              behavior: HitTestBehavior
+                  .opaque, // ធានាថាចុចត្រូវលើផ្ទៃ Column ទាំងអស់បានងាយស្រួល
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    store.name.isNotEmpty
+                        ? store.name
+                        : TranslateConstants.khmerApp.tr,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      color: Color(0xFF1E293B),
+                      letterSpacing: -0.3,
                     ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _userName.isNotEmpty ? _userName : "Active Cashier",
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey.shade600,
+                  ),
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          _userName.isNotEmpty ? _userName : "Active Cashier",
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
       actions: [
-        // 🌐 Language Switcher (ហៅយកមកប្រើប្រាស់ត្រង់នេះ)
+        // 🌐 Language Switcher
         const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 4.0),

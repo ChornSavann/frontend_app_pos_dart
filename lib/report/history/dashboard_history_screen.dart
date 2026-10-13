@@ -4,6 +4,7 @@ import 'package:pos_inventory/Productscreen/scanncheck/price_checker_screen.dart
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/delivery/delivery_orders_screen.dart';
 import 'package:pos_inventory/partail/app_bar_screen.dart';
+import 'package:pos_inventory/report/invoice/list_invoice_screen.dart';
 import '../../order/cart_screen.dart';
 import '../../partail/button_screen.dart';
 import 'sale_history_screen.dart';
@@ -22,7 +23,7 @@ class DashboardHistoryScreen extends StatelessWidget {
         children: [
           Text(
             TranslateConstants.transaction_history.tr,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
@@ -66,16 +67,16 @@ class DashboardHistoryScreen extends StatelessWidget {
               );
             },
           ),
-
           const SizedBox(height: 12),
-          // 🟢 2. Card សម្រាប់ចូលទៅកាន់ Check Scan
+
+          // 🟢 3. Card សម្រាប់ចូលទៅកាន់ Scan Check Product
           _buildHistoryMenuCard(
             context,
-            title: 'Scan Check Product',
-            subtitle: TranslateConstants.review_purchase.tr,
+            title: TranslateConstants.scan_check_product.tr,
+            subtitle: TranslateConstants.manage_scan_check_product.tr,
             icon: Icons.document_scanner_rounded,
-            iconColor: Colors.blue,
-            backgroundColor: Colors.blue.shade50,
+            iconColor: Colors.orange,
+            backgroundColor: Colors.orange.shade50,
             onTap: () {
               Navigator.push(
                 context,
@@ -84,21 +85,40 @@ class DashboardHistoryScreen extends StatelessWidget {
                 ),
               );
             },
-
           ),
           const SizedBox(height: 12),
+
+          // 🟢 4. Card សម្រាប់ចូលទៅកាន់ Manage Delivery
           _buildHistoryMenuCard(
             context,
-            title: 'Manage Delivery',
-            subtitle: TranslateConstants.review_purchase.tr,
-            icon: Icons.local_shipping_rounded,
-            iconColor: Colors.blue,
-            backgroundColor: Colors.blue.shade50,
+            title: TranslateConstants.delivery.tr,
+            subtitle: TranslateConstants.manage_delivery.tr,
+            icon: Icons.local_shipping_outlined,
+            iconColor: Colors.purple,
+            backgroundColor: Colors.purple.shade50,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => DeliveryOrdersScreen(),
+                  builder: (context) => const DeliveryOrdersScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          _buildHistoryMenuCard(
+            context,
+            title: TranslateConstants.invoice.tr,
+            subtitle: TranslateConstants.manage_invoice.tr,
+            icon: Icons.receipt_long_rounded,
+            iconColor: const Color(0xFF10B981),
+            backgroundColor: const Color(0xFF10B981).withOpacity(0.1),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ListInvoiceScreen(),
                 ),
               );
             },
@@ -126,7 +146,7 @@ class DashboardHistoryScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),

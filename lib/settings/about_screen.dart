@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/api/stores/api_store.dart';
 import 'package:pos_inventory/stores/models/store.dart';
+import 'package:pos_inventory/stores/update_store_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -41,6 +42,26 @@ class _AboutScreenState extends State<AboutScreen> {
     }
   }
 
+  void _navigateToUpdateStore() async {
+    if (_store?.id == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('រកមិនឃើញ ID ហាងសម្រាប់កែប្រែទេ')),
+      );
+      return;
+    }
+
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UpdateStoreScreen(storeId: _store!.id!),
+      ),
+    );
+
+    if (result == true) {
+      _fetchStoreData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,8 +81,9 @@ class _AboutScreenState extends State<AboutScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
         actions: [
+          // 🔄 Refresh Button
           Container(
-            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
             decoration: BoxDecoration(
               color: Colors.grey.shade100,
               shape: BoxShape.circle,
@@ -71,6 +93,21 @@ class _AboutScreenState extends State<AboutScreen> {
               color: const Color(0xFF1E293B),
               onPressed: _fetchStoreData,
               tooltip: 'Refresh',
+            ),
+          ),
+
+          // ✏️ Edit Store Button នៅលើ AppBar
+          Container(
+            margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFF2563EB).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.edit_rounded, size: 18),
+              color: const Color(0xFF2563EB),
+              onPressed: _navigateToUpdateStore,
+              tooltip: 'Edit Store',
             ),
           ),
         ],
@@ -250,7 +287,6 @@ class _AboutScreenState extends State<AboutScreen> {
                                 : '+855 12 345 678',
                             actionIcon: Icons.phone_forwarded_rounded,
                             onActionTap: () {
-                              // Optional: លោតចូលកម្មវិធី Call ផ្ទាល់
                               final phone = _store?.phone;
                               if (phone != null && phone.isNotEmpty) {
                                 launchUrl(Uri.parse('tel:$phone'));
@@ -272,7 +308,6 @@ class _AboutScreenState extends State<AboutScreen> {
                                 : 'support@khmerapp.com',
                             actionIcon: Icons.send_rounded,
                             onActionTap: () {
-                              // Optional: លោតចូល Email ផ្ទាល់
                               final email = _store?.email;
                               if (email != null && email.isNotEmpty) {
                                 launchUrl(Uri.parse('mailto:$email'));
@@ -284,6 +319,36 @@ class _AboutScreenState extends State<AboutScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed:
+                          _navigateToUpdateStore,
+                      icon: const Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      label: const Text(
+                        'កែប្រែព័ត៌មានហាង (Edit Store)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontFamily: 'KantumruyPro',
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   // Footer Copyright
                   Text(

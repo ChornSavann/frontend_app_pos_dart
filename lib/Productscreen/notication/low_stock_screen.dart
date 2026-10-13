@@ -25,7 +25,6 @@ class _LowStockScreenState extends State<LowStockScreen> {
     _products = widget.lowStockProducts;
   }
 
-  // 🔄 Function សម្រាប់ទាញយកទិន្នន័យ Low Stock សាថ្មីពី Server
   Future<void> _refreshLowStockData() async {
     setState(() => _isLoading = true);
     try {

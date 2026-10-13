@@ -1,3 +1,6 @@
+
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+
 class ReportDaily {
   final int id;
   final String orderNumber;
@@ -6,6 +9,11 @@ class ReportDaily {
   final String createdAt;
   final CustomerModel? customer;
   final PaymentModel? payment;
+  final double discountAmount;
+  final double taxAmount;
+
+
+  final User? user;
   final List<OrderDetailModel> details;
 
   ReportDaily({
@@ -14,8 +22,12 @@ class ReportDaily {
     required this.totalAmount,
     required this.status,
     required this.createdAt,
-    this.customer,
+    required this.discountAmount,
+  required this.taxAmount,
+
+  this.customer,
     this.payment,
+    this.user,
     required this.details,
   });
 
@@ -31,8 +43,13 @@ class ReportDaily {
       customer: json['customer'] != null
           ? CustomerModel.fromJson(json['customer'] as Map<String, dynamic>)
           : null,
+      discountAmount: (json['discount_amount'] != null) ? double.parse(json['discount_amount'].toString()) : 0.0,
+      taxAmount: (json['tax_amount'] != null) ? double.parse(json['tax_amount'].toString()) : 0.0,
       payment: json['payment'] != null
           ? PaymentModel.fromJson(json['payment'] as Map<String, dynamic>)
+          : null,
+      user: json['user'] != null
+          ? User.fromJson(json['user'] as Map<String, dynamic>)
           : null,
       details: json['details'] != null
           ? (json['details'] as List)
@@ -106,5 +123,39 @@ class ProductModel {
           ? double.parse(json['selling_price'].toString())
           : 0.0,
     );
+  }
+}
+
+// 👤 Custom User Model សម្រាប់ Laravel Backend Cashier
+class User {
+  int? id;
+  String? name;
+  String? email;
+  String? phone;
+  String? password;
+  String? image;
+
+  User({this.id, this.name, this.email, this.phone, this.password, this.image});
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
+      name: json['name'],
+      email: json['email'],
+      phone: json['phone'],
+      password: json['password'],
+      image: json['image_url'] ?? json['image'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'password': password,
+      'image': image,
+    };
   }
 }

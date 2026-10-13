@@ -655,13 +655,15 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: products.length,
                             padding: const EdgeInsets.symmetric(horizontal: 12),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: crossAxisCount,
-                              crossAxisSpacing: 12,
-                              mainAxisSpacing: 12,
-                              childAspectRatio:
-                                  0.69,
-                            ),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio:
+                                      // 0.72,
+                                      0.64,
+                                ),
                             itemBuilder: (context, index) {
                               final product = products[index];
                               bool isAvailableToSell =
@@ -868,13 +870,16 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                   ),
                                                   const SizedBox(height: 2),
                                                   Text(
-                                                    product.description ?? "Fresh & Delicious",
+                                                    product.description ??
+                                                        "Fresh & Delicious",
                                                     maxLines: 3,
-                                                    overflow: TextOverflow.ellipsis,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
                                                     style: TextStyle(
                                                       fontSize: 10.5,
                                                       color: Colors.grey[400],
-                                                      fontWeight: FontWeight.w400,
+                                                      fontWeight:
+                                                          FontWeight.w400,
                                                     ),
                                                   ),
                                                 ],
@@ -904,8 +909,8 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                   ),
                                                   const SizedBox(width: 4),
                                                   SizedBox(
-                                                    height: 30,
-                                                    width: 30,
+                                                    height: 32,
+                                                    width: 32,
                                                     child: ElevatedButton(
                                                       onPressed:
                                                           isAvailableToSell
@@ -935,7 +940,7 @@ class _ProductViewScreenState extends State<ProductViewScreen> {
                                                         shape: RoundedRectangleBorder(
                                                           borderRadius:
                                                               BorderRadius.circular(
-                                                                10,
+                                                                50,
                                                               ),
                                                         ),
                                                         elevation: 0,

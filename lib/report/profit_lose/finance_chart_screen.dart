@@ -99,6 +99,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
             fontWeight: FontWeight.bold,
             fontSize: 18,
             color: Color(0xFF1E293B),
+            fontFamily: 'KhmerOSBattambang',
           ),
         ),
         backgroundColor: Colors.white,
@@ -113,7 +114,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // 🔘 Segmented Tabs ទាំង ៤ (រៀបចំឱ្យរអិលមើលបាន ឬធំទូលាយស្អាត)
+                // 🔘 Segmented Tabs ទាំង ៤
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -166,7 +167,10 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                             ? const Center(
                                 child: Text(
                                   'មិនមានទិន្នន័យសម្រាប់បង្ហាញក្រាហ្វិកទេ',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontFamily: 'KhmerOSBattambang',
+                                  ),
                                 ),
                               )
                             : Stack(
@@ -193,6 +197,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                                           fontSize: 11,
                                           color: Colors.grey.shade500,
                                           fontWeight: FontWeight.w600,
+                                          fontFamily: 'KhmerOSBattambang',
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -218,7 +223,9 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                           children: List.generate(items.length, (index) {
                             final item = items[index];
                             String name = selectedTab == 1
-                                ? (item['expense_type']?['name'] ?? 'ផ្សេងៗ')
+                                ? (item['expense_type']?['name'] ??
+                                      item['name'] ??
+                                      'ផ្សេងៗ')
                                 : (item['category_name'] ?? 'ផ្សេងៗ');
                             Color color = _getColor(index);
 
@@ -269,6 +276,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E293B),
+                        fontFamily: 'KhmerOSBattambang',
                       ),
                     ),
                   ],
@@ -291,12 +299,17 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
 
                           String name = '';
                           String? imageUrl;
+
                           if (selectedTab == 0) {
                             name = item['category_name'] ?? 'ផ្សេងៗ';
                             imageUrl = item['image'];
                           } else if (selectedTab == 1) {
-                            name = item['expense_type']?['name'] ?? 'ផ្សេងៗ';
-                            imageUrl = item['expense_type']?['image'];
+                            name =
+                                item['expense_type']?['name'] ??
+                                item['name'] ??
+                                'ចំណាយទូទៅ';
+                            imageUrl =
+                                item['expense_type']?['image'] ?? item['image'];
                           } else if (selectedTab == 2) {
                             name = item['category_name'] ?? 'ផ្សេងៗ';
                             imageUrl = item['image'];
@@ -315,7 +328,15 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                               String cleanPath = imageUrl.startsWith('/')
                                   ? imageUrl.substring(1)
                                   : imageUrl;
-                              finalImageUrl = '$baseServerUrl/$cleanPath';
+
+                              // 🟢 ថែម http:// ស្វ័យប្រវត្តិប្រសិនបើ baseServerUrl គ្មាន
+                              String baseUrlFormatted = baseServerUrl;
+                              if (!baseUrlFormatted.startsWith('http://') &&
+                                  !baseUrlFormatted.startsWith('https://')) {
+                                baseUrlFormatted = 'http://$baseUrlFormatted';
+                              }
+
+                              finalImageUrl = '$baseUrlFormatted/$cleanPath';
                             }
                           }
 
@@ -408,6 +429,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                                               fontSize: 12,
                                               color: Colors.grey.shade500,
                                               fontWeight: FontWeight.w500,
+                                              fontFamily: 'KhmerOSBattambang',
                                             ),
                                           ),
                                         ],
@@ -454,9 +476,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
     return GestureDetector(
       onTap: () => setState(() => selectedTab = index),
       child: Container(
-        constraints: const BoxConstraints(
-          minWidth: 85,
-        ),
+        constraints: const BoxConstraints(minWidth: 85),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -469,6 +489,7 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
             color: isSelected ? Colors.white : Colors.grey.shade700,
             fontWeight: FontWeight.bold,
             fontSize: 12.5,
+            fontFamily: 'KhmerOSBattambang',
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

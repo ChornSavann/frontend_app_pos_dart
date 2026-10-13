@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_order.dart';
 import '../api/api_customer.dart';
 import '../models/customer.dart';
+import '../msg/appSnackBar.dart';
 import 'addcustomer/add_customer_dialog.dart';
 import 'card_manager.dart';
 
@@ -19,6 +20,9 @@ class _CartScreenState extends State<CartScreen> {
   int? _userId;
   String phone = '';
   String name = '';
+  double discountAmount = 0.0;
+  double taxAmount = 0.0;
+
   final TextEditingController searchCustomersByName = TextEditingController();
 
   @override
@@ -34,17 +38,20 @@ class _CartScreenState extends State<CartScreen> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: CartManager.cartItemCount,
       builder: (context, count, child) {
         final items = CartManager.cartItems;
-        double totalAmount = items.fold(
-          0,
-          (sum, item) => sum + (item.product.sellingPrice * item.quantity),
-        );
+
+        // 🧮 គណនាតម្លៃ Subtotal, Discount, Tax និង Grand Total
+        double subtotal = 0;
+        for (var item in items) {
+          subtotal += item.product.sellingPrice * item.quantity;
+        }
+        double totalAmount = (subtotal - discountAmount) + taxAmount;
+        if (totalAmount < 0) totalAmount = 0.0;
 
         return Scaffold(
           backgroundColor: const Color(0xFFF8FAFC),
@@ -266,8 +273,10 @@ class _CartScreenState extends State<CartScreen> {
                         },
                       ),
                     ),
+
+                    // 🛒 Bottom Container with Summary, Hold, Clear, and Payment
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: const BorderRadius.vertical(
@@ -286,53 +295,361 @@ class _CartScreenState extends State<CartScreen> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // 📊 Summary Calculation Card
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Column(
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        "Items",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      Text(
+                                        "${items.length}",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        "Subtotal",
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                      Text(
+                                        "\$${subtotal.toStringAsFixed(2)}",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  // 🏷️ Discount Row with Edit Dialog
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            "Discount",
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () => _showEditDialog(
+                                              context,
+                                              "Edit Discount",
+                                              discountAmount,
+                                              (val) {
+                                                setState(() {
+                                                  discountAmount = val;
+                                                });
+                                              },
+                                            ),
+                                            child: const Text(
+                                              "Edit",
+                                              style: TextStyle(
+                                                color: Color(0xFF059669),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        "-\$${discountAmount.toStringAsFixed(2)}",
+                                        style: TextStyle(
+                                          color: Colors.red.shade600,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+
+                                  // 🧾 Order Tax Row with Edit Dialog
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Text(
+                                            "Order Tax",
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () => _showEditDialog(
+                                              context,
+                                              "Edit Order Tax",
+                                              taxAmount,
+                                              (val) {
+                                                setState(() {
+                                                  taxAmount = val;
+                                                });
+                                              },
+                                            ),
+                                            child: const Text(
+                                              "Edit",
+                                              style: TextStyle(
+                                                color: Color(0xFF059669),
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        "\$${taxAmount.toStringAsFixed(2)}",
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    child: Divider(
+                                      height: 1,
+                                      thickness: 0.8,
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text(
+                                        "Grand Total",
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
+                                      Text(
+                                        "\$${totalAmount.toStringAsFixed(2)}",
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF059669),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+
+                            // ⏸️ Hold, Clear & 💳 Payment Buttons Row
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  "Total Amount",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey.shade600,
+                                // Hold Cart Button
+                                SizedBox(
+                                  height: 52,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      AppSnackBar.showSuccess(
+                                        context,
+                                        "Cart put on hold successfully!",
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.pause_rounded,
+                                      size: 20,
+                                      color: Color(0xFF059669),
+                                    ),
+                                    label: const Text(
+                                      "Hold",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(
+                                        color: Colors.grey.shade300,
+                                        width: 1.2,
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                                Text(
-                                  "\$${totalAmount.toStringAsFixed(2)}",
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF4F46E5),
+                                const SizedBox(width: 8),
+
+                                // Clear Cart Button
+                                SizedBox(
+                                  height: 52,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext dialogContext) {
+                                          return AlertDialog(
+                                            title: const Text("Clear Cart"),
+                                            content: const Text(
+                                              "Are you sure you want to remove all items from the cart?",
+                                            ),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () => Navigator.pop(
+                                                  dialogContext,
+                                                ),
+                                                child: const Text(
+                                                  "Cancel",
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                              TextButton(
+                                                onPressed: () {
+                                                  CartManager.clearCart();
+                                                  Navigator.pop(dialogContext);
+                                                  AppSnackBar.showSuccess(
+                                                    context,
+                                                    "Cart cleared successfully!",
+                                                  );
+                                                },
+                                                child: const Text(
+                                                  "Clear",
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 20,
+                                      color: Colors.red,
+                                    ),
+                                    label: const Text(
+                                      "Clear",
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                    style: OutlinedButton.styleFrom(
+                                      side: BorderSide(
+                                        color: Colors.red.shade200,
+                                        width: 1.2,
+                                      ),
+                                      backgroundColor: Colors.red.shade50
+                                          .withValues(alpha: 0.3),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(14),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+
+                                // Payment Button (Expanded)
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 52,
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(
+                                          0xFF059669,
+                                        ),
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            14,
+                                          ),
+                                        ),
+                                      ),
+                                      onPressed: () =>
+                                          _showAdvancedPaymentBottomSheet(
+                                            context,
+                                            totalAmount,
+                                          ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(
+                                            Icons.payment_rounded,
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Text(
+                                              "Payment",
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 20),
-                            SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF4F46E5),
-                                  foregroundColor: Colors.white,
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                onPressed: () =>
-                                    _showAdvancedPaymentBottomSheet(
-                                      context,
-                                      totalAmount,
-                                    ),
-                                child: const Text(
-                                  "Proceed to Payment",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
                             ),
                           ],
                         ),
@@ -375,7 +692,6 @@ class _CartScreenState extends State<CartScreen> {
     final TextEditingController customerPhoneController =
         TextEditingController();
 
-    // 🚚 Variables សម្រាប់ເກັບទិន្នន័យដឹកជញ្ជូន
     String deliveryAddress = '';
     double deliveryFee = 0.0;
     String? deliveryPartner;
@@ -540,7 +856,6 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // 🚚 Order Type Selection Tabs
                       Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -607,7 +922,6 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // 📍 បង្ហាញព័ត៌មាន Delivery
                       if (orderType == 'delivery' &&
                           deliveryAddress.isNotEmpty) ...[
                         Container(
@@ -1442,11 +1756,78 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // ⚠️ មុខងារបង្ហាញ Dialog ព្រមានពេលប្រាក់មិនគ្រប់ (មិនបិទ BottomSheet ឡើយ)
+  void _showEditDialog(
+    BuildContext context,
+    String title,
+    double initialValue,
+    Function(double) onSaved,
+  ) {
+    final TextEditingController controller = TextEditingController(
+      text: initialValue > 0 ? initialValue.toStringAsFixed(2) : '',
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: "Enter amount (e.g., 5.00)",
+              prefixText: "\$ ",
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF059669),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 0,
+              ),
+              onPressed: () {
+                double parsedValue =
+                    double.tryParse(controller.text.trim()) ?? 0.0;
+                onSaved(parsedValue);
+                Navigator.pop(dialogContext);
+              },
+              child: const Text(
+                "Save",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _showInsufficientCashDialog(BuildContext context, double shortAmount) {
     showDialog(
       context: context,
-      barrierDismissible: false, // មិនឱ្យចុចក្រៅដើម្បីបិទ
+      barrierDismissible: false,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
@@ -1484,7 +1865,6 @@ class _CartScreenState extends State<CartScreen> {
                 ),
               ),
               onPressed: () {
-                // 🟢 បិទតែ Dialog ព្រមាននេះទេ ដោយប្រើ dialogContext ផ្ទាល់
                 Navigator.of(dialogContext).pop();
               },
               child: const Text(
@@ -1498,38 +1878,36 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  // 💳 មុខងារបញ្ជូនទិន្នន័យទូទាត់ប្រាក់
   Future<void> _handlePaymentSubmission(
-      BuildContext parentContext,
-      double totalAmount,
-      double cashGiven,
-      double actualUSDReceived,
-      String paymentMethod,
-      int? customerId,
-      String customerName,
-      String customerPhone,
-      String orderType,
-      String deliveryAddress,
-      double deliveryFee, {
-        String? pickupAddress,
-        String? deliveryPartner,
-        String? receiverName,
-        String? receiverPhone,
-        String? note,
-      }) async {
-    // 🛑 ពិនិត្យប្រាក់សាច់ប្រាក់ ប្រសិនបើតិចជាងទឹកប្រាក់សរុប ឱ្យលោត Dialog ព្រមាន
+    BuildContext parentContext,
+    double totalAmount,
+    double cashGiven,
+    double actualUSDReceived,
+    String paymentMethod,
+    int? customerId,
+    String customerName,
+    String customerPhone,
+    String orderType,
+    String deliveryAddress,
+    double deliveryFee, {
+    String? pickupAddress,
+    String? deliveryPartner,
+    String? receiverName,
+    String? receiverPhone,
+    String? note,
+  }) async {
     if (paymentMethod == 'cash' && actualUSDReceived < totalAmount) {
       _showInsufficientCashDialog(
         parentContext,
         totalAmount - actualUSDReceived,
       );
-      return; // ឈប់ដំណើរការ មិនឱ្យបង្កើត Order និងមិនឱ្យបិទ Sheet ទេ
+      return;
     }
 
     double changeAmount = actualUSDReceived - totalAmount;
     List<Map<String, dynamic>> orderItems = CartManager.cartItems.map((
-        cartItem,
-        ) {
+      cartItem,
+    ) {
       return {
         'product_id': cartItem.product.id,
         'product_name': cartItem.product.name,
@@ -1555,8 +1933,8 @@ class _CartScreenState extends State<CartScreen> {
         customerPhone: customerPhone.isEmpty ? null : customerPhone,
         userId: _userId ?? 1,
         subtotal: totalAmount - (orderType == 'delivery' ? deliveryFee : 0),
-        discount: 0.0,
-        tax: 0.0,
+        discount: discountAmount,
+        tax: taxAmount,
         total: totalAmount,
         paymentMethod: paymentMethod,
         amountPaid: paymentMethod == 'cash' ? actualUSDReceived : totalAmount,
@@ -1576,7 +1954,7 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     if (!parentContext.mounted) return;
-    Navigator.pop(parentContext); // បិទ Loading Indicator
+    Navigator.pop(parentContext);
 
     if (isSuccess) {
       _showSuccessDialog(

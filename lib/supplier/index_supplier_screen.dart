@@ -4,6 +4,7 @@ import '../models/supplier.dart';
 import '../msg/appSnackBar.dart';
 import 'create_supplier_screen.dart';
 import 'edit_supplier_screen.dart';
+import 'detail_supplier_screen.dart'; // 📥 នាំចូល Screen សម្រាប់មើលព័ត៌មានលម្អិត
 
 class IndexSupplierScreen extends StatefulWidget {
   const IndexSupplierScreen({super.key});
@@ -15,6 +16,10 @@ class IndexSupplierScreen extends StatefulWidget {
 class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
   final ApiSupplier _apiService = ApiSupplier();
   late Future<List<Supplier>> _futureSuppliers;
+
+  // 🔍 Controller និង Variable សម្រាប់ Search
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -28,7 +33,7 @@ class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
     });
   }
 
-  // បង្ហាញ Dialog បញ្ជាក់ពេលចង់លុប
+  // 🗑️ បង្ហាញ Dialog បញ្ជាក់ពេលចង់លុប
   void _confirmDelete(Supplier supplier) {
     final currentContext = context;
 
@@ -36,12 +41,21 @@ class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
       context: currentContext,
       builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Supplier', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Delete Supplier',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Text('Are you sure you want to delete "${supplier.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -60,7 +74,10 @@ class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
 
                 if (!mounted) return;
 
-                AppSnackBar.showSuccess(currentContext, 'Supplier deleted successfully!');
+                AppSnackBar.showSuccess(
+                  currentContext,
+                  'Supplier deleted successfully!',
+                );
                 _loadSuppliers();
               } catch (e) {
                 if (!mounted) return;
@@ -68,7 +85,10 @@ class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
                 AppSnackBar.showError(currentContext, 'Error: $e');
               }
             },
-            child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
           ),
         ],
       ),
@@ -78,7 +98,9 @@ class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: const Color(
+        0xFFF1F5F9,
+      ), // Background ពណ៌ប្រផេះខ្ចីទន់ៗស្អាតស៊ីគ្នាជាមួយหน้า Report
       appBar: AppBar(
         title: const Text(
           'Suppliers List',
@@ -92,229 +114,340 @@ class _IndexSupplierScreenState extends State<IndexSupplierScreen> {
           IconButton(
             icon: Icon(Icons.refresh, color: Colors.blue.shade700),
             onPressed: _loadSuppliers,
+            tooltip: 'Refresh',
           ),
         ],
       ),
-      body: FutureBuilder<List<Supplier>>(
-        future: _futureSuppliers,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(color: Colors.blue.shade700),
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Error: ${snapshot.error}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.red.shade600, fontWeight: FontWeight.w500),
+      body: Column(
+        children: [
+          // 🔍 Search Bar ផ្នែកខាងលើ
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+            color: Colors.white,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'ស្វែងរកឈ្មោះ ឬក្រុមហ៊ុន Supplier...',
+                hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                prefixIcon: Icon(
+                  Icons.search_rounded,
+                  color: Colors.blue.shade700,
                 ),
-              ),
-            );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.inventory_2_outlined,
-                    size: 80,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No suppliers found',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          final suppliers = snapshot.data!;
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: suppliers.length,
-            itemBuilder: (context, index) {
-              final supplier = suppliers[index];
-              return Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: const Color(0xFFF8FAFC),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 0,
+                  horizontal: 16,
+                ),
+                border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.blue.shade700, width: 1),
+                ),
+              ),
+            ),
+          ),
+
+          // 📦 List ជាមួយ FutureBuilder
+          Expanded(
+            child: FutureBuilder<List<Supplier>>(
+              future: _futureSuppliers,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.blue.shade700,
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              supplier.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: supplier.isActive
-                                  ? Colors.green.shade50
-                                  : Colors.red.shade50,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              supplier.isActive ? 'Active' : 'Inactive',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: supplier.isActive
-                                    ? Colors.green.shade700
-                                    : Colors.red.shade700,
-                              ),
-                            ),
-                          ),
-                        ],
+                  );
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Text(
+                        'Error: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.red.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                      if (supplier.company != null &&
-                          supplier.company!.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.business_outlined,
-                              size: 16,
-                              color: Colors.blue.shade700,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                supplier.company!,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                    ),
+                  );
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 80,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No suppliers found',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // 🔍 Filter suppliers ตามการស្វែងរក (Search Query)
+                final allSuppliers = snapshot.data!;
+                final filteredSuppliers = allSuppliers.where((supplier) {
+                  final nameMatch = supplier.name.toLowerCase().contains(
+                    _searchQuery,
+                  );
+                  final companyMatch =
+                      supplier.company != null &&
+                      supplier.company!.toLowerCase().contains(_searchQuery);
+                  final phoneMatch =
+                      supplier.phone != null &&
+                      supplier.phone!.contains(_searchQuery);
+                  return nameMatch || companyMatch || phoneMatch;
+                }).toList();
+
+                if (filteredSuppliers.isEmpty) {
+                  return Center(
+                    child: Text(
+                      'រកមិនឃើញ Supplier ដែលបានស្វែងរកទេ',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredSuppliers.length,
+                  itemBuilder: (context, index) {
+                    final supplier = filteredSuppliers[index];
+                    return InkWell(
+                      onTap: () {
+                        // 🚀 ពេលចុចលើ Card វានឹងរត់ទៅកាន់ Detail Screen (View by ID)
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DetailSupplierScreen(supplier: supplier),
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.02),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
-                      ],
-                      if (supplier.phone != null &&
-                          supplier.phone!.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.phone_outlined,
-                              size: 16,
-                              color: Colors.blue.shade700,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                supplier.phone!,
-                                style: TextStyle(
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      supplier.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 5,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: supplier.isActive
+                                          ? Colors.green.shade50
+                                          : Colors.red.shade50,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      supplier.isActive ? 'Active' : 'Inactive',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: supplier.isActive
+                                            ? Colors.green.shade700
+                                            : Colors.red.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              if (supplier.company != null &&
+                                  supplier.company!.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.business_outlined,
+                                      size: 16,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        supplier.company!,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (supplier.phone != null &&
+                                  supplier.phone!.isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.phone_outlined,
+                                      size: 16,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        supplier.phone!,
+                                        style: TextStyle(
+                                          color: Colors.grey.shade700,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              Divider(height: 24, color: Colors.grey.shade100),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: () async {
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => EditSupplierScreen(
+                                            supplier: supplier,
+                                          ),
+                                        ),
+                                      );
+                                      if (result == true) _loadSuppliers();
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.blue.shade700,
+                                      side: BorderSide(
+                                        color: Colors.blue.shade200,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.edit_outlined,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Edit',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  OutlinedButton.icon(
+                                    onPressed: () => _confirmDelete(supplier),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red.shade600,
+                                      side: BorderSide(
+                                        color: Colors.red.shade200,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                      Divider(height: 24, color: Colors.grey.shade100),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          OutlinedButton.icon(
-                            onPressed: () async {
-                              final result = await Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      EditSupplierScreen(supplier: supplier),
-                                ),
-                              );
-                              if (result == true) _loadSuppliers();
-                            },
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.blue.shade700,
-                              side: BorderSide(color: Colors.blue.shade200),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                            icon: const Icon(Icons.edit_outlined, size: 16),
-                            label: const Text(
-                              'Edit',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          OutlinedButton.icon(
-                            onPressed: () => _confirmDelete(supplier),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red.shade600,
-                              side: BorderSide(color: Colors.red.shade200),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            ),
-                            icon: const Icon(Icons.delete_outline, size: 16),
-                            label: const Text(
-                              'Delete',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          );
-        },
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      // floatingActionButton: FloatingActionButton(
-      //   backgroundColor: Colors.blue.shade700,
-      //   foregroundColor: Colors.white,
-      //   elevation: 4,
-      //   onPressed: () async {
-      //     final result = await Navigator.push(
-      //       context,
-      //       MaterialPageRoute(
-      //         builder: (context) => const CreateSupplierScreen(),
-      //       ),
-      //     );
-      //     if (result == true) {
-      //       _loadSuppliers();
-      //     }
-      //   },
-      //   child: const Icon(Icons.add),
-      // ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,

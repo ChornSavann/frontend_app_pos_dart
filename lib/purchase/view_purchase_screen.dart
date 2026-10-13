@@ -31,7 +31,7 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
     setState(() => _isLoading = true);
 
     final responseData = await _apiPurchase.getPurchaseById(widget.purchaseId);
-
+    debugPrint("📦 PURCHASE DETAIL RESPONSE: $responseData");
     if (responseData != null && responseData['success'] == true) {
       setState(() {
         _purchaseData = responseData['data'];
@@ -60,21 +60,36 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // គណនាសរុបទឹកប្រាក់ទំនិញទាំងអស់
-    double grandTotal = 0.0;
+    // 1️⃣ គណនាសរុបទឹកប្រាក់ទំនិញទាំងអស់ (Subtotal)
+    double subTotal = 0.0;
     if (_purchaseData != null && _purchaseData!['items'] is List) {
       for (var item in _purchaseData!['items']) {
         final double qty =
             double.tryParse((item['quantity'] ?? 0).toString()) ?? 0.0;
         final double price =
             double.tryParse((item['unit_cost'] ?? 0).toString()) ?? 0.0;
-        grandTotal +=
+        subTotal +=
             double.tryParse(
               (item['total_price'] ?? (qty * price)).toString(),
             ) ??
             (qty * price);
       }
     }
+
+    // 2️⃣ ទាញយកតម្លៃ Discount និង Tax ពី API Response
+    final double discount =
+        double.tryParse((_purchaseData?['discount'] ?? 0).toString()) ?? 0.0;
+    final double taxAmount =
+        double.tryParse((_purchaseData?['tax'] ?? 0).toString()) ?? 0.0;
+
+    double taxableAmount = subTotal - discount;
+    if (taxableAmount < 0) taxableAmount = 0;
+
+    // 3️⃣ គណនា Grand Total ចុងក្រោយ
+    double grandTotal =
+        double.tryParse((_purchaseData?['total'] ?? 0).toString())! > 0
+        ? double.parse((_purchaseData?['total']).toString())
+        : (taxableAmount + taxAmount);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -213,19 +228,78 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                                   ? _purchaseData!['supplier']['name']
                                   : (_purchaseData!['supplier_name'] ??
                                         _purchaseData!['supplierName'] ??
-                                        _purchaseData!['name'] ??
-                                        'ID: ${_purchaseData!['supplier_id'] ?? _purchaseData!['supplierId'] ?? 'N/A'}'))
+                                        'N/A'))
                               .toString(),
                         ),
                         const SizedBox(height: 12),
                         _buildInfoRow(
-                          Icons.calendar_today_outlined,
-                          'Date',
-                          (_purchaseData!['date'] ??
-                                  _purchaseData!['created_at'] ??
-                                  'N/A')
-                              .toString(),
+                          Icons.person_outline_rounded,
+                          'Created By',
+                          (() {
+                            String? name;
+                            if (_purchaseData!['user'] != null &&
+                                _purchaseData!['user'] is Map) {
+                              name = _purchaseData!['user']['name']?.toString();
+                            } else {
+                              name =
+                                  _purchaseData!['user_name']?.toString() ??
+                                  _purchaseData!['userName']?.toString();
+                            }
+
+                            if (name != null && name.isNotEmpty) {
+                              return name;
+                            } else if (_purchaseData!['user_id'] != null) {
+                              return 'User #${_purchaseData!['user_id']}';
+                            }
+                            return 'N/A';
+                          })(),
                         ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          Icons.payment_rounded,
+                          'Payment Method',
+                          (_purchaseData!['payment_method'] ??
+                                  _purchaseData!['paymentMethod'] ??
+                                  'Cash')
+                              .toString()
+                              .toUpperCase(),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          Icons.calendar_today_outlined,
+                          'Date & Time',
+                          (() {
+                            final String rawDate = (_purchaseData!['date'] ?? _purchaseData!['created_at'] ?? '').toString();
+                            if (rawDate.isEmpty || rawDate == 'N/A') return 'N/A';
+
+                            try {
+                              // 📌 .toLocal() នឹងដូរកាលបរិច្ឆេទពី UTC ឱ្យត្រូវនឹងម៉ោងក្នុងទូរស័ព្ទ (UTC+7 នៅកម្ពុជា) ស្វ័យប្រវត្តិ
+                              DateTime parsedDate = DateTime.parse(rawDate).toLocal();
+                              String twoDigits(int n) => n.toString().padLeft(2, '0');
+
+                              int hour = parsedDate.hour;
+                              String period = hour >= 12 ? 'PM' : 'AM';
+                              hour = hour % 12;
+                              hour = hour == 0 ? 12 : hour;
+
+                              String formattedDate = "${parsedDate.year}-${twoDigits(parsedDate.month)}-${twoDigits(parsedDate.day)}";
+                              String formattedTime = "$hour:${twoDigits(parsedDate.minute)} $period";
+
+                              return "$formattedDate, $formattedTime";
+                            } catch (e) {
+                              return rawDate.length > 19 ? rawDate.substring(0, 19).replaceFirst('T', ' ') : rawDate;
+                            }
+                          })(),
+                        ),
+                        if (_purchaseData!['notes'] != null &&
+                            _purchaseData!['notes'].toString().isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          _buildInfoRow(
+                            Icons.note_alt_outlined,
+                            'Notes',
+                            _purchaseData!['notes'].toString(),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -424,34 +498,52 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // 💰 Grand Total Summary Card
+                  // 💰 Summary Breakdown Card (Subtotal, Discount, Tax, Grand Total)
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: const Color(0xFF2563EB).withValues(alpha: 0.15),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Total Amount:',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B),
-                          ),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
-                        Text(
-                          '\$${grandTotal.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2563EB),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSummaryRow(
+                          'Subtotal',
+                          '\$${subTotal.toStringAsFixed(2)}',
+                          false,
+                        ),
+                        if (discount > 0) ...[
+                          const SizedBox(height: 10),
+                          _buildSummaryRow(
+                            'Discount',
+                            '-\$${discount.toStringAsFixed(2)}',
+                            false,
+                            textColor: Colors.red.shade600,
                           ),
+                        ],
+                        if (taxAmount > 0) ...[
+                          const SizedBox(height: 10),
+                          _buildSummaryRow(
+                            'Tax',
+                            '+\$${taxAmount.toStringAsFixed(2)}',
+                            false,
+                          ),
+                        ],
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(height: 1, thickness: 0.5),
+                        ),
+                        _buildSummaryRow(
+                          'Grand Total',
+                          '\$${grandTotal.toStringAsFixed(2)}',
+                          true,
                         ),
                       ],
                     ),
@@ -473,12 +565,46 @@ class _ViewPurchaseScreenState extends State<ViewPurchaseScreen> {
           style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
         ),
         const Spacer(),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryRow(
+    String label,
+    String amount,
+    bool isTotal, {
+    Color? textColor,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
         Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 13,
-            color: Color(0xFF1E293B),
+          label,
+          style: TextStyle(
+            fontSize: isTotal ? 16 : 14,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.w500,
+            color: isTotal ? const Color(0xFF1E293B) : Colors.grey.shade600,
+          ),
+        ),
+        Text(
+          amount,
+          style: TextStyle(
+            fontSize: isTotal ? 18 : 14,
+            fontWeight: FontWeight.bold,
+            color:
+                textColor ??
+                (isTotal ? const Color(0xFF2563EB) : const Color(0xFF1E293B)),
           ),
         ),
       ],

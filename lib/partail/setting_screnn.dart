@@ -6,6 +6,7 @@ import 'package:pos_inventory/partail/profile_screen.dart';
 import 'package:pos_inventory/profile/edit_profile_screen.dart';
 import 'package:pos_inventory/report/history/order_history_screen.dart';
 import 'package:pos_inventory/settings/about_screen.dart';
+import 'package:pos_inventory/settings/cash_drawer_setup_screen.dart';
 import 'package:pos_inventory/settings/currency_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -244,7 +245,14 @@ class _SettingScreenState extends State<SettingScreen> {
                       tileBgColor: tileBgColor,
                       arrowBgColor: arrowBgColor,
                       arrowIconColor: arrowIconColor,
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CashDrawerSetupScreen(),
+                          ),
+                        );
+                      },
                     ),
 
                     Divider(height: 1, indent: 68, color: dividerColor),

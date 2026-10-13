@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/baseurl/base_url_api.dart';
 import '../../models/customer.dart';
 import '../../models/reports/report_daily.dart';
@@ -9,9 +10,35 @@ class ApiReport {
   final BaseUrlApi baseUrlApi = BaseUrlApi();
   final String baseUrl = BaseUrlApi.baseurl;
 
-  Future<List<ReportDaily>> fetchDailyReports() async {
+
+
+  Future<List<ReportDaily>> fetchDailyReports({
+    String? startDate,
+    String? endDate,
+  }) async {
     try {
-      final response = await http.get(Uri.parse("$baseUrl/reports/daily"));
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final Map<String, String> queryParams = {};
+      if (startDate != null && startDate.isNotEmpty) {
+        queryParams['start_date'] = startDate;
+      }
+      if (endDate != null && endDate.isNotEmpty) {
+        queryParams['end_date'] = endDate;
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/reports/daily',
+      ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decodedData = jsonDecode(response.body);
@@ -56,12 +83,9 @@ class ApiReport {
         }
 
         return listData.map((item) {
-          final product = item['product'] ?? {};
-
-          final productImage = product['image_url'] ?? item['image_url'] ?? '';
+          final productImage = item['image_url'] ?? item['image'] ?? '';
           final productName =
-              product['name'] ?? item['product_name'] ?? 'Unknown Product';
-
+              item['product_name'] ?? item['name'] ?? 'Unknown Product';
           final totalSold =
               item['total_quantity_sold'] ?? item['quantity'] ?? 0;
           final totalRevenue =
@@ -69,10 +93,10 @@ class ApiReport {
 
           return {
             'name': productName,
-            'category': product['category']?['name'] ?? 'General',
+            'category': item['category']?['name'] ?? 'General',
             'sold_qty': double.parse(totalSold.toString()).toInt(),
             'revenue': double.parse(totalRevenue.toString()),
-            'image_url': productImage.isNotEmpty ? productImage : '📦',
+            'image_url': productImage,
           };
         }).toList();
       }
@@ -82,51 +106,6 @@ class ApiReport {
       return [];
     }
   }
-  //
-  // Future<List<Map<String, dynamic>>> fetchLowStockProducts() async {
-  //   try {
-  //     final response = await http.get(Uri.parse("$baseUrl/reports/low-stock"));
-  //
-  //     if (response.statusCode == 200) {
-  //       final decodedData = jsonDecode(response.body);
-  //
-  //       List<dynamic> listData = [];
-  //       if (decodedData is List) {
-  //         listData = decodedData;
-  //       } else if (decodedData is Map<String, dynamic> &&
-  //           decodedData['data'] is List) {
-  //         listData = decodedData['data'];
-  //       }
-  //
-  //       return listData.map((item) {
-  //         final category = item['category'] ?? {};
-  //         final stockLeft = item['stock_quantity'] != null
-  //             ? double.parse(item['stock_quantity'].toString())
-  //             : 0.0;
-  //         final minAlert = item['alert_quantity'] != null
-  //             ? double.parse(item['alert_quantity'].toString())
-  //             : 0.0;
-  //
-  //         // កំណត់ Status ស្វ័យប្រវត្តិ (Critical បើស្តុក <= 2 ឬ <= 0)
-  //         String status = stockLeft <= 2 ? 'Critical' : 'Low Stock';
-  //
-  //         return {
-  //           'id': item['id'],
-  //           'name': item['name'] ?? 'Unknown Product',
-  //           'category': category['name'] ?? 'General',
-  //           'stock_left': stockLeft.toInt(),
-  //           'min_alert': minAlert.toInt(),
-  //           'status': status,
-  //           'image_url': item['image_url'] ?? '',
-  //         };
-  //       }).toList();
-  //     }
-  //     return [];
-  //   } catch (e) {
-  //     debugPrint('Error fetching low stock: $e');
-  //     return [];
-  //   }
-  // }
 
   Future<List<Map<String, dynamic>>> fetchLowStockProducts() async {
     try {
@@ -638,5 +617,173 @@ class ApiReport {
       'income_breakdown': [],
       'expense_by_category': [],
     };
+  }
+
+  Future<List<Map<String, dynamic>>> fetchMonthlyReport({
+    required int year,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+      final response = await http.get(
+        Uri.parse('$baseUrl/reports/monthly?year=$year'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        List<dynamic> list = data is List ? data : (data['data'] ?? []);
+
+        return list.map((item) {
+          return {
+            'month': item['month'] ?? 0,
+            'name': _getMonthName(item['month'] ?? 1),
+            'orders': item['total_orders'] ?? 0,
+            'revenue': double.tryParse(item['total_revenue'].toString()) ?? 0.0,
+          };
+        }).toList();
+      } else {
+        debugPrint("❌ Failed to load monthly report: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching monthly report: $e");
+      return [];
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    if (month >= 1 && month <= 12) {
+      return months[month - 1];
+    }
+    return '';
+  }
+
+  Future<List<Map<String, dynamic>>> fetchProductsByMonth({
+    required int year,
+    required int month,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/reports/monthly-products?year=$year&month=$month'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        List<dynamic> list = data is List ? data : (data['data'] ?? []);
+
+        return list.map((item) {
+          return {
+            'name': item['product_name'] ?? item['name'] ?? 'Unknown',
+            'qty': item['total_qty'] ?? item['qty'] ?? 0,
+            'price':
+                double.tryParse(
+                  (item['price'] ?? item['selling_price'] ?? 0).toString(),
+                ) ??
+                0.0,
+            'total':
+                double.tryParse(
+                  (item['total'] ?? item['total_revenue'] ?? 0).toString(),
+                ) ??
+                0.0,
+            'image': item['image'] ?? item['image_url'],
+          };
+        }).toList();
+      } else {
+        debugPrint("❌ Failed to load monthly products: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching monthly products: $e");
+      return [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchYearlyReport() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/reports/yearly'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        List<dynamic> list = data is List ? data : (data['data'] ?? []);
+
+        return list.map((item) {
+          return {
+            'year': int.tryParse(item['year'].toString()) ?? 2026,
+            'orders': int.tryParse(item['orders'].toString()) ?? 0,
+            'revenue': double.tryParse(item['revenue'].toString()) ?? 0.0,
+          };
+        }).toList();
+      } else {
+        debugPrint("❌ Failed to load yearly report: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching yearly report: $e");
+      return [];
+    }
+  }
+
+  Future<List<ReportDaily>> getAllOrders() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('auth_token') ?? '';
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/reports/orders'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        List listData = data is List ? data : (data['data'] ?? []);
+
+        return listData.map((json) => ReportDaily.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load orders: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching orders: $e');
+    }
   }
 }

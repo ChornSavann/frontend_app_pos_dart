@@ -9,7 +9,6 @@ import 'package:pos_inventory/api/report/api_report.dart';
 import 'package:pos_inventory/brand/brand_index_screen.dart';
 import 'package:pos_inventory/brand/create_brand_screen.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
-import 'package:pos_inventory/customer/customer_create_screen.dart';
 import 'package:pos_inventory/customer/customer_index_screen.dart';
 import 'package:pos_inventory/expenses/create_expense_screen.dart';
 import 'package:pos_inventory/expenses/index_expense_screen.dart';

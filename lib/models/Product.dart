@@ -71,13 +71,10 @@ class Product {
       alertQuantity: json['alert_quantity'] != null
           ? (json['alert_quantity'] is String ? double.parse(json['alert_quantity']) : (json['alert_quantity'] as num).toDouble())
           : null,
-
-      // 🟢 ទាញយក image_url ផ្ទាល់ពី Backend ដោយមិនបាច់ต่อ URL ក្នុង Flutter ទៀតទេ
       imageUrl: json['image_url'] as String?,
 
       isActive: json['is_active'] is String ? int.parse(json['is_active']) : (json['is_active'] as int? ?? 1),
 
-      // 🔍 ទាញយកឈ្មោះពី Relation មកប្រើប្រាស់ได้យ៉ាងស្រួល
       categoryName: json['category'] != null ? json['category']['name'] : null,
       brandName: json['brand'] != null ? json['brand']['name'] : null,
       unitName: json['unit'] != null ? json['unit']['name'] : null,

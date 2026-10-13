@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/models/user.dart';
 import 'package:pos_inventory/api/api_user.dart';
+import 'package:pos_inventory/users/user_detail_sreen.dart';
 
 import '../msg/appSnackBar.dart';
 import 'create_user_screen.dart';
@@ -160,7 +161,6 @@ class _UserIndexScreenState extends State<UserIndexScreen> {
       ),
       body: Column(
         children: [
-          // 🔎 Modern Search Header Section
           Container(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
             decoration: const BoxDecoration(
@@ -228,173 +228,194 @@ class _UserIndexScreenState extends State<UserIndexScreen> {
                     itemCount: _filteredUsers.length,
                     itemBuilder: (context, index) {
                       final user = _filteredUsers[index];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      return InkWell(
+                        onTap: () async {
+                          bool? updated = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  UserDetailScreen(user: user),
                             ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              // 🖼️ User Avatar with border
-                              Container(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(
+                          );
+                          if (updated == true) {
+                            _searchController.clear();
+                            _loadUsers();
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.03),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                // 🖼️ User Avatar with border
+                                Container(
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: const Color(
+                                        0xFF4F46E5,
+                                      ).withValues(alpha: 0.2),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: const Color(
                                       0xFF4F46E5,
-                                    ).withValues(alpha: 0.2),
-                                    width: 2,
+                                    ).withValues(alpha: 0.1),
+                                    backgroundImage:
+                                        (user.image != null &&
+                                            user.image!.isNotEmpty)
+                                        ? NetworkImage(user.image!)
+                                        : null,
+                                    child:
+                                        (user.image == null ||
+                                            user.image!.isEmpty)
+                                        ? const Icon(
+                                            Icons.person,
+                                            color: Color(0xFF4F46E5),
+                                            size: 28,
+                                          )
+                                        : null,
                                   ),
                                 ),
-                                child: CircleAvatar(
-                                  radius: 28,
-                                  backgroundColor: const Color(
-                                    0xFF4F46E5,
-                                  ).withValues(alpha: 0.1),
-                                  backgroundImage:
-                                      (user.image != null &&
-                                          user.image!.isNotEmpty)
-                                      ? NetworkImage(user.image!)
-                                      : null,
-                                  child:
-                                      (user.image == null ||
-                                          user.image!.isEmpty)
-                                      ? const Icon(
-                                          Icons.person,
-                                          color: Color(0xFF4F46E5),
-                                          size: 28,
-                                        )
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
+                                const SizedBox(width: 14),
 
-                              // 📝 User Details info
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      user.name ?? 'No Name',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                        color: Color(0xFF1E293B),
+                                // 📝 User Details info
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        user.name ?? 'No Name',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 15,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.email_outlined,
-                                          size: 13,
-                                          color: Colors.grey,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            user.email ?? 'No Email',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 12,
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.email_outlined,
+                                            size: 13,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              user.email ?? 'No Email',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
-                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.phone_outlined,
+                                            size: 13,
+                                            color: Colors.grey,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              user.phone ?? 'No Phone',
+                                              style: TextStyle(
+                                                color: Colors.grey.shade600,
+                                                fontSize: 12,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // ⚙ Action Buttons (Edit & Delete)
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    InkWell(
+                                      onTap: () async {
+                                        bool? updated = await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                EditUserScreen(user: user),
+                                          ),
+                                        );
+                                        if (updated == true) {
+                                          _searchController.clear();
+                                          _loadUsers();
+                                        }
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
                                         ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.phone_outlined,
-                                          size: 13,
-                                          color: Colors.grey,
+                                        child: const Icon(
+                                          Icons.edit_outlined,
+                                          color: Colors.blue,
+                                          size: 18,
                                         ),
-                                        const SizedBox(width: 6),
-                                        Expanded(
-                                          child: Text(
-                                            user.phone ?? 'No Phone',
-                                            style: TextStyle(
-                                              color: Colors.grey.shade600,
-                                              fontSize: 12,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    InkWell(
+                                      onTap: () {
+                                        if (user.id != null) {
+                                          _confirmAndDeleteUser(user);
+                                        }
+                                      },
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            8,
                                           ),
                                         ),
-                                      ],
+                                        child: const Icon(
+                                          Icons.delete_outline,
+                                          color: Colors.red,
+                                          size: 18,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ),
-                              ),
-
-                              // ⚙️ Action Buttons (Edit & Delete)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  InkWell(
-                                    onTap: () async {
-                                      bool? updated = await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              EditUserScreen(user: user),
-                                        ),
-                                      );
-                                      if (updated == true) {
-                                        _searchController.clear();
-                                        _loadUsers();
-                                      }
-                                    },
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.edit_outlined,
-                                        color: Colors.blue,
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  InkWell(
-                                    onTap: () {
-                                      if (user.id != null) {
-                                        _confirmAndDeleteUser(user);
-                                      }
-                                    },
-                                    borderRadius: BorderRadius.circular(8),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                        size: 18,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       );
@@ -403,14 +424,11 @@ class _UserIndexScreenState extends State<UserIndexScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF4F46E5),
-        elevation: 2,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text(
-          'Add User',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        elevation: 3,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add, color: Colors.white),
         onPressed: () async {
           bool? created = await Navigator.push(
             context,

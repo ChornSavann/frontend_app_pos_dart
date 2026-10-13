@@ -1,5 +1,10 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:pos_inventory/api/api_product.dart';
+import 'package:pos_inventory/msg/appSnackBar.dart';
 
 class DataSyncScreen extends StatefulWidget {
   const DataSyncScreen({super.key});
@@ -9,46 +14,122 @@ class DataSyncScreen extends StatefulWidget {
 }
 
 class _DataSyncScreenState extends State<DataSyncScreen> {
+  final ApiProduct _apiProduct = ApiProduct();
   bool isSyncing = false;
   String lastSynced = 'Just now';
+  List<Map<String, dynamic>> offlineProducts = [];
 
-  // ឧទាហរណ៍ទិន្នន័យ Local ដែលត្រូវ Sync
   final Map<String, int> pendingData = {
     'Products': 0,
     'Categories': 0,
-    'Orders (Sales)': 5,
-    'Customers': 2,
+    'Orders (Sales)': 0,
+    'Customers': 0,
   };
 
-  // Function จำลองการ Sync ទិន្នន័យ
+  @override
+  void initState() {
+    super.initState();
+    _loadOfflineProductsCount();
+  }
+
+  Future<void> _loadOfflineProductsCount() async {
+    try {
+      if (!Hive.isBoxOpen('offline_pending_products')) {
+        await Hive.openBox('offline_pending_products');
+      }
+      var box = Hive.box('offline_pending_products');
+
+      List<Map<String, dynamic>> loadedData = [];
+      for (var key in box.keys) {
+        var value = box.get(key);
+        if (value != null) {
+          loadedData.add({
+            'key': key,
+            'data': Map<String, dynamic>.from(value),
+          });
+        }
+      }
+
+      setState(() {
+        offlineProducts = loadedData;
+        pendingData['Products'] = offlineProducts.length;
+      });
+    } catch (e) {
+      debugPrint("❌ Error loading offline products: $e");
+    }
+  }
+
   Future<void> _handleSync() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      if (mounted) {
+        AppSnackBar.showError(
+          context,
+          '⚠️ គ្មានអ៉ីនធឺណិតទេ! សូមភ្ជាប់ Wi-Fi ឬ Data សិនមុននឹង Sync។',
+        );
+      }
+      return;
+    }
+
     setState(() {
       isSyncing = true;
     });
 
-    // จำลองเวลาในการ Sync (ឧ. ២ វិនាទី)
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      if (offlineProducts.isNotEmpty) {
+        var box = Hive.box('offline_pending_products');
+        int successCount = 0;
+        List<dynamic> keysToRemove = [];
 
-    setState(() {
-      isSyncing = false;
-      lastSynced = 'Just now';
-      // ពេល Sync រួច 0 ទិន្នន័យដែលសល់
-      pendingData.updateAll((key, value) => 0);
-    });
+        for (var item in offlineProducts) {
+          var key = item['key'];
+          Map<String, dynamic> productData = item['data'];
 
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text(
-            'ធ្វើសមកាលកម្មទិន្នន័យបានជោគជ័យ!',
-            style: TextStyle(fontFamily: 'KantumruyPro'),
-          ),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      );
+          try {
+            Map<String, dynamic> result = await _apiProduct.createProduct(
+              productData,
+            );
+
+            if (result['success'] == true) {
+              successCount++;
+              keysToRemove.add(key);
+            }
+          } catch (e) {
+            debugPrint("Failed to sync product key $key: $e");
+          }
+        }
+
+        for (var key in keysToRemove) {
+          await box.delete(key);
+        }
+      }
+
+      // ទាញយកទិន្នន័យថ្មីៗពី Server មកវិញបើចាំបាច់
+      await _apiProduct.fetchProducts();
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      setState(() {
+        isSyncing = false;
+        lastSynced = TimeOfDay.now().format(context);
+        pendingData.updateAll((key, value) => 0);
+        offlineProducts.clear();
+      });
+
+      if (mounted) {
+        AppSnackBar.showSuccess(context, 'ធ្វើសមកាលកម្មទិន្នន័យបានជោគជ័យ!');
+      }
+    } catch (e) {
+      setState(() {
+        isSyncing = false;
+      });
+
+      if (mounted) {
+        AppSnackBar.showError(context, 'បរាជ័យក្នុងការ Sync: $e');
+      }
     }
+
+    _loadOfflineProductsCount();
   }
 
   @override
@@ -104,7 +185,7 @@ class _DataSyncScreenState extends State<DataSyncScreen> {
                       color: Colors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.cloud_sync_rounded,
                       size: 40,
                       color: Colors.white,
@@ -156,21 +237,21 @@ class _DataSyncScreenState extends State<DataSyncScreen> {
                       onPressed: isSyncing ? null : _handleSync,
                       child: isSyncing
                           ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF2563EB),
-                        ),
-                      )
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFF2563EB),
+                              ),
+                            )
                           : const Text(
-                        'ធ្វើសមកាលកម្មឥឡូវនេះ (Sync Now)',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          fontFamily: 'KantumruyPro',
-                        ),
-                      ),
+                              'ធ្វើសមកាលកម្មឥឡូវនេះ (Sync Now)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                fontFamily: 'KantumruyPro',
+                              ),
+                            ),
                     ),
                   ),
                 ],

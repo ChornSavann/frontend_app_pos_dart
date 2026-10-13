@@ -62,6 +62,12 @@ class TranslateConstants {
   static const String real_time='real_time';
   static const String customer='customer';
   static const String manage_customer='manage_customer';
+  static const String manage_invoice="manage_invoice";
+  static const String invoice="invoice";
+  static const String scan_check_product="scan_check_product";
+  static const String manage_scan_check_product="manage_scan_check_product";
+  static const String delivery="delivery";
+  static const String manage_delivery="manage_delivery";
 
 
 

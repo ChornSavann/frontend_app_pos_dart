@@ -30,8 +30,14 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
     try {
       setState(() => _isLoading = true);
       final data = await apiProduct.fetchProducts();
+      final filteredData = data.where((product) {
+        final stock =
+            num.tryParse((product.stockQuantity ?? 0).toString()) ?? 0;
+        return stock >= 10;
+      }).toList();
+
       setState(() {
-        _banners = data;
+        _banners = filteredData;
         _isLoading = false;
       });
     } catch (e) {
@@ -54,6 +60,7 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
       );
     }
 
+    // បើគ្មានទិន្នន័យ ឬចំនួនតិចជាង 10 គឺវាមិនបង្ហាញអ្វីទាំងអស់ (SizedBox.shrink)
     if (_banners.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -104,7 +111,6 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                   },
                   child: Container(
                     width: MediaQuery.of(context).size.width,
-                    // 🟢 កាត់បន្ថយ Margin សងខាងឱ្យនៅតូច ដើម្បីកុំឱ្យគែមឆ្ងាយពេក
                     margin: const EdgeInsets.symmetric(horizontal: 4.0),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(22),
@@ -123,38 +129,38 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                         children: [
                           imageUrl.isNotEmpty
                               ? Container(
-                            color: Colors.grey.shade900,
-                            child: CachedNetworkImage(
-                              imageUrl: imageUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey.shade100,
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                  color: Colors.grey.shade900,
+                                  child: CachedNetworkImage(
+                                    imageUrl: imageUrl,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(
+                                      color: Colors.grey.shade100,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    ),
+                                    errorWidget: (context, url, error) =>
+                                        Container(
+                                          color: Colors.grey.shade200,
+                                          child: const Icon(
+                                            Icons.image_not_supported,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                  ),
+                                )
+                              : Container(
+                                  color: const Color(
+                                    0xFF4F46E5,
+                                  ).withValues(alpha: 0.1),
+                                  child: const Icon(
+                                    Icons.shopping_bag,
+                                    size: 50,
+                                    color: Color(0xFF4F46E5),
                                   ),
                                 ),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  Container(
-                                    color: Colors.grey.shade200,
-                                    child: const Icon(
-                                      Icons.image_not_supported,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                            ),
-                          )
-                              : Container(
-                            color: const Color(
-                              0xFF4F46E5,
-                            ).withValues(alpha: 0.1),
-                            child: const Icon(
-                              Icons.shopping_bag,
-                              size: 50,
-                              color: Color(0xFF4F46E5),
-                            ),
-                          ),
 
                           // 🌑 Smooth Premium Gradient Overlay
                           Container(
@@ -191,7 +197,9 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                     color: Colors.white.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(20),
                                     border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.3,
+                                      ),
                                       width: 1.0,
                                     ),
                                   ),
@@ -206,8 +214,8 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                       const SizedBox(width: 4),
                                       Text(
                                         (product.categoryName ??
-                                            product.brandName ??
-                                            'FEATURED')
+                                                product.brandName ??
+                                                'FEATURED')
                                             .toUpperCase(),
                                         style: const TextStyle(
                                           color: Colors.white,
@@ -238,7 +246,9 @@ class _AutoPlayBannerState extends State<AutoPlayBanner> {
                                   borderRadius: BorderRadius.circular(20),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.2,
+                                      ),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),

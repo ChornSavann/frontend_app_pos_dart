@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:pos_inventory/Productscreen/show_product_id_screen.dart';
 import 'package:pos_inventory/api/api_product.dart';
 import 'package:pos_inventory/msg/appSnackBar.dart';
-
 import '../../models/Product.dart';
+import '../../purchase/create_purchase_screen.dart';
 
 class PriceCheckerScreen extends StatefulWidget {
   const PriceCheckerScreen({super.key});
@@ -69,12 +70,14 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
       if (match.id != 0) {
         setState(() {
           _scannedProduct = {
+            'id': match.id,
             'name': match.name,
             'price': match.sellingPrice ?? match.costPrice ?? 0.0,
             'stock': match.stockQuantity ?? 0.0,
             'unit': match.unitName ?? 'Pcs',
             'image': match.imageUrl,
             'barcode': barcode,
+            'product': match,
           };
         });
       } else {
@@ -106,17 +109,18 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFF090D16),
       appBar: AppBar(
         title: const Text(
           'Price & Stock Checker',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
+            fontSize: 17,
+            letterSpacing: 0.3,
           ),
         ),
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: const Color(0xFF111827),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         centerTitle: true,
@@ -124,8 +128,9 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
           Container(
             margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: ValueListenableBuilder<MobileScannerState>(
               valueListenable: _controller,
@@ -134,9 +139,11 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
                 return IconButton(
                   icon: Icon(
                     torchState == TorchState.on
-                        ? Icons.flash_on
-                        : Icons.flash_off,
-                    color: Colors.amber,
+                        ? Icons.flash_on_rounded
+                        : Icons.flash_off_rounded,
+                    color: torchState == TorchState.on
+                        ? Colors.amberAccent
+                        : Colors.white70,
                     size: 20,
                   ),
                   onPressed: () => _controller.toggleTorch(),
@@ -148,10 +155,11 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
       ),
       body: _isLoadingProducts
           ? const Center(
-              child: CircularProgressIndicator(color: Colors.indigoAccent),
+              child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
             )
           : Stack(
               children: [
+                // 📷 Scanner
                 MobileScanner(
                   controller: _controller,
                   onDetect: (capture) {
@@ -165,159 +173,308 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
                   },
                 ),
 
+                // 🎯 Modern Scanner Overlay Framework (មានភ្លើងសញ្ញាបៃតងពេលចាប់បាន Barcode)
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
-                        width: 260,
-                        height: 180,
+                        width: 300,
+                        height: 200,
                         decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.indigoAccent,
-                            width: 3.5,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.indigoAccent.withValues(alpha: 0.3),
-                              blurRadius: 15,
-                              spreadRadius: 2,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Stack(
+                          children: [
+                            ..._buildCustomScannerCorners(
+                              color: _isProcessing
+                                  ? Colors.greenAccent
+                                  : Colors.white,
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
+                      const SizedBox(height: 20),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Text(
-                          'Scan product barcode inside frame',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                          // ប្តូរពណ៌ផ្ទៃដูกន្លែងអרט ប្រសិនបើចាប់បាន
+                          color: _isProcessing
+                              ? Colors.green.withValues(alpha: 0.2)
+                              : Colors.black.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: _isProcessing
+                                ? Colors.greenAccent.withValues(alpha: 0.5)
+                                : Colors.white.withValues(alpha: 0.1),
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isProcessing
+                                  ? Icons.check_circle_rounded
+                                  : Icons.qr_code_scanner_rounded,
+                              color: _isProcessing
+                                  ? Colors.greenAccent
+                                  : Colors.white70,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isProcessing
+                                  ? 'ស្កេនបានជោគជ័យ!'
+                                  : 'ដាក់ Barcode ក្នុងស៊ុមដើម្បីស្កេន',
+                              style: TextStyle(
+                                color: _isProcessing
+                                    ? Colors.greenAccent
+                                    : Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
 
-                // 🏷️ បង្ហាញលទ្ធផលទំនិញທີ່ស្កេនបានយ៉ាងស្អាតនៅផ្នែកខាងក្រោម
                 if (_scannedProduct != null)
                   Positioned(
                     bottom: 24,
                     left: 16,
                     right: 16,
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(24),
+                        borderRadius: BorderRadius.circular(28),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.4),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
+                            color: Colors.black.withValues(alpha: 0.3),
+                            blurRadius: 25,
+                            offset: const Offset(0, 10),
                           ),
                         ],
+                        border: Border.all(
+                          color: Colors.grey.shade100,
+                          width: 1.5,
+                        ),
                       ),
-                      child: Row(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 🖼️ រូបភាពទំនិញ
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              width: 75,
-                              height: 75,
-                              color: Colors.grey.shade100,
-                              child: _scannedProduct!['image'] != null
-                                  ? Image.network(
-                                      _scannedProduct!['image'],
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              const Icon(
-                                                Icons.image_not_supported,
+                          Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(18),
+                                child: Container(
+                                  width: 70,
+                                  height: 70,
+                                  color: const Color(0xFFF1F5F9),
+                                  child: _scannedProduct!['image'] != null
+                                      ? Image.network(
+                                          _scannedProduct!['image'],
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) => const Icon(
+                                                Icons
+                                                    .image_not_supported_rounded,
                                                 color: Colors.grey,
+                                                size: 28,
                                               ),
-                                    )
-                                  : const Icon(
-                                      Icons.inventory_2_rounded,
-                                      color: Colors.indigo,
-                                      size: 34,
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-
-                          // 📝 ឈ្មោះ តម្លៃ និងស្តុក
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _scannedProduct!['name'],
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+                                        )
+                                      : const Icon(
+                                          Icons.inventory_2_rounded,
+                                          color: Color(0xFF4F46E5),
+                                          size: 32,
+                                        ),
                                 ),
-                                const SizedBox(height: 6),
-                                Row(
+                              ),
+                              const SizedBox(width: 14),
+
+                              // 📝 Details Info
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
                                   children: [
+                                    Text(
+                                      _scannedProduct!['name'],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
                                     Text(
                                       '\$${(_scannedProduct!['price'] as double).toStringAsFixed(2)}',
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w900,
-                                        fontSize: 19,
+                                        fontSize: 18,
                                         color: Color(0xFF4F46E5),
                                       ),
                                     ),
-                                    const Spacer(),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color:
-                                            ((_scannedProduct!['stock']
-                                                    as double) >
-                                                0)
-                                            ? Colors.green.shade50
-                                            : Colors.red.shade50,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        'Stock: ${_scannedProduct!['stock']} ${_scannedProduct!['unit']}',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color:
-                                              ((_scannedProduct!['stock']
-                                                      as double) >
-                                                  0)
-                                              ? Colors.green.shade700
-                                              : Colors.red.shade700,
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          width: 7,
+                                          height: 7,
+                                          decoration: BoxDecoration(
+                                            color:
+                                                ((_scannedProduct!['stock']
+                                                        as double) >
+                                                    0)
+                                                ? const Color(0xFF10B981)
+                                                : Colors.redAccent,
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Stock: ${_scannedProduct!['stock']} ${_scannedProduct!['unit']}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Divider(height: 1, color: Colors.grey.shade100),
+                          const SizedBox(height: 14),
+
+                          // 🔘 Action Buttons (View Details & Add Stock)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    if (_scannedProduct != null) {
+                                      final int productId =
+                                          _scannedProduct!['id'] ?? 0;
+                                      await _controller.stop();
+                                      if (!mounted) return;
+
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ShowProductIdScreen(
+                                                productId: productId,
+                                              ),
+                                        ),
+                                      );
+
+                                      if (mounted) {
+                                        _controller.start();
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.visibility_rounded,
+                                    size: 16,
+                                    color: Color(0xFF334155),
+                                  ),
+                                  label: const Text(
+                                    'View Details',
+                                    style: TextStyle(
+                                      color: Color(0xFF334155),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    side: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // Add Stock Button
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () async {
+                                    if (_scannedProduct != null) {
+                                      await _controller.stop();
+                                      final int productId =
+                                          _scannedProduct!['id'] ?? 0;
+                                      final String productName =
+                                          _scannedProduct!['name'] ?? '';
+
+                                      if (!mounted) return;
+
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              CreatePurchaseScreen(
+                                                productId: productId,
+                                                productName: productName,
+                                                productQuantity: 1,
+                                              ),
+                                        ),
+                                      );
+
+                                      if (mounted) {
+                                        _controller.start();
+                                      }
+                                    }
+                                  },
+                                  icon: const Icon(
+                                    Icons.add_shopping_cart_rounded,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                  label: const Text(
+                                    'Add Stock',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF4F46E5),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -326,5 +483,80 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
               ],
             ),
     );
+  }
+
+  // 🎨 Custom Corner Borders អាចប្តូរពណ៌តាមស្ថានភាពស្កេន
+  List<Widget> _buildCustomScannerCorners({required Color color}) {
+    const double cornerSize = 28.0;
+    const double borderWidth = 4.5;
+
+    return [
+      Positioned(
+        top: 0,
+        left: 0,
+        child: Container(
+          width: cornerSize,
+          height: cornerSize,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: color, width: borderWidth),
+              left: BorderSide(color: color, width: borderWidth),
+            ),
+            borderRadius: const BorderRadius.only(topLeft: Radius.circular(16)),
+          ),
+        ),
+      ),
+      Positioned(
+        top: 0,
+        right: 0,
+        child: Container(
+          width: cornerSize,
+          height: cornerSize,
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(color: color, width: borderWidth),
+              right: BorderSide(color: color, width: borderWidth),
+            ),
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(16),
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        bottom: 0,
+        left: 0,
+        child: Container(
+          width: cornerSize,
+          height: cornerSize,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: color, width: borderWidth),
+              left: BorderSide(color: color, width: borderWidth),
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomLeft: Radius.circular(16),
+            ),
+          ),
+        ),
+      ),
+      Positioned(
+        bottom: 0,
+        right: 0,
+        child: Container(
+          width: cornerSize,
+          height: cornerSize,
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(color: color, width: borderWidth),
+              right: BorderSide(color: color, width: borderWidth),
+            ),
+            borderRadius: const BorderRadius.only(
+              bottomRight: Radius.circular(16),
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../homesccreeen/dashboard_screen.dart';
 import '../msg/appSnackBar.dart';
 import '../profile/forget_pass_screen.dart';
@@ -20,8 +21,40 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isEmailValid = false;
+  bool _rememberMe = false;
 
   final ApiAuth _apiAuth = ApiAuth();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedCredentials();
+  }
+
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _rememberMe = prefs.getBool('remember_me') ?? false;
+      if (_rememberMe) {
+        _emailController.text = prefs.getString('saved_email') ?? '';
+        _passwordController.text = prefs.getString('saved_password') ?? '';
+        _isEmailValid = _emailController.text.contains('@');
+      }
+    });
+  }
+
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setBool('remember_me', true);
+      await prefs.setString('saved_email', _emailController.text.trim());
+      await prefs.setString('saved_password', _passwordController.text.trim());
+    } else {
+      await prefs.remove('remember_me');
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+    }
+  }
 
   @override
   void dispose() {
@@ -46,11 +79,14 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       if (result['success']) {
-        AppSnackBar.showSuccess(context, "Login successful!");
+        await _saveCredentials();
+        if (!mounted) return;
 
-        Navigator.pushReplacement(
+        AppSnackBar.showSuccess(context, "Login successful!");
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          (route) => false,
         );
       } else {
         AppSnackBar.showError(
@@ -63,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // កំណត់ពណ៌ Status bar ឱ្យទៅជា Light (White)
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -84,11 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 🎨 Header Container with Gradient (លាតដល់គែមលើផុត)
+            // 🌿 Gradient Banner (Modern Soft Emerald Green)
             Container(
               padding: const EdgeInsets.only(
-                top:
-                    75, // បន្ថែម Padding ខាងលើ ដើម្បីកុំឱ្យបាំង Status bar / Dynamic Island
+                top: 75,
                 bottom: 40,
                 left: 24,
                 right: 24,
@@ -96,9 +130,9 @@ class _LoginScreenState extends State<LoginScreen> {
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    Color(0xFF4F46E5),
-                    Color(0xFF3B82F6),
-                    Color(0xFF00C6FF),
+                    Color(0xFF047857),
+                    Color(0xFF059669), // 🌱 Medium Green
+                    Color(0xFF34D399), // 🍃 Mint Bright Light
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -131,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: ClipOval(
                       child: Image.network(
-                        'https://i.pinimg.com/1200x/d8/9a/8a/d89a8aa6e670284f88a320353d7c3e18.jpg',
+                        'https://i.pinimg.com/736x/0c/65/64/0c6564861bd356b98f0746f6cc1ff8db.jpg',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return const Icon(
@@ -145,7 +179,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    "Welcome Back!",
+                    "Khmer Store",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -155,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    "Sign in to continue to your APP dashboard",
+                    "Sign in to continue to your App dashboard",
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.white.withValues(alpha: 0.85),
@@ -202,10 +236,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         prefixIcon: const Icon(
                           Icons.email_outlined,
-                          color: Color(0xFF4F46E5),
+                          color: Color(0xFF059669), // 🍃 Green Icon
                           size: 22,
                         ),
-                        // បង្ហាញសញ្ញាគ្រីសពណ៌បៃតងនៅខាងស្តាំពេលអ៊ីមែលត្រូវ
                         suffixIcon: _emailController.text.isNotEmpty
                             ? Icon(
                                 _isEmailValid
@@ -222,7 +255,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide(
-                            // ប្តូរពណ៌ស៊ុមទៅជាបៃតងបើត្រូវ ឬក្រហមបើវាយខុសនិងមិនទាន់អស់
                             color: _emailController.text.isNotEmpty
                                 ? (_isEmailValid ? Colors.green : Colors.red)
                                 : Colors.grey.shade200,
@@ -234,7 +266,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderSide: BorderSide(
                             color: _emailController.text.isNotEmpty
                                 ? (_isEmailValid ? Colors.green : Colors.red)
-                                : const Color(0xFF4F46E5),
+                                : const Color(0xFF059669), // 🍃 Focus Green
                             width: 1.5,
                           ),
                         ),
@@ -267,7 +299,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
 
                     // 🔒 Password TextField
                     Text(
@@ -290,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         prefixIcon: const Icon(
                           Icons.lock_outline_rounded,
-                          color: Color(0xFF4F46E5),
+                          color: Color(0xFF059669), // 🍃 Green Icon
                           size: 22,
                         ),
                         suffixIcon: IconButton(
@@ -323,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: const BorderSide(
-                            color: Color(0xFF4F46E5),
+                            color: Color(0xFF059669), // 🍃 Focus Green
                             width: 1.5,
                           ),
                         ),
@@ -339,42 +371,75 @@ class _LoginScreenState extends State<LoginScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 5),
 
-                    // 🔑 Forgot Password
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ForgetPassScreen(),
+                    // ☑️ Remember Me & Forgot Password Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: Checkbox(
+                                value: _rememberMe,
+                                activeColor: const Color(
+                                  0xFF059669,
+                                ), // 🍃 Green Checkbox
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value ?? false;
+                                  });
+                                },
+                              ),
                             ),
-                          );
-                        },
-                        child: const Text(
-                          "Forgot Password?",
-                          style: TextStyle(
-                            color: Color(0xFF4F46E5),
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
+                            const SizedBox(width: 8),
+                            Text(
+                              "Remember me",
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ForgetPassScreen(),
+                              ),
+                            );
+                          },
+                          child: const Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                              color: Color(0xFF059669), // 🍃 Green Link
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 10),
 
-                    // 🚀 Login Button with Gradient & Shadow
+                    // 🚀 Login Button with Soft Green Gradient & Shadow
                     Container(
                       height: 54,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF4F46E5), Color(0xFF3B82F6)],
+                          colors: [Color(0xFF047857), Color(0xFF059669)],
                           begin: Alignment.centerLeft,
                           end: Alignment.centerRight,
                         ),
@@ -382,7 +447,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         boxShadow: [
                           BoxShadow(
                             color: const Color(
-                              0xFF4F46E5,
+                              0xFF059669,
                             ).withValues(alpha: 0.3),
                             blurRadius: 15,
                             offset: const Offset(0, 8),
@@ -417,7 +482,37 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 15),
+
+                    // ➖ OR Divider Line
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: Colors.grey.shade300,
+                            thickness: 1,
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            "OR",
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: Colors.grey.shade300,
+                            thickness: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 17),
 
                     // 📌 Sign Up Navigation
                     Row(
@@ -442,13 +537,25 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             "Sign Up",
                             style: TextStyle(
-                              color: Color(0xFF4F46E5),
+                              color: Color(0xFF059669), // 🍃 Green Sign Up Link
                               fontWeight: FontWeight.bold,
                               fontSize: 13.5,
                             ),
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    // ©️ Copyright Footer
+                    Center(
+                      child: Text(
+                        "Copyright © 2026 Khmer Store System · Inventory Management",
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 11,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 20),
                   ],

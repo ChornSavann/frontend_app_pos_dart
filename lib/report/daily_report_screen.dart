@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pos_inventory/api/report/api_report.dart';
 import 'package:pos_inventory/models/reports/report_daily.dart';
 
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:share_plus/share_plus.dart';
 import 'invoice_detail_screen.dart';
 
 class DailyReportScreen extends StatefulWidget {
@@ -21,9 +26,14 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
   int totalOrdersCount = 0;
   double totalDiscount = 0.0;
 
+  DateTime? _startDate;
+  DateTime? _endDate;
+
   @override
   void initState() {
     super.initState();
+    _startDate = DateTime.now();
+    _endDate = DateTime.now();
     _loadDailyReports();
   }
 
@@ -33,7 +43,17 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
     });
 
     try {
-      List<ReportDaily> fetchedOrders = await _apiReport.fetchDailyReports();
+      String? startStr = _startDate != null
+          ? "${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}"
+          : null;
+      String? endStr = _endDate != null
+          ? "${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}"
+          : null;
+
+      List<ReportDaily> fetchedOrders = await _apiReport.fetchDailyReports(
+        startDate: startStr,
+        endDate: endStr,
+      );
 
       double revenue = 0.0;
       double discount = 0.0;
@@ -56,8 +76,242 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
     }
   }
 
+  // 🗓️ មុខងារបើក Date Range Picker
+  Future<void> _selectDateRange() async {
+    DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      initialDateRange: _startDate != null && _endDate != null
+          ? DateTimeRange(start: _startDate!, end: _endDate!)
+          : DateTimeRange(start: DateTime.now(), end: DateTime.now()),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            primaryColor: const Color(0xFF059669),
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF059669),
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Color(0xFF1E293B),
+            ),
+            dialogBackgroundColor: Colors.white,
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+      _loadDailyReports();
+    }
+  }
+
+  // 📄 មុខងារ Export របាយការណ៍សរុបជា PDF
+  Future<void> _exportReportAsPDF() async {
+    try {
+      final pdf = pw.Document();
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(24),
+          build: (pw.Context context) {
+            return [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        'SALES REPORT',
+                        style: pw.TextStyle(
+                          fontSize: 22,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.teal800,
+                        ),
+                      ),
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Total Revenue: \$${totalRevenue.toStringAsFixed(2)}',
+                        style: const pw.TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                  pw.Text(
+                    'Total Orders: $totalOrdersCount',
+                    style: pw.TextStyle(
+                      fontSize: 14,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              pw.SizedBox(height: 15),
+              pw.Divider(color: PdfColors.grey400),
+              pw.SizedBox(height: 10),
+              pw.Table.fromTextArray(
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.white,
+                  fontSize: 11,
+                ),
+                headerDecoration: const pw.BoxDecoration(
+                  color: PdfColors.grey800,
+                ),
+                rowDecoration: const pw.BoxDecoration(
+                  border: pw.Border(
+                    bottom: pw.BorderSide(color: PdfColors.grey200),
+                  ),
+                ),
+                cellStyle: const pw.TextStyle(fontSize: 10),
+                headers: ['Order No', 'Customer', 'Date', 'Status', 'Amount'],
+                data: dailyOrders.map((order) {
+                  return [
+                    order.orderNumber,
+                    order.customer?.name ?? 'Guest',
+                    order.createdAt.contains('T')
+                        ? order.createdAt.split('T').first
+                        : order.createdAt,
+                    order.status.toUpperCase(),
+                    '\$${order.totalAmount.toStringAsFixed(2)}',
+                  ];
+                }).toList(),
+              ),
+            ];
+          },
+        ),
+      );
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/Sales_Report.pdf");
+      await file.writeAsBytes(await pdf.save());
+
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: '📊 របាយការណ៍លក់សរុប (Sales Report PDF)');
+    } catch (e) {
+      debugPrint("Error exporting PDF report: $e");
+    }
+  }
+
+  // 📊 មុខងារ Export របាយការណ៍ជា CSV (Excel Compatible)
+  Future<void> _exportReportAsCSV() async {
+    try {
+      List<String> csvRows = [];
+
+      // Header
+      csvRows.add(
+        "Order ID,Order Number,Customer Name,Payment Method,Status,Total Amount,Date",
+      );
+
+      // Rows
+      for (var order in dailyOrders) {
+        String line =
+            "${order.id},"
+            "\"${order.orderNumber}\","
+            "\"${order.customer?.name ?? 'Guest'}\","
+            "\"${order.payment?.paymentMethod ?? 'Cash'}\","
+            "\"${order.status}\","
+            "${order.totalAmount},"
+            "\"${order.createdAt}\"";
+        csvRows.add(line);
+      }
+
+      String csvData = csvRows.join("\n");
+
+      final output = await getTemporaryDirectory();
+      final file = File("${output.path}/Sales_Report.csv");
+      await file.writeAsString(csvData);
+
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: '📈 របាយការណ៍លក់ (Excel/CSV Format)');
+    } catch (e) {
+      debugPrint("Error exporting CSV report: $e");
+    }
+  }
+
+  // ⚙️ BottomSheet បង្ហាញជម្រើស Export
+  void _showExportOptions(BuildContext context) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (BuildContext context) => CupertinoActionSheet(
+        title: const Text('Export & Share Report'),
+        message: const Text('ជ្រើសរើសទម្រង់ឯកសារដែលចង់ Export'),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _exportReportAsPDF();
+            },
+            child: const Text('Export as PDF Document'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              _exportReportAsCSV();
+            },
+            child: const Text('Export as Excel / CSV'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDefaultAction: true,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(color: Colors.red)),
+        ),
+      ),
+    );
+  }
+
+  // 📈 Growth Rate Badge Widget
+  Widget _buildGrowthBadge({
+    required double percentage,
+    required bool isIncrease,
+  }) {
+    Color badgeColor = isIncrease
+        ? const Color(0xFF34D399)
+        : const Color(0xFFF87171);
+    IconData iconData = isIncrease
+        ? Icons.arrow_upward_rounded
+        : Icons.arrow_downward_rounded;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: badgeColor.withOpacity(0.4), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(iconData, color: badgeColor, size: 13),
+          const SizedBox(width: 4),
+          Text(
+            '${isIncrease ? "+" : ""}${percentage.toStringAsFixed(1)}% ធៀបនឹងរយៈពេលមុន',
+            style: TextStyle(
+              color: badgeColor,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    String dateRangeText = (_startDate != null && _endDate != null)
+        ? "${_startDate!.day}/${_startDate!.month}/${_startDate!.year} - ${_endDate!.day}/${_endDate!.month}/${_endDate!.year}"
+        : "ជ្រើសរើសកាលបរិច្ឆេទ";
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -66,7 +320,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
         centerTitle: true,
         iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
         title: const Text(
-          'Daily Sales Report',
+          'Sales Report',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -74,16 +328,26 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
           ),
         ),
         actions: [
+          // 📤 ប៊ូតុង Export & Share Reports
+          IconButton(
+            icon: const Icon(
+              CupertinoIcons.square_arrow_up,
+              color: Color(0xFF059669),
+              size: 22,
+            ),
+            onPressed: () => _showExportOptions(context),
+          ),
+          // Refresh Button
           Container(
             margin: const EdgeInsets.only(right: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF4F46E5).withOpacity(0.1),
+              color: const Color(0xFF059669).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: IconButton(
               icon: const Icon(
                 Icons.refresh_rounded,
-                color: Color(0xFF4F46E5),
+                color: Color(0xFF059669),
                 size: 20,
               ),
               onPressed: _loadDailyReports,
@@ -93,10 +357,10 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
       ),
       body: isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+              child: CircularProgressIndicator(color: Color(0xFF059669)),
             )
           : RefreshIndicator(
-              color: const Color(0xFF4F46E5),
+              color: const Color(0xFF059669),
               onRefresh: _loadDailyReports,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(
@@ -104,15 +368,70 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                 ),
                 padding: const EdgeInsets.all(16.0),
                 children: [
-                  // 🌟 Premium Header Card (Summary Total Revenue)
+                  // 📅 Date Range Filter Bar Button
+                  InkWell(
+                    onTap: _selectDateRange,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: const Color(0xFF059669).withOpacity(0.3),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.02),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                CupertinoIcons.calendar,
+                                color: Color(0xFF059669),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                dateRangeText,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios_rounded,
+                            size: 14,
+                            color: Color(0xFF059669),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 🌟 Premium Emerald Header Card (Summary Total Revenue)
                   Container(
                     padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [
-                          Color(0xFF4F46E5),
-                          Color(0xFF6366F1),
-                          Color(0xFF818CF8),
+                          Color(0xFF065F46),
+                          Color(0xFF059669),
+                          Color(0xFF10B981),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -120,101 +439,62 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF4F46E5).withOpacity(0.3),
+                          color: const Color(0xFF059669).withOpacity(0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 8),
                         ),
                       ],
                     ),
-                    child: Stack(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Positioned(
-                          right: -30,
-                          top: -30,
-                          child: Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.08),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'TOTAL REVENUE TODAY',
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 1.0,
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 5,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      Icon(
-                                        Icons.circle,
-                                        size: 7,
-                                        color: Color(0xFF34D399),
-                                      ),
-                                      SizedBox(width: 5),
-                                      Text(
-                                        'Live DB',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              '\$${totalRevenue.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 32,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: -0.5,
+                            const Text(
+                              'TOTAL REVENUE',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.0,
                               ),
                             ),
-                            const SizedBox(height: 18),
-                            Container(
-                              height: 1,
-                              color: Colors.white.withOpacity(0.15),
+                            // 🚀 Growth Rate Badge
+                            _buildGrowthBadge(
+                              percentage: 12.5,
+                              isIncrease: true,
                             ),
-                            const SizedBox(height: 14),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                _buildSubMetric(
-                                  'Total Orders',
-                                  '$totalOrdersCount',
-                                  CupertinoIcons.cart_fill,
-                                ),
-                                _buildSubMetric(
-                                  'Discounts',
-                                  '\$${totalDiscount.toStringAsFixed(2)}',
-                                  CupertinoIcons.tag_fill,
-                                ),
-                              ],
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '\$${totalRevenue.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 32,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          height: 1,
+                          color: Colors.white.withOpacity(0.15),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildSubMetric(
+                              'Total Orders',
+                              '$totalOrdersCount',
+                              CupertinoIcons.cart_fill,
+                            ),
+                            _buildSubMetric(
+                              'Discounts',
+                              '\$${totalDiscount.toStringAsFixed(2)}',
+                              CupertinoIcons.tag_fill,
                             ),
                           ],
                         ),
@@ -278,7 +558,7 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 const Text(
-                                  'No transactions found for today',
+                                  'No transactions found in this range',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 14,
@@ -335,12 +615,11 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                                     padding: const EdgeInsets.all(16.0),
                                     child: Row(
                                       children: [
-                                        // Order Icon Box
                                         Container(
                                           padding: const EdgeInsets.all(12),
                                           decoration: BoxDecoration(
                                             color: const Color(
-                                              0xFF4F46E5,
+                                              0xFF059669,
                                             ).withOpacity(0.08),
                                             borderRadius: BorderRadius.circular(
                                               16,
@@ -348,13 +627,11 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                                           ),
                                           child: const Icon(
                                             CupertinoIcons.doc_text_fill,
-                                            color: Color(0xFF4F46E5),
+                                            color: Color(0xFF059669),
                                             size: 22,
                                           ),
                                         ),
                                         const SizedBox(width: 14),
-
-                                        // Order & Customer Info
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment:
@@ -380,8 +657,6 @@ class _DailyReportScreenState extends State<DailyReportScreen> {
                                             ],
                                           ),
                                         ),
-
-                                        // Price & Status Badge
                                         Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.end,

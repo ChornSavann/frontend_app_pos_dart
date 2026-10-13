@@ -12,7 +12,7 @@ class PurchaseModel {
   final String paymentMethod;
   final String status;
   final String? notes;
-  final List<Map<String, dynamic>>? items; // 🟢 កំណត់ Type ឱ្យច្បាស់ជា Map<String, dynamic>
+  final List<Map<String, dynamic>>? items;
 
   PurchaseModel({
     this.id,

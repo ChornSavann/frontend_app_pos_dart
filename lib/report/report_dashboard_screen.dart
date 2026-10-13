@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:pos_inventory/api/report/api_report.dart';
 import 'package:pos_inventory/report/customer_report_screen.dart';
 import 'package:pos_inventory/report/daily_report_screen.dart';
+import 'package:pos_inventory/report/invoice/list_invoice_screen.dart';
 import 'package:pos_inventory/report/low_stock_screen.dart';
+import 'package:pos_inventory/report/month/monthly_report_screen.dart';
 import 'package:pos_inventory/report/profit_lose/finance_chart_screen.dart';
 import 'package:pos_inventory/report/profit_lose/finance_report_screen.dart';
 import 'package:pos_inventory/report/purchase_report_screen.dart';
 import 'package:pos_inventory/report/top_selling_screen.dart';
+import 'package:pos_inventory/report/year/yearly_report_screen.dart';
 
 class ReportDashboardScreen extends StatefulWidget {
   const ReportDashboardScreen({super.key});
@@ -107,7 +110,7 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildChartCard(), // 📊 Modern Bar Chart
+                    _buildChartCard(),
                     const SizedBox(height: 24),
 
                     const Text(
@@ -157,8 +160,11 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                       title: 'Purchase History',
                       subtitle:
                           'Track supplier expenses, stock imports and orders',
-                      icon: Icons.shopping_bag_rounded,
-                      color: const Color(0xFF3B82F6),
+                      icon:
+                          Icons.shopping_bag_rounded,
+                      color: const Color(
+                        0xFF3B82F6,
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,
@@ -168,6 +174,27 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                         );
                       },
                     ),
+                    const SizedBox(height: 12),
+
+                    _buildReportCard(
+                      title: 'Invoice History',
+                      subtitle:
+                          'View and manage customer sales invoices and receipts',
+                      icon: Icons
+                          .receipt_long_rounded,
+                      color: const Color(
+                        0xFF10B981,
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ListInvoiceScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
                     const SizedBox(height: 16),
 
                     Row(
@@ -208,7 +235,45 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildSmallCard(
+                            title: 'Monthly Report',
+                            subtitle: 'Items need refill',
+                            icon: Icons.bar_chart_rounded,
+                            color: const Color(0xFFEF4444),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const MonthlyReportScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _buildSmallCard(
+                            title: 'Yearly Report',
+                            subtitle: 'Points & history',
+                            icon: Icons.analytics_rounded,
+                            color: const Color(0xFF8B5CF6),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => YearlyReportScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     Row(
                       children: [
                         Expanded(
@@ -409,7 +474,7 @@ class _ReportDashboardScreenState extends State<ReportDashboardScreen> {
       children: [
         if (amount > 0)
           Text(
-            '\$${amount.toStringAsFixed(0)}',
+            '\$${amount.toStringAsFixed(2)}',
             style: const TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.bold,

@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import '../api/api_unit.dart';
 import '../models/Product.dart';
 import '../msg/appSnackBar.dart';
 
@@ -118,6 +119,92 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     }
   }
 
+  // 📂 1. Categories Offline Aware
+  Future<List<dynamic>> _fetchCategoriesOfflineAware() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    var box = Hive.box('offline_categories');
+
+    if (connectivityResult != ConnectivityResult.none) {
+      try {
+        List<dynamic> categories = await ApiCategory().fetchCategory();
+        await box.clear();
+        await box.put('categories_data', categories);
+        return categories;
+      } catch (e) {
+        debugPrint("Error fetching categories from API, fallback to local: $e");
+      }
+    }
+
+    var localData = box.get('categories_data');
+    if (localData != null) {
+      return List<dynamic>.from(localData);
+    }
+    return [];
+  }
+
+  // 📂 2. Brands Offline Aware
+  Future<List<dynamic>> _fetchBrandsOfflineAware() async {
+    var connectivityResult = await Connectivity().checkConnectivity();
+    var box = Hive.box('offline_brands');
+
+    if (connectivityResult != ConnectivityResult.none) {
+      try {
+        List<dynamic> brands = await ApiBrand().fetchBrands();
+        await box.clear();
+        List<Map<String, dynamic>> brandMaps = brands
+            .map((b) => {'id': b.id, 'name': b.name})
+            .toList();
+        await box.put('brands_data', brandMaps);
+        return brands;
+      } catch (e) {
+        debugPrint("Error fetching brands from API, fallback to local: $e");
+      }
+    }
+
+    var localData = box.get('brands_data');
+    if (localData != null) {
+      return List<dynamic>.from(localData);
+    }
+    return [];
+  }
+
+  // 📂 3. Units Offline Aware
+  Future<List<dynamic>> _fetchUnitsOfflineAware() async {
+    var box = Hive.box('offline_units');
+    var connectivityResult = await Connectivity().checkConnectivity();
+
+    if (connectivityResult != ConnectivityResult.none) {
+      try {
+        List<dynamic> units = await ApiProduct().fetchUnits();
+        if (units.isNotEmpty) {
+          await box.clear();
+          List<Map<String, dynamic>> unitMaps = units
+              .map(
+                (u) => {
+                  'id': u is Map ? u['id'] : u.id,
+                  'name': u is Map ? u['name'] : u.name,
+                  'short_name': u is Map
+                      ? (u['short_name'] ?? '')
+                      : (u.shortName ?? ''),
+                },
+              )
+              .toList();
+
+          await box.put('units_data', unitMaps);
+          return unitMaps;
+        }
+      } catch (e) {
+        debugPrint("API Error fetching units: $e");
+      }
+    }
+
+    var localData = box.get('units_data');
+    if (localData != null) {
+      return List<dynamic>.from(localData);
+    }
+    return [];
+  }
+
   void _scanBarcode() {
     final MobileScannerController scannerController = MobileScannerController(
       detectionSpeed: DetectionSpeed.noDuplicates,
@@ -177,7 +264,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     if (barcode.rawValue != null) {
                       final scannedCode = barcode.rawValue!.trim();
 
-                      // ១. បិទកាមេរ៉ា និងកំណត់ Barcode ទុកមុន
                       HapticFeedback.mediumImpact();
                       Navigator.pop(context);
 
@@ -185,7 +271,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                         _barcodeController.text = scannedCode;
                       });
 
-                      // ២. បង្ហាញ Dialog "កំពុងស្វែងរក"
                       showDialog(
                         context: context,
                         barrierDismissible: false,
@@ -216,22 +301,22 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                         ),
                       );
 
-                      // ៣. ឆែកមើលក្នុង API ខាងក្រៅ ដោយកំណត់ Timeout ត្រឹម 0.5 វិនាទី (500 ms)
                       dynamic publicProduct;
                       try {
                         publicProduct = await apiProduct
                             .fetchProductInfoFromPublicBarcode(scannedCode)
-                            .timeout(const Duration(milliseconds: 500), onTimeout: () {
-                          return null; // បើហួស 0.5 វិនាទី ចាត់ទុកว่าរកមិនឃើញ
-                        });
+                            .timeout(
+                              const Duration(milliseconds: 500),
+                              onTimeout: () {
+                                return null;
+                              },
+                            );
                       } catch (e) {
                         publicProduct = null;
                       }
 
-                      // ៤. បិទ Dialog "កំពុងស្វែងរក" វិញ
                       if (mounted) Navigator.pop(context);
 
-                      // ៥. ពិនិត្យលទ្ធផល
                       if (publicProduct != null &&
                           publicProduct['name'] != null &&
                           publicProduct['name'].toString().isNotEmpty) {
@@ -245,7 +330,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                           );
                         }
                       } else {
-                        // ៦. បើរកអត់ឃើញ ឬ Timeout 0.5s គឺលោត Dialog ឱ្យបំពេញឈ្មោះទំនិញថ្មីភ្លាមៗ
                         if (mounted) {
                           _showQuickAddProductDialog(scannedCode);
                         }
@@ -256,8 +340,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   }
                 },
               ),
-
-              // 🔲 Scan Frame Overlay
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -311,11 +393,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     );
   }
 
-
   void _showQuickAddProductDialog(String barcode) {
     final TextEditingController quickNameController = TextEditingController();
-    final TextEditingController quickCostPriceController = TextEditingController();
-    final TextEditingController quickSellingPriceController = TextEditingController();
+    final TextEditingController quickCostPriceController =
+        TextEditingController();
+    final TextEditingController quickSellingPriceController =
+        TextEditingController();
 
     showDialog(
       context: context,
@@ -368,33 +451,46 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: quickCostPriceController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Cost Price (\$)',
                     hintText: '0.00',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: quickSellingPriceController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: InputDecoration(
                     labelText: 'Selling Price (\$)',
                     hintText: '0.00',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
                   ),
                 ),
               ],
@@ -407,7 +503,10 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               Expanded(
                 child: TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('បោះបង់', style: TextStyle(color: Colors.grey)),
+                  child: const Text(
+                    'បោះបង់',
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
@@ -424,10 +523,15 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                       setState(() {
                         _nameController.text = quickNameController.text.trim();
                         if (quickCostPriceController.text.trim().isNotEmpty) {
-                          _costPriceController.text = quickCostPriceController.text.trim();
+                          _costPriceController.text = quickCostPriceController
+                              .text
+                              .trim();
                         }
-                        if (quickSellingPriceController.text.trim().isNotEmpty) {
-                          _sellingPriceController.text = quickSellingPriceController.text.trim();
+                        if (quickSellingPriceController.text
+                            .trim()
+                            .isNotEmpty) {
+                          _sellingPriceController.text =
+                              quickSellingPriceController.text.trim();
                         }
                       });
                       Navigator.pop(context);
@@ -439,7 +543,10 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                       AppSnackBar.showError(context, 'សូមបញ្ចូលឈ្មោះទំនិញ!');
                     }
                   },
-                  child: const Text('យល់ព្រម', style: TextStyle(color: Colors.white)),
+                  child: const Text(
+                    'យល់ព្រម',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -449,6 +556,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     );
   }
 
+  // 🟢 មុខងារ Submit Product ជាមួយការគាំទ្រ Offline Mode (Hive)
   void _submitProduct() async {
     if (_formKey.currentState!.validate()) {
       showDialog(
@@ -474,26 +582,54 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
         'description': _descriptionController.text,
         'image': _selectedImages.isNotEmpty ? _selectedImages[0].path : null,
       };
+      var connectivityResult = await Connectivity().checkConnectivity();
+      bool isOffline = (connectivityResult == ConnectivityResult.none);
 
-      Map<String, dynamic> result = await apiProduct.createProduct(productData);
+      if (isOffline) {
+        try {
+          var offlineBox = Hive.box('offline_pending_products');
+          String key = _barcodeController.text.isNotEmpty
+              ? _barcodeController.text
+              : _skuController.text;
+          await offlineBox.put(key, productData);
 
-      if (mounted) Navigator.pop(context);
+          if (mounted) Navigator.pop(context);
 
-      if (result['success'] == true) {
-        _showSuccessDialog(
-          result['message'] ?? 'Product created successfully!',
-          onClose: () {
-            Navigator.pop(context, true);
-          },
-        );
+          if (mounted) {
+            _showSuccessDialog(
+              '⚠️ គ្មានអ៉ីនធឺណិត! ផលិតផលត្រូវបានរក្សាទុកក្នុង Offline ជោគជ័យ។',
+              onClose: () {
+                Navigator.pop(context, true);
+              },
+            );
+          }
+        } catch (e) {
+          if (mounted) Navigator.pop(context);
+          debugPrint("Error saving offline product to Hive: $e");
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Failed to create product'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        Map<String, dynamic> result = await apiProduct.createProduct(
+          productData,
         );
+
+        if (mounted) Navigator.pop(context);
+
+        if (result['success'] == true) {
+          _showSuccessDialog(
+            result['message'] ?? 'Product created successfully!',
+            onClose: () {
+              Navigator.pop(context, true);
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'Failed to create product'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     }
   }
@@ -608,7 +744,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🌟 1. Image Banner Section
+              // 🌟 Image Banner Section
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -818,6 +954,126 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               const SizedBox(height: 16),
 
               // 🗂️ 3. Organization Card
+              // Container(
+              //   padding: const EdgeInsets.all(16),
+              //   decoration: BoxDecoration(
+              //     color: Colors.white,
+              //     borderRadius: BorderRadius.circular(20),
+              //     boxShadow: [
+              //       BoxShadow(
+              //         color: Colors.black.withValues(alpha: 0.03),
+              //         blurRadius: 10,
+              //         offset: const Offset(0, 4),
+              //       ),
+              //     ],
+              //   ),
+              //   child: Column(
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: [
+              //       const Text(
+              //         "Organization",
+              //         style: TextStyle(
+              //           fontSize: 14,
+              //           fontWeight: FontWeight.bold,
+              //           color: Color(0xFF1E293B),
+              //         ),
+              //       ),
+              //       const SizedBox(height: 16),
+              //
+              //       // Category Dropdown
+              //       FutureBuilder<List<dynamic>>(
+              //         future: ApiCategory().fetchCategory(),
+              //         builder: (context, snapshot) {
+              //           if (snapshot.connectionState ==
+              //               ConnectionState.waiting) {
+              //             return const LinearProgressIndicator();
+              //           }
+              //           final categoryList = snapshot.data ?? [];
+              //           return DropdownButtonFormField<int>(
+              //             value: _selectedCategoryId,
+              //             decoration: _inputDecoration(
+              //               "Select Category",
+              //               Icons.category_outlined,
+              //             ),
+              //             items: categoryList.map((category) {
+              //               return DropdownMenuItem<int>(
+              //                 value: category['id'],
+              //                 child: Text(category['name'].toString()),
+              //               );
+              //             }).toList(),
+              //             validator: (value) =>
+              //                 value == null ? 'Please select a category' : null,
+              //             onChanged: (int? newValue) =>
+              //                 setState(() => _selectedCategoryId = newValue),
+              //           );
+              //         },
+              //       ),
+              //       const SizedBox(height: 14),
+              //
+              //       // Brand Dropdown
+              //       FutureBuilder<List<dynamic>>(
+              //         future: ApiBrand().fetchBrands(),
+              //         builder: (context, snapshot) {
+              //           if (snapshot.connectionState ==
+              //               ConnectionState.waiting) {
+              //             return const LinearProgressIndicator();
+              //           }
+              //           final brandList = snapshot.data ?? [];
+              //           return DropdownButtonFormField<int>(
+              //             value: _selectedBrandId,
+              //             decoration: _inputDecoration(
+              //               "Select Brand",
+              //               Icons.branding_watermark_outlined,
+              //             ),
+              //             items: brandList.map((brand) {
+              //               return DropdownMenuItem<int>(
+              //                 value: brand.id,
+              //                 child: Text(brand.name.toString()),
+              //               );
+              //             }).toList(),
+              //             validator: (value) =>
+              //                 value == null ? 'Please select a brand' : null,
+              //             onChanged: (int? newValue) =>
+              //                 setState(() => _selectedBrandId = newValue),
+              //           );
+              //         },
+              //       ),
+              //       const SizedBox(height: 14),
+              //
+              //       // Unit Dropdown
+              //       FutureBuilder<List<dynamic>>(
+              //         future: ApiProduct().fetchUnits(),
+              //         builder: (context, snapshot) {
+              //           if (snapshot.connectionState ==
+              //               ConnectionState.waiting) {
+              //             return const LinearProgressIndicator();
+              //           }
+              //           final unitList = snapshot.data ?? [];
+              //           return DropdownButtonFormField<int>(
+              //             value: _selectedUnitId,
+              //             decoration: _inputDecoration(
+              //               "Select Unit (e.g. Pcs, Box)",
+              //               Icons.straighten,
+              //             ),
+              //             items: unitList.map((unit) {
+              //               return DropdownMenuItem<int>(
+              //                 value: unit['id'],
+              //                 child: Text(
+              //                   "${unit['name']} (${unit['short_name'] ?? ''})",
+              //                 ),
+              //               );
+              //             }).toList(),
+              //             validator: (value) =>
+              //                 value == null ? 'Please select a unit' : null,
+              //             onChanged: (int? newValue) =>
+              //                 setState(() => _selectedUnitId = newValue),
+              //           );
+              //         },
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // 🗂️ 3. Organization Card (គាំទ្រ Offline Mode ຜ່ານ Hive)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -846,7 +1102,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
                     // Category Dropdown
                     FutureBuilder<List<dynamic>>(
-                      future: ApiCategory().fetchCategory(),
+                      future: _fetchCategoriesOfflineAware(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -861,7 +1117,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                           ),
                           items: categoryList.map((category) {
                             return DropdownMenuItem<int>(
-                              value: category['id'],
+                              value: category['id'] is int
+                                  ? category['id']
+                                  : int.parse(category['id'].toString()),
                               child: Text(category['name'].toString()),
                             );
                           }).toList(),
@@ -876,7 +1134,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
                     // Brand Dropdown
                     FutureBuilder<List<dynamic>>(
-                      future: ApiBrand().fetchBrands(),
+                      future: _fetchBrandsOfflineAware(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -890,9 +1148,14 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                             Icons.branding_watermark_outlined,
                           ),
                           items: brandList.map((brand) {
+                            // ផ្ទៀងផ្ទាត់ថាតើ brand ជា Map ឬ Object
+                            var id = brand is Map ? brand['id'] : brand.id;
+                            var name = brand is Map
+                                ? brand['name']
+                                : brand.name;
                             return DropdownMenuItem<int>(
-                              value: brand.id,
-                              child: Text(brand.name.toString()),
+                              value: id is int ? id : int.parse(id.toString()),
+                              child: Text(name.toString()),
                             );
                           }).toList(),
                           validator: (value) =>
@@ -906,7 +1169,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
                     // Unit Dropdown
                     FutureBuilder<List<dynamic>>(
-                      future: ApiProduct().fetchUnits(),
+                      future: _fetchUnitsOfflineAware(),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -920,11 +1183,15 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                             Icons.straighten,
                           ),
                           items: unitList.map((unit) {
+                            var id = unit is Map ? unit['id'] : unit.id;
+                            var name = unit is Map ? unit['name'] : unit.name;
+                            var shortName = unit is Map
+                                ? (unit['short_name'] ?? '')
+                                : (unit.shortName ?? '');
+
                             return DropdownMenuItem<int>(
-                              value: unit['id'],
-                              child: Text(
-                                "${unit['name']} (${unit['short_name'] ?? ''})",
-                              ),
+                              value: id is int ? id : int.parse(id.toString()),
+                              child: Text("$name (${shortName})"),
                             );
                           }).toList(),
                           validator: (value) =>
@@ -1055,6 +1322,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     required String actionLabel,
     required VoidCallback onActionPressed,
   }) {
+    // ignore: unnecessary_string_interpolations
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
@@ -1106,6 +1374,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: (value) {
+        // ignore: unnecessary_null_comparison
         if (isRequired && (value == null || value.isEmpty)) {
           return 'This field is required';
         }

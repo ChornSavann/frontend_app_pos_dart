@@ -21,22 +21,27 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = _apiProductService.fetchProductsandcategory(
-      categoryId: widget.categoryId,
-    );
+    _productsFuture = _fetchFilteredProducts();
   }
 
   @override
   void didUpdateWidget(covariant BannerProductScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 🟢 កែទិន្នន័យឡើងវិញស្វ័យប្រវត្តិ នៅពេលដែល categoryId មានការផ្លាស់ប្តូរ
     if (oldWidget.categoryId != widget.categoryId) {
       setState(() {
-        _productsFuture = _apiProductService.fetchProductsandcategory(
-          categoryId: widget.categoryId,
-        );
+        _productsFuture = _fetchFilteredProducts();
       });
     }
+  }
+
+  Future<List<ProductModelBanner>> _fetchFilteredProducts() async {
+    final products = await _apiProductService.fetchProductsandcategory(
+      categoryId: widget.categoryId,
+    );
+    return products.where((product) {
+      final stock = num.tryParse((product.stockQuantity ?? 0).toString()) ?? 0;
+      return stock >= 10;
+    }).toList();
   }
 
   @override
@@ -86,7 +91,6 @@ class _BannerProductScreenState extends State<BannerProductScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🌟 Carousel Slider Banner
             CarouselSlider(
               carouselController: _controller,
               options: CarouselOptions(

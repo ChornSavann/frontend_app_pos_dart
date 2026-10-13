@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:pos_inventory/api/report/api_report.dart';
+import 'package:pos_inventory/constants/baseurl/base_image_url.dart'; // 📥 នាំចូល BaseImageUrl
 
 class TopSellingScreen extends StatefulWidget {
   const TopSellingScreen({super.key});
@@ -154,6 +155,35 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                             itemCount: topProducts.length,
                             itemBuilder: (context, index) {
                               final product = topProducts[index];
+
+                              // 🖼️ ដំណើរការបង្កើត Link រូបភាពឱ្យបានត្រឹមត្រូវជាមួយ BaseImageUrl
+                              final rawImage = product['image_url'];
+                              String? finalImageUrl;
+
+                              if (rawImage != null &&
+                                  rawImage.toString().trim().isNotEmpty) {
+                                String imageStr = rawImage.toString();
+                                if (imageStr.startsWith('http://') ||
+                                    imageStr.startsWith('https://')) {
+                                  finalImageUrl = imageStr;
+                                } else {
+                                  String cleanPath = imageStr.startsWith('/')
+                                      ? imageStr.substring(1)
+                                      : imageStr;
+                                  String baseUrlFormatted =
+                                      BaseImageUrl.BaseimageUrl;
+                                  if (!baseUrlFormatted.startsWith('http://') &&
+                                      !baseUrlFormatted.startsWith(
+                                        'https://',
+                                      )) {
+                                    baseUrlFormatted =
+                                        'http://$baseUrlFormatted';
+                                  }
+                                  finalImageUrl =
+                                      '$baseUrlFormatted/$cleanPath';
+                                }
+                              }
+
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 12),
                                 decoration: BoxDecoration(
@@ -209,16 +239,9 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
-                                          child: Builder(
-                                            builder: (context) {
-                                              final imageUrl =
-                                                  product['image_url'];
-                                              if (imageUrl != null &&
-                                                  imageUrl
-                                                      .toString()
-                                                      .isNotEmpty) {
-                                                return Image.network(
-                                                  imageUrl.toString(),
+                                          child: finalImageUrl != null
+                                              ? Image.network(
+                                                  finalImageUrl,
                                                   fit: BoxFit.cover,
                                                   errorBuilder:
                                                       (
@@ -235,19 +258,15 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                                                           ),
                                                         );
                                                       },
-                                                );
-                                              } else {
-                                                return const Center(
+                                                )
+                                              : const Center(
                                                   child: Text(
                                                     '📦',
                                                     style: TextStyle(
                                                       fontSize: 20,
                                                     ),
                                                   ),
-                                                );
-                                              }
-                                            },
-                                          ),
+                                                ),
                                         ),
                                       ),
                                       const SizedBox(width: 14),
@@ -257,7 +276,7 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              product['name'],
+                                              product['name'] ?? 'Unknown',
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 15,
@@ -310,35 +329,55 @@ class _TopSellingScreenState extends State<TopSellingScreen>
     );
   }
 
-  // 🥧 Widget សម្រាប់ Pie Chart ផ្អែកលើទិន្នន័យจริง
+// 🥧 Modern Styled Pie Chart Widget
   Widget _buildPieChartCard() {
     final List<Color> chartColors = [
-      const Color(0xFF3B82F6),
-      const Color(0xFF10B981),
-      const Color(0xFFF97316),
-      const Color(0xFF8B5CF6),
-      const Color(0xFFEC4899),
+      const Color(0xFF4F46E5), // Indigo
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFF8B5CF6), // Purple
+      const Color(0xFFEC4899), // Pink
     ];
+
+    // គណនាយកចំនួនសរុប (Total Qty) ដើម្បីយកមកគណនាភាគរយ ឬបង្ហាញនៅកណ្តាលរង្វង់
+    int totalSold = 0;
+    final displayLength = topProducts.length > 4 ? 4 : topProducts.length;
+    for (int i = 0; i < displayLength; i++) {
+      totalSold += (topProducts[i]['sold_qty'] as int);
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.shade100),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: topProducts.isEmpty
           ? const SizedBox(
-              height: 150,
-              child: Center(child: Text('No data for chart')),
-            )
+        height: 160,
+        child: Center(
+          child: Text(
+            'No data for chart',
+            style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+          ),
+        ),
+      )
           : Row(
+        children: [
+          // 📊 Pie Chart with Center Text
+          SizedBox(
+            height: 160,
+            width: 160,
+            child: Stack(
+              alignment: Alignment.center,
               children: [
                 RotationTransition(
                   turns: Tween(begin: 0.0, end: 1.0).animate(
@@ -347,79 +386,113 @@ class _TopSellingScreenState extends State<TopSellingScreen>
                       curve: Curves.easeOutCubic,
                     ),
                   ),
-                  child: SizedBox(
-                    height: 150,
-                    width: 150,
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 35,
-                        sections: List.generate(
-                          topProducts.length > 4 ? 4 : topProducts.length,
-                          (index) {
-                            final item = topProducts[index];
-                            final color =
-                                chartColors[index % chartColors.length];
-                            return PieChartSectionData(
-                              color: color,
-                              value: (item['sold_qty'] as int).toDouble(),
-                              title: '${item['sold_qty']}',
-                              radius: 45,
-                              titleStyle: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            );
-                          },
-                        ),
+                  child: PieChart(
+                    PieChartData(
+                      sectionsSpace: 3,
+                      centerSpaceRadius: 45, // ទំហំរង្វង់មូល හිස්កណ្តាល
+                      sections: List.generate(
+                        displayLength,
+                            (index) {
+                          final item = topProducts[index];
+                          final color = chartColors[index % chartColors.length];
+                          return PieChartSectionData(
+                            color: color,
+                            value: (item['sold_qty'] as int).toDouble(),
+                            title: '', // រក្សាទុកទទេ ដើម្បីឱ្យស្អាត មិនបាច់មានអត្ថបទជាន់គ្នាក្នុងរង្វង់
+                            radius: 35,
+                          );
+                        },
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      topProducts.length > 4 ? 4 : topProducts.length,
-                      (index) {
-                        final item = topProducts[index];
-                        final color = chartColors[index % chartColors.length];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  color: color,
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '${item['name']} (${item['sold_qty']})',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                // ✨ អត្ថបទបង្ហាញនៅចំកណ្តាលរង្វង់ Donut Chart
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'TOTAL',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$totalSold',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 16),
+
+          // 📋 Legend / Labels ខាងស្តាំ (បង្ហាញទាំងឈ្មោះ ចំនួនលក់ និងភាគរយ)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                displayLength,
+                    (index) {
+                  final item = topProducts[index];
+                  final color = chartColors[index % chartColors.length];
+                  final qty = item['sold_qty'] as int;
+
+                  // គណនាជាភាគរយ (%)
+                  double percentage = totalSold > 0 ? (qty / totalSold) * 100 : 0;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item['name'] ?? 'Unknown',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF334155),
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // បង្ហាញទាំងចំនួន (qty) និងភាគរយ (%)
+                        Text(
+                          '$qty (${percentage.toStringAsFixed(0)}%)',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

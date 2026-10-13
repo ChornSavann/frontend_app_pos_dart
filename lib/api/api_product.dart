@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:pos_inventory/Productscreen/models/product_model_banner.dart';
+import 'package:pos_inventory/api/api_unit.dart';
 import 'package:pos_inventory/models/Product.dart';
 
 import 'dart:io';
@@ -11,6 +14,8 @@ import '../constants/baseurl/base_url_api.dart';
 import '../helpers/shared_preferences_helper.dart';
 import '../models/brand.dart';
 import '../models/category.dart';
+import 'api_brand.dart';
+import 'api_category.dart';
 
 class ApiProduct {
   final String baseUrl = BaseUrlApi.baseurl;
@@ -123,6 +128,52 @@ class ApiProduct {
     }
   }
 
+  Future<List<CategoryModel>> fetchCategories() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/categories'));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
+        final List<dynamic> decodedData = jsonResponse['data'];
+
+        return decodedData.map((dynamic item) {
+          return CategoryModel.fromJson(item as Map<String, dynamic>);
+        }).toList();
+      } else {
+        throw Exception(
+          "Failed to load categories. Status: ${response.statusCode}",
+        );
+      }
+    } catch (e) {
+      throw Exception("Error fetching categories: $e");
+    }
+  }
+
+  Future<List<BrandModel>> fetchBrands() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/brands'));
+
+      debugPrint("Brand Response Code: ${response.statusCode}");
+      debugPrint("Brand Response Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        List<dynamic> list = decoded is List
+            ? decoded
+            : (decoded['data'] ?? []);
+
+        return list.map((item) => BrandModel.fromJson(item)).toList();
+      } else {
+        return [];
+      }
+    } catch (e) {
+      debugPrint("Error fetching brands catch: $e");
+      return [];
+    }
+  }
+
+
+
   Future<Map<String, dynamic>> updateProduct(Map<String, dynamic> data) async {
     try {
       final productId = data['id'];
@@ -217,49 +268,6 @@ class ApiProduct {
     }
   }
 
-  Future<List<CategoryModel>> fetchCategories() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/categories'));
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonResponse = jsonDecode(response.body);
-        final List<dynamic> decodedData = jsonResponse['data'];
-
-        return decodedData.map((dynamic item) {
-          return CategoryModel.fromJson(item as Map<String, dynamic>);
-        }).toList();
-      } else {
-        throw Exception(
-          "Failed to load categories. Status: ${response.statusCode}",
-        );
-      }
-    } catch (e) {
-      throw Exception("Error fetching categories: $e");
-    }
-  }
-
-  Future<List<BrandModel>> fetchBrands() async {
-    try {
-      final response = await http.get(Uri.parse('$baseUrl/brands'));
-
-      debugPrint("Brand Response Code: ${response.statusCode}");
-      debugPrint("Brand Response Body: ${response.body}");
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        List<dynamic> list = decoded is List
-            ? decoded
-            : (decoded['data'] ?? []);
-
-        return list.map((item) => BrandModel.fromJson(item)).toList();
-      } else {
-        return [];
-      }
-    } catch (e) {
-      debugPrint("Error fetching brands catch: $e");
-      return [];
-    }
-  }
 
   Future<int> fetchProductCount() async {
     try {

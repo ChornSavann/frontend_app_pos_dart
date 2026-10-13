@@ -39,38 +39,48 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
   String _selectedService = 'Grab Express';
   double _deliveryFee = 2.50;
 
+
   // 🗺️ កូអរដោនេពិតប្រាកដ (Default ទុកនៅទីតាំងជាក់ស្តែងក្នុងរាជធានីភ្នំពេញ)
   double _storeLat = 11.5564;
   double _storeLng = 104.9282;
   double _customerLat = 11.5650;
   double _customerLng = 104.9150;
 
-  final List<Map<String, dynamic>> _deliveryServices = [
-    {
-      'name': 'Grab Express',
-      'desc': 'ដឹកជញ្ជូនហុចដល់ដៃរហ័សទាន់ចិត្ត',
-      'fee': 2.50,
-      'icon': '🚗',
-    },
-    {
-      'name': 'Foodpanda',
-      'desc': 'សេវាដឹកជញ្ជូនអាហារ និងទំនិញ',
-      'fee': 2.00,
-      'icon': '🐼',
-    },
-    {
-      'name': 'Nhan Delivery',
-      'desc': 'សេវាកម្មរហ័សទូទាំងរាជធានី-ខេត្ត',
-      'fee': 1.50,
-      'icon': '⚡',
-    },
-    {
-      'name': 'Wing Delivery',
-      'desc': 'សុវត្ថិភាព ឆាប់រហ័ស ទុកចិត្តបាន',
-      'fee': 2.20,
-      'icon': 'WING',
-    },
-  ];
+  List<Map<String, dynamic>> _deliveryServices = [];
+  bool _isLoadingServices = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadServices();
+  }
+
+  Future<void> _loadServices() async {
+    setState(() => _isLoadingServices = true);
+
+    // ហៅទាញយកទិន្នន័យពី API មកបង្ហាញ
+    final services = await _apiOrder.fetchDeliveryServicesFromApi();
+
+    setState(() {
+      if (services.isNotEmpty) {
+        _deliveryServices = services;
+        _selectedService = _deliveryServices[0]['name'];
+        _deliveryFee = _deliveryServices[0]['fee'];
+        _customFeeController.text = _deliveryFee.toStringAsFixed(2);
+      } else {
+        // 🛡️ Fallback ទុកក្នុងករណី API គ្មានទិន្នន័យ
+        _deliveryServices = [
+          {
+            'name': 'Grab Express',
+            'note': 'ដឹកជញ្ជូនហុចដល់ដៃរហ័សទាន់ចិត្ត',
+            'fee': 2.50,
+            'icon': '🚗',
+          },
+        ];
+      }
+      _isLoadingServices = false;
+    });
+  }
 
   @override
   void dispose() {
@@ -142,7 +152,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
         note: _noteController.text.trim(),
         items: itemsList,
 
-        // 🗺️ បន្ថែមប៉ារ៉ាម៉ែត្រកូអរដោនេទីតាំង
+        // 🗺️️ បន្ថែមប៉ារ៉ាម៉ែត្រកូអរដោនេទីតាំង
         storeLat: _storeLat,
         storeLng: _storeLng,
         customerLat: _customerLat,
@@ -533,7 +543,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
               ),
               const SizedBox(height: 20),
 
-              // ⚡ Delivery Service Options
+              // ⚡ Delivery Service Options (From API)
               const Text(
                 "សេវាកម្មដឹកជញ្ជូន (Delivery Partners)",
                 style: TextStyle(
@@ -545,88 +555,96 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
               ),
               const SizedBox(height: 10),
 
-              Column(
-                children: _deliveryServices.map((service) {
-                  bool isSelected = _selectedService == service['name'];
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        _selectedService = service['name'];
-                        _deliveryFee = service['fee'];
-                        _customFeeController.text = _deliveryFee
-                            .toStringAsFixed(2);
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: isSelected
-                              ? Colors.green
-                              : Colors.grey.shade200,
-                          width: isSelected ? 2 : 1,
-                        ),
+              _isLoadingServices
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(color: Colors.green),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Radio<String>(
-                                value: service['name'],
-                                groupValue: _selectedService,
-                                activeColor: Colors.green,
-                                onChanged: (val) {
-                                  if (val != null) {
-                                    setState(() {
-                                      _selectedService = val;
-                                      _deliveryFee = service['fee'];
-                                      _customFeeController.text = _deliveryFee
-                                          .toStringAsFixed(2);
-                                    });
-                                  }
-                                },
+                    )
+                  : Column(
+                      children: _deliveryServices.map((service) {
+                        bool isSelected = _selectedService == service['name'];
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedService = service['name'];
+                              _deliveryFee = service['fee'];
+                              _customFeeController.text = _deliveryFee
+                                  .toStringAsFixed(2);
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected
+                                    ? Colors.green
+                                    : Colors.grey.shade200,
+                                width: isSelected ? 2 : 1,
                               ),
-                              const SizedBox(width: 6),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    service['name'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Row(
+                                  children: [
+                                    Radio<String>(
+                                      value: service['name'],
+                                      groupValue: _selectedService,
+                                      activeColor: Colors.green,
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          setState(() {
+                                            _selectedService = val;
+                                            _deliveryFee = service['fee'];
+                                            _customFeeController.text =
+                                                _deliveryFee.toStringAsFixed(2);
+                                          });
+                                        }
+                                      },
                                     ),
-                                  ),
-                                  Text(
-                                    service['desc'],
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade600,
-                                      fontFamily: 'KhmerOSBattambang',
+                                    const SizedBox(width: 6),
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          service['name'],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        Text(
+                                          service['note'],
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade600,
+                                            fontFamily: 'KhmerOSBattambang',
+                                          ),
+                                        ),
+                                      ],
                                     ),
+                                  ],
+                                ),
+                                Text(
+                                  "\$${service['fee'].toStringAsFixed(2)}",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.green,
                                   ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          Text(
-                            "\$${service['fee'].toStringAsFixed(2)}",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.green,
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
               const SizedBox(height: 10),
 
               // 💵 កែសម្រួលថ្លៃសេវាដឹកជញ្ជូនតាមចម្ងាយ
