@@ -1,6 +1,6 @@
-import 'package:blue_thermal_printer/blue_thermal_printer.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 import '../msg/appSnackBar.dart';
 
@@ -26,9 +26,12 @@ class _PrinterScreenState extends State<PrinterScreen> {
       isScanning = true;
     });
 
-    List<BluetoothDevice> results = [];
+    List<BluetoothInfo> results = [];
     try {
-      results = await BlueThermalPrinter.instance.getBondedDevices() ?? [];
+      final bool? bluetoothEnabled = await PrintBluetoothThermal.bluetoothEnabled;
+      if (bluetoothEnabled == true) {
+        results = await PrintBluetoothThermal.pairedBluetooths;
+      }
     } catch (e) {
       debugPrint("Error scanning printers: $e");
     }
@@ -36,8 +39,8 @@ class _PrinterScreenState extends State<PrinterScreen> {
     setState(() {
       devices = results.map((d) {
         return {
-          'name': d.name ?? 'Unknown Printer',
-          'address': d.address ?? '',
+          'name': d.name.isNotEmpty ? d.name : 'Unknown Printer',
+          'address': d.macAdress,
           'isConnected': false,
           'device': d,
         };
@@ -68,13 +71,13 @@ class _PrinterScreenState extends State<PrinterScreen> {
           IconButton(
             icon: isScanning
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF10B981),
-                    ),
-                  )
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Color(0xFF10B981),
+              ),
+            )
                 : const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
             onPressed: isScanning ? null : _startScan,
           ),
@@ -131,86 +134,95 @@ class _PrinterScreenState extends State<PrinterScreen> {
             // 📋 Devices List Card
             devices.isEmpty
                 ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Text(
-                        isScanning
-                            ? 'កំពុងស្វែងរកម៉ាស៊ីនព្រីន...'
-                            : 'រកមិនឃើញម៉ាស៊ីនព្រីន Bluetooth ទេ។\nសូមពិនិត្យការតភ្ជាប់ក្នុងទូរស័ព្ទរបស់អ្នក។',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.grey.shade500,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ),
-                  )
-                : Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: devices.length,
-                        separatorBuilder: (context, index) => Divider(
-                          height: 1,
-                          indent: 68,
-                          color: Colors.grey.shade100,
-                        ),
-                        itemBuilder: (context, index) {
-                          final device = devices[index];
-                          bool isConnected = device['isConnected'];
-
-                          return _buildPrinterTile(
-                            name: device['name'],
-                            address: device['address'],
-                            isConnected: isConnected,
-                            onTap: () async {
-                              try {
-                                BluetoothDevice myDevice = device['device'];
-                                await BlueThermalPrinter.instance.connect(
-                                  myDevice,
-                                );
-
-                                setState(() {
-                                  for (var d in devices) {
-                                    d['isConnected'] = false;
-                                  }
-                                  device['isConnected'] = true;
-                                });
-
-                                if (context.mounted) {
-                                  AppSnackBar.showSuccess(
-                                    context,
-                                    'បានតភ្ជាប់ទៅកាន់ ${device['name']} ជោគជ័យ!',
-                                  );
-                                }
-                              } catch (e) {
-                                debugPrint("Connection failed: $e");
-                                if (context.mounted) {
-                                  AppSnackBar.showError(
-                                    context,
-                                    'ការតភ្ជាប់បរាជ័យ: $e',
-                                  );
-                                }
-                              }
-                            },
-                          );
-                        },
-                      ),
-                    ),
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Text(
+                  isScanning
+                      ? 'កំពុងស្វែងរកម៉ាស៊ីនព្រីន...'
+                      : 'រកមិនឃើញម៉ាស៊ីនព្រីន Bluetooth ទេ។\nសូមពិនិត្យការតភ្ជាប់ក្នុងទូរស័ព្ទរបស់អ្នក។',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 13,
                   ),
+                ),
+              ),
+            )
+                : Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: devices.length,
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    indent: 68,
+                    color: Colors.grey.shade100,
+                  ),
+                  itemBuilder: (context, index) {
+                    final device = devices[index];
+                    bool isConnected = device['isConnected'];
+
+                    return _buildPrinterTile(
+                      name: device['name'],
+                      address: device['address'],
+                      isConnected: isConnected,
+                      onTap: () async {
+                        try {
+                          String macAddress = device['address'];
+
+                          // 🟢 ប្រើប្រាស់ macPrinterAddress ឱ្យត្រូវតាម package
+                          bool connected = await PrintBluetoothThermal.connect(
+                            macPrinterAddress: macAddress,
+                          );
+
+                          setState(() {
+                            for (var d in devices) {
+                              d['isConnected'] = false;
+                            }
+                            device['isConnected'] = connected;
+                          });
+
+                          if (context.mounted) {
+                            if (connected) {
+                              AppSnackBar.showSuccess(
+                                context,
+                                'បានតភ្ជាប់ទៅកាន់ ${device['name']} ជោគជ័យ!',
+                              );
+                            } else {
+                              AppSnackBar.showError(
+                                context,
+                                'ការតភ្ជាប់បរាជ័យ!',
+                              );
+                            }
+                          }
+                        } catch (e) {
+                          debugPrint("Connection failed: $e");
+                          if (context.mounted) {
+                            AppSnackBar.showError(
+                              context,
+                              'ការតភ្ជាប់បរាជ័យ: $e',
+                            );
+                          }
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
           ],
         ),
       ),
