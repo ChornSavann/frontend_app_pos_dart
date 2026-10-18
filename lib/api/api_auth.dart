@@ -49,7 +49,6 @@ class ApiAuth {
   //     return {'success': false, 'message': 'Network error: $e'};
   //   }
 
-
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
@@ -104,7 +103,9 @@ class ApiAuth {
           userRoleName = userData['role'];
         }
 
-        List<String> userPermissions = List<String>.from(userData['permissions'] ?? []);
+        List<String> userPermissions = List<String>.from(
+          userData['permissions'] ?? [],
+        );
 
         // 🖼️ จัดการ Image Avatar
         String rawImage = userData['image_url'] ?? userData['image'] ?? "";
@@ -118,11 +119,14 @@ class ApiAuth {
           if (rawImage.startsWith('http')) {
             userAvatar = rawImage;
           } else {
-            String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
+            String cleanPath = rawImage.startsWith('/')
+                ? rawImage.substring(1)
+                : rawImage;
             userAvatar = '$domainUrl/$cleanPath';
           }
         } else {
-          userAvatar = "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
+          userAvatar =
+              "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
         }
 
         final prefs = await SharedPreferences.getInstance();
@@ -249,6 +253,115 @@ class ApiAuth {
   //   }
   // }
 
+  // Future<Map<String, dynamic>> login({
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/login-user'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Accept': 'application/json',
+  //       },
+  //       body: jsonEncode({'email': email, 'password': password}),
+  //     );
+  //
+  //     if (response.body.isEmpty) {
+  //       return {'success': false, 'message': 'Server returned empty response.'};
+  //     }
+  //
+  //     final data = jsonDecode(response.body);
+  //
+  //     if (response.statusCode == 200) {
+  //       if (data == null) {
+  //         return {'success': false, 'message': 'Data representation is null'};
+  //       }
+  //
+  //       final userData = data['data']?['user'] ?? data['user'] ?? data;
+  //       final token = data['data']?['token'] ?? data['token'] ?? '';
+  //
+  //       if (userData == null || userData is! Map) {
+  //         return {'success': false, 'message': 'User profile data missing.'};
+  //       }
+  //
+  //       String userName = userData['name'] ?? "";
+  //       String userEmail = userData['email'] ?? email;
+  //       String userPhone = userData['phone'] ?? "";
+  //       int? userId = userData['id'];
+  //
+  //       String userRoleName = "Cashier";
+  //       int roleId = userData['role_id'] ?? 0;
+  //
+  //       if (userData['role'] is Map) {
+  //         userRoleName = userData['role']['name'] ?? "Cashier";
+  //         roleId = userData['role']['id'] ?? roleId;
+  //       } else if (userData['role'] is String) {
+  //         userRoleName = userData['role'];
+  //       }
+  //
+  //       List<String> userPermissions = List<String>.from(
+  //         userData['permissions'] ?? [],
+  //       );
+  //
+  //       String rawImage = userData['image_url'] ?? userData['image'] ?? "";
+  //       String userAvatar;
+  //
+  //       String domainUrl = baseUrl.endsWith('/api')
+  //           ? baseUrl.substring(0, baseUrl.length - 4)
+  //           : baseUrl;
+  //
+  //       if (rawImage.isNotEmpty) {
+  //         if (rawImage.startsWith('http')) {
+  //           userAvatar = rawImage;
+  //         } else {
+  //           String cleanPath = rawImage.startsWith('/')
+  //               ? rawImage.substring(1)
+  //               : rawImage;
+  //
+  //           if (cleanPath.startsWith('storage/')) {
+  //             userAvatar = '$domainUrl/$cleanPath';
+  //           } else if (cleanPath.startsWith('users/')) {
+  //             userAvatar = '$domainUrl/$cleanPath';
+  //           } else {
+  //             userAvatar = '$domainUrl/users/$cleanPath';
+  //           }
+  //         }
+  //       } else {
+  //         userAvatar =
+  //             "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
+  //       }
+  //
+  //       final prefs = await SharedPreferences.getInstance();
+  //       if (userId != null) {
+  //         await prefs.setInt('user_id', userId);
+  //       }
+  //
+  //       await prefs.setInt('role_id', roleId);
+  //       await prefs.setString('token', token);
+  //       await prefs.setString('name', userName);
+  //       await prefs.setString('email', userEmail);
+  //       await prefs.setString('phone', userPhone);
+  //       await prefs.setString('role', userRoleName);
+  //       await prefs.setString('image', userAvatar);
+  //       await prefs.setStringList('user_permissions', userPermissions);
+  //
+  //       return {'success': true, 'data': data};
+  //     } else {
+  //       String errorMessage = 'Invalid credentials';
+  //       if (data != null && data is Map) {
+  //         if (data['message'] != null) {
+  //           errorMessage = data['message'];
+  //         } else if (data['errors'] != null) {
+  //           errorMessage = data['errors'].toString();
+  //         }
+  //       }
+  //       return {'success': false, 'message': errorMessage};
+  //     }
+  //   } catch (e) {
+  //     return {'success': false, 'message': 'Network error: $e'};
+  //   }
+  // }
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -269,6 +382,9 @@ class ApiAuth {
 
       final data = jsonDecode(response.body);
 
+      // 🟢 1. ព្រីនមើល Response ទាំងមូលក្នុង Terminal ដើម្បីឆែកមើលโครงสร้าง JSON ពី Backend
+      debugPrint("📥 [DEBUG LOGIN RAW RESPONSE]: $data");
+
       if (response.statusCode == 200) {
         if (data == null) {
           return {'success': false, 'message': 'Data representation is null'};
@@ -286,14 +402,31 @@ class ApiAuth {
         String userPhone = userData['phone'] ?? "";
         int? userId = userData['id'];
 
-        String userRoleName = "Cashier";
-        int roleId = userData['role_id'] ?? 0;
+        // 🟢 2. ទាញយក role_id ដោយការពារករណី Key ឈ្មោះខុសគ្នា
+        int roleId = 0;
+        if (userData['role_id'] != null) {
+          roleId = int.tryParse(userData['role_id'].toString()) ?? 0;
+        } else if (userData['role'] is Map && userData['role']['id'] != null) {
+          roleId = int.tryParse(userData['role']['id'].toString()) ?? 0;
+        }
 
-        if (userData['role'] is Map) {
-          userRoleName = userData['role']['name'] ?? "Cashier";
-          roleId = userData['role']['id'] ?? roleId;
-        } else if (userData['role'] is String) {
-          userRoleName = userData['role'];
+        // 🟢 3. ទាញយក role name យ៉ាងហ្មត់ចត់
+        String userRoleName = "Cashier";
+        if (userData['role'] != null) {
+          if (userData['role'] is Map) {
+            userRoleName = userData['role']['name'] ?? "Cashier";
+          } else if (userData['role'] is String) {
+            userRoleName = userData['role'];
+          }
+        }
+
+        // 💡 ករណី Backup៖ បើ Backend អត់ផ្ញើឈ្មោះ Role មក ប៉ុន្តែផ្ញើ role_id មក (ឧ. 2 = Admin, 3 = Supper Admin)
+        if (userRoleName == "Cashier" || userRoleName.isEmpty) {
+          if (roleId == 3) {
+            userRoleName = "Supper Admin";
+          } else if (roleId == 2) {
+            userRoleName = "Admin";
+          }
         }
 
         List<String> userPermissions = List<String>.from(
@@ -303,6 +436,7 @@ class ApiAuth {
         String rawImage = userData['image_url'] ?? userData['image'] ?? "";
         String userAvatar;
 
+        // 🟢 កែសម្រួល domainUrl មិនឱ្យមានបញ្ហា syntax error ពេលកាត់ string
         String domainUrl = baseUrl.endsWith('/api')
             ? baseUrl.substring(0, baseUrl.length - 4)
             : baseUrl;
@@ -315,9 +449,8 @@ class ApiAuth {
                 ? rawImage.substring(1)
                 : rawImage;
 
-            if (cleanPath.startsWith('storage/')) {
-              userAvatar = '$domainUrl/$cleanPath';
-            } else if (cleanPath.startsWith('users/')) {
+            if (cleanPath.startsWith('storage/') ||
+                cleanPath.startsWith('users/')) {
               userAvatar = '$domainUrl/$cleanPath';
             } else {
               userAvatar = '$domainUrl/users/$cleanPath';
@@ -328,6 +461,7 @@ class ApiAuth {
               "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
         }
 
+        // 💾 រក្សាទុកចូល SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         if (userId != null) {
           await prefs.setInt('user_id', userId);
@@ -342,6 +476,8 @@ class ApiAuth {
         await prefs.setString('image', userAvatar);
         await prefs.setStringList('user_permissions', userPermissions);
 
+        debugPrint("✅ [SAVED SUCCESS] Role: $userRoleName | Role ID: $roleId");
+
         return {'success': true, 'data': data};
       } else {
         String errorMessage = 'Invalid credentials';
@@ -355,6 +491,7 @@ class ApiAuth {
         return {'success': false, 'message': errorMessage};
       }
     } catch (e) {
+      debugPrint("❌ [LOGIN ERROR]: $e");
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
