@@ -2,14 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:pos_inventory/Productscreen/scanncheck/scanner_screen.dart';
 import 'package:pos_inventory/api/api_brand.dart';
 import 'package:pos_inventory/api/api_category.dart';
 import 'package:pos_inventory/api/api_product.dart';
 import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-
-import '../api/api_unit.dart';
 import '../models/Product.dart';
 import '../msg/appSnackBar.dart';
 
@@ -35,6 +34,8 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
   final TextEditingController _barcodeController = TextEditingController();
   final TextEditingController _costPriceController = TextEditingController();
   final TextEditingController _sellingPriceController = TextEditingController();
+  final TextEditingController _alertQuantityController =
+      TextEditingController();
   final TextEditingController _stockQuantityController =
       TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -84,6 +85,107 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     }
   }
 
+  Future<void> _getImageFromCamera() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 90,
+        maxHeight: 1200,
+        maxWidth: 1200,
+      );
+
+      if (photo != null) {
+        setState(() {
+          _selectedImages.add(photo);
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('មិនមានរូបភាពបានថតទេ')));
+        }
+      }
+    } catch (e) {
+      debugPrint("Error capturing image: $e");
+    }
+  }
+
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled:
+          true, // 🟢 អនុញ្ញាតឱ្យយើងគ្រប់គ្រងកម្ពស់និងទីតាំងបានល្អជាងមុន
+      backgroundColor:
+          Colors.transparent, // ធ្វើឱ្យផ្ទៃខាងក្រោយថ្លា ដើម្បីបង្ហាញកោងស្អាត
+      builder: (BuildContext context) {
+        return Container(
+          margin: const EdgeInsets.all(
+            16.0,
+          ), // 🟢 ធ្វើឱ្យវាអណ្តែតឡើងលើបន្តិច និងមានគន្លាតពីគែមទាំងសងខាង
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SafeArea(
+            child: Wrap(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Color(0xFF2563EB),
+                  ),
+                  title: const Text(
+                    'Camera',
+                    style: TextStyle(
+                      fontFamily: 'KantumruyPro',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _getImageFromCamera();
+                  },
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Color(0xFF2563EB),
+                  ),
+                  title: const Text(
+                    'Gallery',
+                    style: TextStyle(
+                      fontFamily: 'KantumruyPro',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _getImages();
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _generateSku() {
     final now = DateTime.now();
     final randomNum = (1000 + (DateTime.now().millisecond % 9000));
@@ -119,7 +221,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     }
   }
 
-  // 📂 1. Categories Offline Aware
+  // 📂 Categories Offline Aware
   Future<List<dynamic>> _fetchCategoriesOfflineAware() async {
     var connectivityResult = await Connectivity().checkConnectivity();
     var box = Hive.box('offline_categories');
@@ -205,358 +307,22 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     return [];
   }
 
-  void _scanBarcode() {
-    final MobileScannerController scannerController = MobileScannerController(
-      detectionSpeed: DetectionSpeed.noDuplicates,
-    );
-
-    Navigator.push(
+  void _scanBarcode() async {
+    final scannedCode = await Navigator.push<String>(
       context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          backgroundColor: Colors.black,
-          appBar: AppBar(
-            title: const Text(
-              'Scan Product Barcode',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-            backgroundColor: const Color(0xFF1E293B),
-            elevation: 0,
-            centerTitle: true,
-            iconTheme: const IconThemeData(color: Colors.white),
-            actions: [
-              Container(
-                margin: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: ValueListenableBuilder<MobileScannerState>(
-                  valueListenable: scannerController,
-                  builder: (context, state, child) {
-                    final torchState = state.torchState;
-                    return IconButton(
-                      icon: Icon(
-                        torchState == TorchState.on
-                            ? Icons.flash_on
-                            : Icons.flash_off,
-                        color: Colors.amber,
-                        size: 20,
-                      ),
-                      onPressed: () => scannerController.toggleTorch(),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          body: Stack(
-            children: [
-              MobileScanner(
-                controller: scannerController,
-                onDetect: (capture) async {
-                  final List<Barcode> barcodes = capture.barcodes;
-                  for (final barcode in barcodes) {
-                    if (barcode.rawValue != null) {
-                      final scannedCode = barcode.rawValue!.trim();
-
-                      HapticFeedback.mediumImpact();
-                      Navigator.pop(context);
-
-                      setState(() {
-                        _barcodeController.text = scannedCode;
-                      });
-
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => Dialog(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                CircularProgressIndicator(
-                                  color: Color(0xFF2563EB),
-                                  strokeWidth: 2.5,
-                                ),
-                                SizedBox(width: 16),
-                                Text(
-                                  "កំពុងស្វែងរកទិន្នន័យ...",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-
-                      dynamic publicProduct;
-                      try {
-                        publicProduct = await apiProduct
-                            .fetchProductInfoFromPublicBarcode(scannedCode)
-                            .timeout(
-                              const Duration(milliseconds: 500),
-                              onTimeout: () {
-                                return null;
-                              },
-                            );
-                      } catch (e) {
-                        publicProduct = null;
-                      }
-
-                      if (mounted) Navigator.pop(context);
-
-                      if (publicProduct != null &&
-                          publicProduct['name'] != null &&
-                          publicProduct['name'].toString().isNotEmpty) {
-                        setState(() {
-                          _nameController.text = publicProduct['name'];
-                        });
-                        if (mounted) {
-                          AppSnackBar.showSuccess(
-                            context,
-                            '✨ បានទាញយកឈ្មោះផលិតផលពីប្រព័ន្ធខាងក្រៅជោគជ័យ!',
-                          );
-                        }
-                      } else {
-                        if (mounted) {
-                          _showQuickAddProductDialog(scannedCode);
-                        }
-                      }
-
-                      break;
-                    }
-                  }
-                },
-              ),
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 260,
-                      height: 180,
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: const Color(0xFF3B82F6),
-                          width: 3.5,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(
-                              0xFF3B82F6,
-                            ).withValues(alpha: 0.3),
-                            blurRadius: 15,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        'ដាក់ Barcode ឲ្យចំក្នុងស៊ុមដើម្បីស្កេន',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      MaterialPageRoute(builder: (context) => const ScannerScreen()),
     );
+    if (scannedCode != null && scannedCode.isNotEmpty) {
+      setState(() {
+        _barcodeController.text = scannedCode;
+      });
+
+      if (mounted) {
+        AppSnackBar.showSuccess(context, '✨ បានស្កេន Barcode ជោគជ័យ!');
+      }
+    }
   }
 
-  void _showQuickAddProductDialog(String barcode) {
-    final TextEditingController quickNameController = TextEditingController();
-    final TextEditingController quickCostPriceController =
-        TextEditingController();
-    final TextEditingController quickSellingPriceController =
-        TextEditingController();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade100,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.add_shopping_cart,
-                color: Colors.orange,
-                size: 22,
-              ),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'រកមិនឃើញទំនិញ (New Product)',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        content: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Barcode: $barcode',
-                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: quickNameController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Product Name',
-                    hintText: 'បញ្ចូលឈ្មោះទំនិញថ្មី...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: quickCostPriceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Cost Price (\$)',
-                    hintText: '0.00',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: quickSellingPriceController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Selling Price (\$)',
-                    hintText: '0.00',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'បោះបង់',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onPressed: () {
-                    if (quickNameController.text.trim().isNotEmpty) {
-                      setState(() {
-                        _nameController.text = quickNameController.text.trim();
-                        if (quickCostPriceController.text.trim().isNotEmpty) {
-                          _costPriceController.text = quickCostPriceController
-                              .text
-                              .trim();
-                        }
-                        if (quickSellingPriceController.text
-                            .trim()
-                            .isNotEmpty) {
-                          _sellingPriceController.text =
-                              quickSellingPriceController.text.trim();
-                        }
-                      });
-                      Navigator.pop(context);
-                      AppSnackBar.showSuccess(
-                        context,
-                        'បានបញ្ចូលព័ត៌មានទំនិញថ្មីដោយជោគជ័យ!',
-                      );
-                    } else {
-                      AppSnackBar.showError(context, 'សូមបញ្ចូលឈ្មោះទំនិញ!');
-                    }
-                  },
-                  child: const Text(
-                    'យល់ព្រម',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  // 🟢 មុខងារ Submit Product ជាមួយការគាំទ្រ Offline Mode (Hive)
   void _submitProduct() async {
     if (_formKey.currentState!.validate()) {
       showDialog(
@@ -579,6 +345,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
         'cost_price': double.parse(_costPriceController.text),
         'selling_price': double.parse(_sellingPriceController.text),
         'stock_quantity': double.parse(_stockQuantityController.text),
+        'alert_quantity': _alertQuantityController.text.isNotEmpty
+            ? _alertQuantityController.text
+            : '5',
         'description': _descriptionController.text,
         'image': _selectedImages.isNotEmpty ? _selectedImages[0].path : null,
       };
@@ -650,7 +419,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: Colors.green.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -752,7 +521,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withOpacity(0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -771,7 +540,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     ),
                     const SizedBox(height: 12),
                     GestureDetector(
-                      onTap: _getImages,
+                      onTap: _showImageSourceActionSheet,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(16),
                         child: Stack(
@@ -795,7 +564,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                                           decoration: BoxDecoration(
                                             color: const Color(
                                               0xFF2563EB,
-                                            ).withValues(alpha: 0.08),
+                                            ).withOpacity(0.08),
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
@@ -820,7 +589,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                               Container(
                                 width: double.infinity,
                                 height: 200,
-                                color: Colors.black.withValues(alpha: 0.25),
+                                color: Colors.black.withOpacity(0.25),
                               ),
                             if (_selectedImages.isNotEmpty)
                               Container(
@@ -829,10 +598,10 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                                   vertical: 10,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.6),
+                                  color: Colors.black.withOpacity(0.6),
                                   borderRadius: BorderRadius.circular(30),
                                   border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.3),
+                                    color: Colors.white.withOpacity(0.3),
                                     width: 1,
                                   ),
                                 ),
@@ -873,7 +642,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withOpacity(0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -914,11 +683,75 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     // Barcode Field
                     TextFormField(
                       controller: _barcodeController,
-                      decoration: _inputDecorationWithAction(
-                        label: 'Barcode (Optional)',
-                        icon: Icons.qr_code,
-                        actionLabel: 'Generate',
-                        onActionPressed: _generateBarcode,
+                      decoration: InputDecoration(
+                        labelText: 'Barcode (Optional)',
+                        labelStyle: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 13,
+                        ),
+                        prefixIcon: const Icon(
+                          Icons.qr_code,
+                          color: Color(0xFF2563EB),
+                          size: 20,
+                        ),
+                        suffixIcon: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              onPressed: _scanBarcode,
+                              icon: const Icon(
+                                Icons.qr_code_scanner_rounded,
+                                color: Color(0xFF2563EB),
+                                size: 22,
+                              ),
+                              tooltip: 'Scan Barcode',
+                            ),
+                            Container(
+                              height: 20,
+                              width: 1,
+                              color: Colors.grey.shade300,
+                            ),
+                            // ✨ ប៊ូតុង Generate ដើម
+                            TextButton.icon(
+                              onPressed: _generateBarcode,
+                              icon: const Icon(
+                                Icons.auto_awesome,
+                                size: 14,
+                                color: Color(0xFF2563EB),
+                              ),
+                              label: const Text(
+                                'Generate',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2563EB),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF2563EB),
+                            width: 1.5,
+                          ),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 14),
@@ -953,126 +786,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 🗂️ 3. Organization Card
-              // Container(
-              //   padding: const EdgeInsets.all(16),
-              //   decoration: BoxDecoration(
-              //     color: Colors.white,
-              //     borderRadius: BorderRadius.circular(20),
-              //     boxShadow: [
-              //       BoxShadow(
-              //         color: Colors.black.withValues(alpha: 0.03),
-              //         blurRadius: 10,
-              //         offset: const Offset(0, 4),
-              //       ),
-              //     ],
-              //   ),
-              //   child: Column(
-              //     crossAxisAlignment: CrossAxisAlignment.start,
-              //     children: [
-              //       const Text(
-              //         "Organization",
-              //         style: TextStyle(
-              //           fontSize: 14,
-              //           fontWeight: FontWeight.bold,
-              //           color: Color(0xFF1E293B),
-              //         ),
-              //       ),
-              //       const SizedBox(height: 16),
-              //
-              //       // Category Dropdown
-              //       FutureBuilder<List<dynamic>>(
-              //         future: ApiCategory().fetchCategory(),
-              //         builder: (context, snapshot) {
-              //           if (snapshot.connectionState ==
-              //               ConnectionState.waiting) {
-              //             return const LinearProgressIndicator();
-              //           }
-              //           final categoryList = snapshot.data ?? [];
-              //           return DropdownButtonFormField<int>(
-              //             value: _selectedCategoryId,
-              //             decoration: _inputDecoration(
-              //               "Select Category",
-              //               Icons.category_outlined,
-              //             ),
-              //             items: categoryList.map((category) {
-              //               return DropdownMenuItem<int>(
-              //                 value: category['id'],
-              //                 child: Text(category['name'].toString()),
-              //               );
-              //             }).toList(),
-              //             validator: (value) =>
-              //                 value == null ? 'Please select a category' : null,
-              //             onChanged: (int? newValue) =>
-              //                 setState(() => _selectedCategoryId = newValue),
-              //           );
-              //         },
-              //       ),
-              //       const SizedBox(height: 14),
-              //
-              //       // Brand Dropdown
-              //       FutureBuilder<List<dynamic>>(
-              //         future: ApiBrand().fetchBrands(),
-              //         builder: (context, snapshot) {
-              //           if (snapshot.connectionState ==
-              //               ConnectionState.waiting) {
-              //             return const LinearProgressIndicator();
-              //           }
-              //           final brandList = snapshot.data ?? [];
-              //           return DropdownButtonFormField<int>(
-              //             value: _selectedBrandId,
-              //             decoration: _inputDecoration(
-              //               "Select Brand",
-              //               Icons.branding_watermark_outlined,
-              //             ),
-              //             items: brandList.map((brand) {
-              //               return DropdownMenuItem<int>(
-              //                 value: brand.id,
-              //                 child: Text(brand.name.toString()),
-              //               );
-              //             }).toList(),
-              //             validator: (value) =>
-              //                 value == null ? 'Please select a brand' : null,
-              //             onChanged: (int? newValue) =>
-              //                 setState(() => _selectedBrandId = newValue),
-              //           );
-              //         },
-              //       ),
-              //       const SizedBox(height: 14),
-              //
-              //       // Unit Dropdown
-              //       FutureBuilder<List<dynamic>>(
-              //         future: ApiProduct().fetchUnits(),
-              //         builder: (context, snapshot) {
-              //           if (snapshot.connectionState ==
-              //               ConnectionState.waiting) {
-              //             return const LinearProgressIndicator();
-              //           }
-              //           final unitList = snapshot.data ?? [];
-              //           return DropdownButtonFormField<int>(
-              //             value: _selectedUnitId,
-              //             decoration: _inputDecoration(
-              //               "Select Unit (e.g. Pcs, Box)",
-              //               Icons.straighten,
-              //             ),
-              //             items: unitList.map((unit) {
-              //               return DropdownMenuItem<int>(
-              //                 value: unit['id'],
-              //                 child: Text(
-              //                   "${unit['name']} (${unit['short_name'] ?? ''})",
-              //                 ),
-              //               );
-              //             }).toList(),
-              //             validator: (value) =>
-              //                 value == null ? 'Please select a unit' : null,
-              //             onChanged: (int? newValue) =>
-              //                 setState(() => _selectedUnitId = newValue),
-              //           );
-              //         },
-              //       ),
-              //     ],
-              //   ),
-              // ),
               // 🗂️ 3. Organization Card (គាំទ្រ Offline Mode ຜ່ານ Hive)
               Container(
                 padding: const EdgeInsets.all(16),
@@ -1081,7 +794,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withOpacity(0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1104,10 +817,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     FutureBuilder<List<dynamic>>(
                       future: _fetchCategoriesOfflineAware(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const LinearProgressIndicator();
-                        }
+                        // 🟢 បើកំពុង Loading មិនបាច់បង្ហាញ LinearProgressIndicator ទេ ទុកឱ្យវាបង្ហាញ Dropdown ទទេរស្អាត
                         final categoryList = snapshot.data ?? [];
                         return DropdownButtonFormField<int>(
                           value: _selectedCategoryId,
@@ -1136,10 +846,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     FutureBuilder<List<dynamic>>(
                       future: _fetchBrandsOfflineAware(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const LinearProgressIndicator();
-                        }
                         final brandList = snapshot.data ?? [];
                         return DropdownButtonFormField<int>(
                           value: _selectedBrandId,
@@ -1148,7 +854,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                             Icons.branding_watermark_outlined,
                           ),
                           items: brandList.map((brand) {
-                            // ផ្ទៀងផ្ទាត់ថាតើ brand ជា Map ឬ Object
                             var id = brand is Map ? brand['id'] : brand.id;
                             var name = brand is Map
                                 ? brand['name']
@@ -1171,15 +876,11 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     FutureBuilder<List<dynamic>>(
                       future: _fetchUnitsOfflineAware(),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const LinearProgressIndicator();
-                        }
                         final unitList = snapshot.data ?? [];
                         return DropdownButtonFormField<int>(
                           value: _selectedUnitId,
                           decoration: _inputDecoration(
-                            "Select Unit (e.g. Pcs, Box)",
+                            "Select Unit",
                             Icons.straighten,
                           ),
                           items: unitList.map((unit) {
@@ -1191,7 +892,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
                             return DropdownMenuItem<int>(
                               value: id is int ? id : int.parse(id.toString()),
-                              child: Text("$name (${shortName})"),
+                              child: Text("$name ($shortName)"),
                             );
                           }).toList(),
                           validator: (value) =>
@@ -1206,7 +907,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               ),
               const SizedBox(height: 16),
 
-              // 📝 4. Additional Details Card
+              // 📝 4. Additional Details Card (រួមបញ្ចូលទាំង Alert Quantity និង Description)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -1214,7 +915,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
+                      color: Colors.black.withOpacity(0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1224,7 +925,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Additional Details",
+                      "Inventory Alerts & Details",
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -1232,6 +933,20 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // 🟢 ô បញ្ចូលចំនួន Alert Quantity
+                    _buildTextField(
+                      controller: _alertQuantityController,
+                      label: "Alert Quantity (e.g. Low stock warning)",
+                      icon: Icons.notifications_active_outlined,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: false,
+                      ),
+                      isRequired: false,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Description Field ដើម
                     _buildTextField(
                       controller: _descriptionController,
                       label: "Description (Optional)",
@@ -1252,7 +967,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                      color: const Color(0xFF2563EB).withOpacity(0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 6),
                     ),
@@ -1322,7 +1037,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
     required String actionLabel,
     required VoidCallback onActionPressed,
   }) {
-    // ignore: unnecessary_string_interpolations
     return InputDecoration(
       labelText: label,
       labelStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
@@ -1374,7 +1088,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: (value) {
-        // ignore: unnecessary_null_comparison
         if (isRequired && (value == null || value.isEmpty)) {
           return 'This field is required';
         }

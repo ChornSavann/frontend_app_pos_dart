@@ -68,6 +68,8 @@ class TranslateConstants {
   static const String manage_scan_check_product="manage_scan_check_product";
   static const String delivery="delivery";
   static const String manage_delivery="manage_delivery";
+  static const String auth_logs="auth_logs";
+  static const String manage_auth_logs="manage_auth_logs";
 
 
 

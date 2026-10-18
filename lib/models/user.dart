@@ -4,6 +4,7 @@ class User {
   String? email;
   String? phone;
   String?password;
+  int?roleid;
   String? image;
 
   User({
@@ -12,10 +13,11 @@ class User {
     this.email,
     this.phone,
     this.password,
+    this.roleid,
     this.image,
   });
 
-  // 📥 แปลง JSON មកជា User Object
+
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
@@ -23,11 +25,12 @@ class User {
       email: json['email'],
       phone: json['phone'],
       password: json['password'],
+      roleid: json['role_id'],
       image: json['image_url'],
     );
   }
 
-  // 📤 แปลง User Object ទៅជា JSON
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

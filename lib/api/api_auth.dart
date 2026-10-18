@@ -20,10 +20,41 @@ class ApiAuth {
     );
   }
 
+  // Future<Map<String, dynamic>> register({
+  //   required String name,
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/auth/create-user'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Accept': 'application/json',
+  //       },
+  //       body: jsonEncode({'name': name, 'email': email, 'password': password}),
+  //     );
+  //
+  //     final data = jsonDecode(response.body);
+  //
+  //     if (response.statusCode == 200 || response.statusCode == 201) {
+  //       return {'success': true, 'data': data};
+  //     } else {
+  //       return {
+  //         'success': false,
+  //         'message': data['message'] ?? 'Registration failed',
+  //       };
+  //     }
+  //   } catch (e) {
+  //     return {'success': false, 'message': 'Network error: $e'};
+  //   }
+
+
   Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
+    String? phone,
   }) async {
     try {
       final response = await http.post(
@@ -32,23 +63,191 @@ class ApiAuth {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'name': name, 'email': email, 'password': password}),
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+          'password': password,
+          'phone': phone ?? '',
+        }),
       );
+
+      if (response.body.isEmpty) {
+        return {'success': false, 'message': 'Server returned empty response.'};
+      }
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        if (data == null) {
+          return {'success': false, 'message': 'Data representation is null'};
+        }
+
+        final userData = data['data']?['user'] ?? data['user'] ?? data;
+        final token = data['data']?['token'] ?? data['token'] ?? '';
+
+        if (userData == null || userData is! Map) {
+          return {'success': false, 'message': 'User profile data missing.'};
+        }
+
+        String userName = userData['name'] ?? name;
+        String userEmail = userData['email'] ?? email;
+        String userPhone = userData['phone'] ?? "";
+        int? userId = userData['id'];
+
+        String userRoleName = "Cashier";
+        int roleId = userData['role_id'] ?? 0;
+
+        if (userData['role'] is Map) {
+          userRoleName = userData['role']['name'] ?? "Cashier";
+          roleId = userData['role']['id'] ?? roleId;
+        } else if (userData['role'] is String) {
+          userRoleName = userData['role'];
+        }
+
+        List<String> userPermissions = List<String>.from(userData['permissions'] ?? []);
+
+        // 🖼️ จัดการ Image Avatar
+        String rawImage = userData['image_url'] ?? userData['image'] ?? "";
+        String userAvatar;
+
+        String domainUrl = baseUrl.endsWith('/api')
+            ? baseUrl.substring(0, baseUrl.length - 4)
+            : baseUrl;
+
+        if (rawImage.isNotEmpty) {
+          if (rawImage.startsWith('http')) {
+            userAvatar = rawImage;
+          } else {
+            String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
+            userAvatar = '$domainUrl/$cleanPath';
+          }
+        } else {
+          userAvatar = "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        if (userId != null) {
+          await prefs.setInt('user_id', userId);
+        }
+
+        await prefs.setInt('role_id', roleId);
+        await prefs.setString('token', token);
+        await prefs.setString('name', userName);
+        await prefs.setString('email', userEmail);
+        await prefs.setString('phone', userPhone);
+        await prefs.setString('role', userRoleName);
+        await prefs.setString('image', userAvatar);
+        await prefs.setStringList('user_permissions', userPermissions);
+
         return {'success': true, 'data': data};
       } else {
-        return {
-          'success': false,
-          'message': data['message'] ?? 'Registration failed',
-        };
+        String errorMessage = 'Registration failed';
+        if (data != null && data is Map) {
+          if (data['message'] != null) {
+            errorMessage = data['message'];
+          } else if (data['errors'] != null) {
+            errorMessage = data['errors'].toString();
+          }
+        }
+        return {'success': false, 'message': errorMessage};
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
     }
   }
+
+  // Future<Map<String, dynamic>> login({
+  //   required String email,
+  //   required String password,
+  // }) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('$baseUrl/login-user'),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Accept': 'application/json',
+  //       },
+  //       body: jsonEncode({'email': email, 'password': password}),
+  //     );
+  //
+  //     if (response.body.isEmpty) {
+  //       return {'success': false, 'message': 'Server returned empty response.'};
+  //     }
+  //
+  //     final data = jsonDecode(response.body);
+  //
+  //     if (response.statusCode == 200) {
+  //       if (data == null) {
+  //         return {'success': false, 'message': 'Data representation is null'};
+  //       }
+  //
+  //       final userData = data['data']?['user'] ?? data['user'] ?? data;
+  //       final token = data['data']?['token'] ?? data['token'] ?? '';
+  //
+  //       if (userData == null || userData is! Map) {
+  //         return {'success': false, 'message': 'User profile data missing.'};
+  //       }
+  //
+  //       String userName = userData['name'] ?? "";
+  //       String userEmail = userData['email'] ?? email;
+  //       String userPhone = userData['phone'] ?? "";
+  //       String userRole = userData['role'] ?? "Cashier #01";
+  //       int? userId = userData['id'];
+  //
+  //       String rawImage = userData['image'] ?? "";
+  //       String userAvatar;
+  //
+  //
+  //       String domainUrl = baseUrl.endsWith('/api')
+  //           ? baseUrl.substring(0, baseUrl.length - 4)
+  //           : baseUrl;
+  //
+  //       if (rawImage.isNotEmpty) {
+  //         if (rawImage.startsWith('http')) {
+  //           userAvatar = rawImage;
+  //         } else {
+  //           String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
+  //
+  //           if (cleanPath.startsWith('storage/')) {
+  //             userAvatar = '$domainUrl/$cleanPath';
+  //           } else if (cleanPath.startsWith('users/')) {
+  //             userAvatar = '$domainUrl/$cleanPath';
+  //           } else {
+  //             userAvatar = '$domainUrl/users/$cleanPath';
+  //           }
+  //         }
+  //       } else {
+  //         userAvatar =
+  //         "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
+  //       }
+  //
+  //       final prefs = await SharedPreferences.getInstance();
+  //       if (userId != null) {
+  //         await prefs.setInt('user_id', userId);
+  //       }
+  //       await prefs.setString('token', token);
+  //       await prefs.setString('name', userName);
+  //       await prefs.setString('email', userEmail);
+  //       await prefs.setString('phone', userPhone);
+  //       await prefs.setString('role', userRole);
+  //       await prefs.setString('image', userAvatar);
+  //
+  //       return {'success': true, 'data': data};
+  //     } else {
+  //       String errorMessage = 'Invalid credentials';
+  //       if (data != null && data is Map) {
+  //         if (data['message'] != null) {
+  //           errorMessage = data['message'];
+  //         } else if (data['errors'] != null) {
+  //           errorMessage = data['errors'].toString();
+  //         }
+  //       }
+  //       return {'success': false, 'message': errorMessage};
+  //     }
+  //   } catch (e) {
+  //     return {'success': false, 'message': 'Network error: $e'};
+  //   }
+  // }
 
   Future<Map<String, dynamic>> login({
     required String email,
@@ -85,10 +284,23 @@ class ApiAuth {
         String userName = userData['name'] ?? "";
         String userEmail = userData['email'] ?? email;
         String userPhone = userData['phone'] ?? "";
-        String userRole = userData['role'] ?? "Cashier 01";
         int? userId = userData['id'];
 
-        String rawImage = userData['image'] ?? "";
+        String userRoleName = "Cashier";
+        int roleId = userData['role_id'] ?? 0;
+
+        if (userData['role'] is Map) {
+          userRoleName = userData['role']['name'] ?? "Cashier";
+          roleId = userData['role']['id'] ?? roleId;
+        } else if (userData['role'] is String) {
+          userRoleName = userData['role'];
+        }
+
+        List<String> userPermissions = List<String>.from(
+          userData['permissions'] ?? [],
+        );
+
+        String rawImage = userData['image_url'] ?? userData['image'] ?? "";
         String userAvatar;
 
         String domainUrl = baseUrl.endsWith('/api')
@@ -99,11 +311,11 @@ class ApiAuth {
           if (rawImage.startsWith('http')) {
             userAvatar = rawImage;
           } else {
-
-            String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
+            String cleanPath = rawImage.startsWith('/')
+                ? rawImage.substring(1)
+                : rawImage;
 
             if (cleanPath.startsWith('storage/')) {
-
               userAvatar = '$domainUrl/$cleanPath';
             } else if (cleanPath.startsWith('users/')) {
               userAvatar = '$domainUrl/$cleanPath';
@@ -113,19 +325,22 @@ class ApiAuth {
           }
         } else {
           userAvatar =
-          "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
+              "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
         }
 
         final prefs = await SharedPreferences.getInstance();
         if (userId != null) {
           await prefs.setInt('user_id', userId);
         }
+
+        await prefs.setInt('role_id', roleId);
         await prefs.setString('token', token);
         await prefs.setString('name', userName);
         await prefs.setString('email', userEmail);
         await prefs.setString('phone', userPhone);
-        await prefs.setString('role', userRole);
+        await prefs.setString('role', userRoleName);
         await prefs.setString('image', userAvatar);
+        await prefs.setStringList('user_permissions', userPermissions);
 
         return {'success': true, 'data': data};
       } else {
@@ -151,7 +366,7 @@ class ApiAuth {
 
       if (token != null && token.isNotEmpty) {
         await http.post(
-          Uri.parse('$baseUrl/logout'),
+          Uri.parse('${baseUrl}/logout'),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -200,93 +415,6 @@ class ApiAuth {
     }
     return null;
   }
-
-  // Future<Map<String, dynamic>> updateProfile({
-  //   required String name,
-  //   required String email,
-  //   required String phone,
-  //   File? image,
-  // }) async {
-  //   try {
-  //     final prefs = await SharedPreferences.getInstance();
-  //     final token = prefs.getString('token') ?? '';
-  //     final userId = prefs.getInt('user_id');
-  //
-  //     print("Current User ID: $userId");
-  //     if (userId == null) {
-  //       return {
-  //         'success': false,
-  //         'message': 'User ID not found in local storage. Please login again.',
-  //       };
-  //     }
-  //
-  //     var request = http.MultipartRequest(
-  //       'POST',
-  //       Uri.parse('$baseUrl/users/$userId'),
-  //     );
-  //
-  //     request.fields['name'] = name;
-  //     request.fields['email'] = email;
-  //     request.fields['phone'] = phone;
-  //
-  //     if (image != null) {
-  //       request.files.add(
-  //         await http.MultipartFile.fromPath('image', image.path),
-  //       );
-  //     }
-  //
-  //     request.headers.addAll({
-  //       'Authorization': 'Bearer $token',
-  //       'Accept': 'application/json',
-  //     });
-  //
-  //     var streamedResponse = await request.send();
-  //     var response = await http.Response.fromStream(streamedResponse);
-  //     var data = jsonDecode(response.body);
-  //
-  //     if (response.statusCode == 200 && (data['success'] == true)) {
-  //       await prefs.setString('name', name);
-  //       await prefs.setString('email', email);
-  //       await prefs.setString('phone', phone);
-  //
-  //       if (data['data'] != null && data['data']['image'] != null) {
-  //         String rawImage = data['data']['image'];
-  //         String userAvatar;
-  //
-  //         String domainUrl = baseUrl.endsWith('/api')
-  //             ? baseUrl.substring(0, baseUrl.length - 4)
-  //             : baseUrl;
-  //
-  //         if (rawImage.startsWith('http')) {
-  //           userAvatar = rawImage;
-  //         } else {
-  //
-  //           if (rawImage.startsWith('storage/')) {
-  //             userAvatar = '$domainUrl/$rawImage';
-  //           } else if (rawImage.startsWith('users/')) {
-  //             userAvatar = '$domainUrl/storage/$rawImage';
-  //           } else {
-  //             userAvatar = '$domainUrl/storage/users/$rawImage';
-  //           }
-  //         }
-  //
-  //         await prefs.setString('image', userAvatar);
-  //       }
-  //
-  //       return {
-  //         'success': true,
-  //         'message': data['message'] ?? 'Profile updated successfully',
-  //       };
-  //     } else {
-  //       return {
-  //         'success': false,
-  //         'message': data['message'] ?? 'Failed to update profile',
-  //       };
-  //     }
-  //   } catch (e) {
-  //     return {'success': false, 'message': 'Network error: $e'};
-  //   }
-  // }
 
   Future<Map<String, dynamic>> updateProfile({
     required String name,
@@ -347,7 +475,9 @@ class ApiAuth {
           if (rawImage.startsWith('http')) {
             userAvatar = rawImage;
           } else {
-            String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
+            String cleanPath = rawImage.startsWith('/')
+                ? rawImage.substring(1)
+                : rawImage;
 
             if (cleanPath.startsWith('storage/')) {
               userAvatar = '$domainUrl/$cleanPath';
@@ -480,6 +610,43 @@ class ApiAuth {
       }
     } catch (e) {
       return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
+  }
+
+  Future<Map<String, dynamic>?> getProfile() async {
+    try {
+      final token = await _getToken();
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint("Profile Status Code: ${response.statusCode}");
+      debugPrint("Profile Response: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final decodedData = json.decode(response.body);
+        if (decodedData is Map && decodedData.containsKey('data')) {
+          return decodedData['data'];
+        }
+        return decodedData;
+      } else {
+        debugPrint("Failed to load profile");
+        return null;
+      }
+    } catch (e) {
+      debugPrint("Error fetching profile: $e");
+      return null;
     }
   }
 }

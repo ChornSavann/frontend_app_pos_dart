@@ -30,6 +30,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
   late TextEditingController _costPriceController;
   late TextEditingController _sellingPriceController;
   late TextEditingController _stockQuantityController;
+  late TextEditingController _alertQuantityController;
   late TextEditingController _descriptionController;
   late TextEditingController _categoryIdController;
   late TextEditingController _unitIdController;
@@ -58,6 +59,11 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
     _stockQuantityController = TextEditingController(
       text: widget.product.stockQuantity.toString(),
     );
+
+    _alertQuantityController = TextEditingController(
+      text: (widget.product.alertQuantity ?? 5).toString(),
+    );
+
     _descriptionController = TextEditingController(
       text: widget.product.description ?? '',
     );
@@ -86,6 +92,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
     _costPriceController.dispose();
     _sellingPriceController.dispose();
     _stockQuantityController.dispose();
+    _alertQuantityController.dispose();
     _descriptionController.dispose();
     _categoryIdController.dispose();
     _unitIdController.dispose();
@@ -120,7 +127,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImageFromGallery() async {
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 90,
@@ -133,6 +140,103 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
         _selectedImage = File(pickedFile.path);
       });
     }
+  }
+
+  Future<void> _pickImageFromCamera() async {
+    try {
+      final XFile? photo = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 90,
+        maxHeight: 1200,
+        maxWidth: 1200,
+      );
+
+      if (photo != null) {
+        setState(() {
+          _selectedImage = File(photo.path);
+        });
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('មិនមានរូបភាពបានថតទេ')));
+        }
+      }
+    } catch (e) {
+      debugPrint("Error capturing image: $e");
+    }
+  }
+
+  void _showImageSourceActionSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          margin: const EdgeInsets.all(16.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: SafeArea(
+            child: Wrap(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Color(0xFF2563EB),
+                  ),
+                  title: const Text(
+                    'Camera',
+                    style: TextStyle(
+                      fontFamily: 'KantumruyPro',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _pickImageFromCamera();
+                  },
+                ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Color(0xFF2563EB),
+                  ),
+                  title: const Text(
+                    'Gallery',
+                    style: TextStyle(
+                      fontFamily: 'KantumruyPro',
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _pickImageFromGallery();
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _updateProduct() async {
@@ -148,6 +252,8 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
       'cost_price': double.tryParse(_costPriceController.text) ?? 0.0,
       'selling_price': double.tryParse(_sellingPriceController.text) ?? 0.0,
       'stock_quantity': double.tryParse(_stockQuantityController.text) ?? 0.0,
+      'alert_quantity': double.tryParse(_alertQuantityController.text) ?? 5.0,
+
       'category_id': _categoryIdController.text,
       'brand_id': _brandIdController.text,
       'unit_id': _unitIdController.text,
@@ -201,7 +307,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // 🌟 1. Premium Large Image Banner Section
+                    // 🌟 Premium Large Image Banner Section
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -228,7 +334,8 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                           ),
                           const SizedBox(height: 12),
                           GestureDetector(
-                            onTap: _pickImage,
+                            onTap:
+                                _showImageSourceActionSheet,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(16),
                               child: Stack(
@@ -272,15 +379,11 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                                                   ),
                                                 )),
                                   ),
-
-                                  // 🌟 Dark Overlay ពេលយក Mouse ឬដៃတို့មើលទៅរលោងស្អាត
                                   Container(
                                     width: double.infinity,
                                     height: 200,
                                     color: Colors.black.withOpacity(0.2),
                                   ),
-
-                                  // 📷 Floating Camera Icon Button (រាងមូលតូចល្មម មានសោភ័ណភាពខ្ពស់)
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 16,
@@ -443,14 +546,34 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                             ],
                           ),
                           const SizedBox(height: 14),
-                          TextFormField(
-                            controller: _stockQuantityController,
-                            keyboardType: TextInputType.number,
-                            decoration: _inputDecoration(
-                              'Stock Quantity',
-                              Icons.inventory_2_outlined,
-                            ),
-                            validator: (v) => v!.isEmpty ? 'Required' : null,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _stockQuantityController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _inputDecoration(
+                                    'Stock Quantity',
+                                    Icons.inventory_2_outlined,
+                                  ),
+                                  validator: (v) =>
+                                      v!.isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _alertQuantityController,
+                                  keyboardType: TextInputType.number,
+                                  decoration: _inputDecoration(
+                                    'Alert Quantity',
+                                    Icons.notifications_active_outlined,
+                                  ),
+                                  validator: (v) =>
+                                      v!.isEmpty ? 'Required' : null,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -517,8 +640,8 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                           DropdownButtonFormField<String>(
                             value:
                                 _brand.any(
-                                  (cat) =>
-                                      cat.id.toString() ==
+                                  (brand) =>
+                                      brand.id.toString() ==
                                       _brandIdController.text,
                                 )
                                 ? _brandIdController.text
@@ -527,10 +650,10 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                               'Brand',
                               Icons.branding_watermark_outlined,
                             ),
-                            items: _brand.map((cat) {
+                            items: _brand.map((brand) {
                               return DropdownMenuItem<String>(
-                                value: cat.id.toString(),
-                                child: Text(cat.name.toString()),
+                                value: brand.id.toString(),
+                                child: Text(brand.name.toString()),
                               );
                             }).toList(),
                             onChanged: (value) => setState(
@@ -546,7 +669,8 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                             value:
                                 _units.any(
                                   (unit) =>
-                                      unit['id'].toString() ==
+                                      (unit is Map ? unit['id'] : unit.id)
+                                          .toString() ==
                                       _unitIdController.text,
                                 )
                                 ? _unitIdController.text
@@ -556,11 +680,15 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                               Icons.straighten_outlined,
                             ),
                             items: _units.map((unit) {
+                              var id = unit is Map ? unit['id'] : unit.id;
+                              var name = unit is Map ? unit['name'] : unit.name;
+                              var shortName = unit is Map
+                                  ? (unit['short_name'] ?? '')
+                                  : (unit.shortName ?? '');
+
                               return DropdownMenuItem<String>(
-                                value: unit['id'].toString(),
-                                child: Text(
-                                  "${unit['name']} (${unit['short_name'] ?? ''})",
-                                ),
+                                value: id.toString(),
+                                child: Text("$name ($shortName)"),
                               );
                             }).toList(),
                             onChanged: (value) =>
@@ -620,9 +748,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(
-                              0xFF2563EB,
-                            ).withValues(alpha: 0.35),
+                            color: const Color(0xFF2563EB).withOpacity(0.35),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),

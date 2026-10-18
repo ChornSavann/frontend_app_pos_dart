@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pos_inventory/api/api_auth.dart';
+import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
 import 'package:pos_inventory/partail/profile_screen.dart';
@@ -9,7 +11,6 @@ import 'package:pos_inventory/settings/about_screen.dart';
 import 'package:pos_inventory/settings/cash_drawer_setup_screen.dart';
 import 'package:pos_inventory/settings/currency_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../settings/data_sync_screen.dart';
 import '../settings/printer_screen.dart';
 import 'button_screen.dart';
@@ -22,6 +23,8 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
+  final ApiAuth _apiAuth = ApiAuth();
+  final baseImageUrl = BaseImageUrl.BaseimageUrl;
   bool _isDarkMode = false;
   bool _autoPrintReceipt = true;
   bool _soundEnabled = true;
@@ -38,12 +41,57 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _userName = prefs.getString('name') ?? "Chorn Savann099";
-      _userRole = prefs.getString('role') ?? "Cashier • Register #01";
-      _userAvatar = prefs.getString('image') ?? "assets/Savann.jpg";
-    });
+    try {
+      final profileData = await _apiAuth.getProfile();
+
+      if (profileData != null) {
+        final String name = profileData['name'] ?? "Chorn Savann";
+        debugPrint("🔍 Profile Data Received: $profileData");
+
+        String role = "Cashier";
+        if (profileData['role'] is Map) {
+          role =
+              profileData['role']['name'] ??
+              profileData['role']['title'] ??
+              "Cashier";
+        } else if (profileData['role'] is String) {
+          role = profileData['role'];
+        } else if (profileData['role_name'] != null) {
+          role = profileData['role_name'].toString();
+        }
+
+        debugPrint("✅ Extracted Role: $role");
+        final String? image = profileData['image_url'] ?? profileData['image'];
+        debugPrint("📸 Raw Image from API: $image");
+
+        final String avatarUrl = (image != null && image.isNotEmpty)
+            ? image
+            : "";
+
+        debugPrint("🔗 Final Avatar URL: $avatarUrl");
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('name', name);
+        await prefs.setString('role', role);
+        await prefs.setString('image', avatarUrl);
+
+        setState(() {
+          _userName = name;
+          _userRole = "$role ";
+          _userAvatar = avatarUrl.isNotEmpty ? avatarUrl : "assets/gamming.jpg";
+        });
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        setState(() {
+          _userName = prefs.getString('name') ?? "Chorn Savann";
+          String savedRole = prefs.getString('role') ?? "Cashier";
+          _userRole = "$savedRole ";
+          _userAvatar = prefs.getString('image') ?? "assets/gamming.jpg";
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading profile from API: $e");
+    }
   }
 
   @override
@@ -105,68 +153,166 @@ class _SettingScreenState extends State<SettingScreen> {
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                      colors: [Colors.blueAccent, Color(0xFF448AFF)],
+                      colors: [
+                        Color(0xFF2563EB),
+                        Color(0xFF1D4ED8),
+                        Color(0xFF3B82F6),
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.blueAccent.withValues(alpha: 0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
-                  child: Row(
+                  child: Stack(
                     children: [
-                      CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.white,
-                        backgroundImage: NetworkImage(_userAvatar),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _userName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _userRole,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ],
+                      // 🌟 Background Decorative Circle (เพิ่มมิติความสวยงามแบบ Abstract)
+                      Positioned(
+                        right: -20,
+                        bottom: -20,
+                        child: Icon(
+                          Icons.admin_panel_settings_rounded,
+                          size: 110,
+                          color: Colors.white.withValues(alpha: 0.07),
                         ),
                       ),
-                      // ប៊ូតុង Edit ដដែល (អាចទុក ឬលុបចេញបាន ព្រោះចុចលើ Card ហ្នឹងក៏បានដែរ)
-                      IconButton(
-                        icon: const Icon(
-                          Icons.edit_rounded,
-                          color: Colors.white,
-                        ),
-                        onPressed: () async {
-                          final result = await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const EditProfileScreen(),
+                      Row(
+                        children: [
+                          // 🖼️ Profile Avatar with Elegant Border & Glow
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                width: 2.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          );
+                            child: CircleAvatar(
+                              radius: 32,
+                              backgroundColor: Colors.white,
+                              backgroundImage: _userAvatar.startsWith('http')
+                                  ? NetworkImage(_userAvatar)
+                                  : AssetImage(_userAvatar) as ImageProvider,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
 
-                          if (result == true) {
-                            _loadUserData();
-                          }
-                        },
+                          // 📝 User Info Section
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _userName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: 0.3,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 6),
+
+                                // 🛡️ Role Badge with small icon
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.18),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.verified_user_rounded,
+                                        size: 13,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 150,
+                                        ),
+                                        child: Text(
+                                          _userRole,
+                                          style: const TextStyle(
+                                            fontSize: 11.5,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+
+                          // ✏️ Modern Rounded Edit Button
+                          Material(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(14),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () async {
+                                final result = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const EditProfileScreen(),
+                                  ),
+                                );
+
+                                if (result == true) {
+                                  _loadUserData();
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(11),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(14),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.35),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.edit_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

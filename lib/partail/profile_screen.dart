@@ -3,17 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/api/api_auth.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
-import 'package:pos_inventory/order/cart_screen.dart';
 import 'package:pos_inventory/profile/change_pass_screen.dart';
 import 'package:pos_inventory/profile/store_info_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pos_inventory/partail/setting_screnn.dart';
-
 import '../login/login_screen.dart';
 import '../msg/appSnackBar.dart';
 import '../profile/change_laung_screen.dart';
 import '../profile/edit_profile_screen.dart';
-import 'button_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -25,7 +22,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final ApiAuth apiAuth = ApiAuth();
   String _userName = "Let Lihor";
-  String _userRole = "Cashier • Register #01";
+  String _userRole = "Staff";
   String _userAvatar = "";
 
   @override
@@ -36,11 +33,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
+
     setState(() {
       _userName = prefs.getString('name') ?? "Let Lihor";
-      _userRole = prefs.getString('role') ?? "Cashier • Register #01";
+      String roleName =
+          prefs.getString('role_name') ?? prefs.getString('role') ?? "Staff";
+      _userRole = "$roleName • POS System";
       _userAvatar = prefs.getString('image') ?? '';
     });
+
+    try {
+      final profileData = await apiAuth.getProfile();
+
+      if (profileData != null && mounted) {
+        String serverRoleName =
+            profileData['role']?['name'] ?? profileData['role_name'] ?? "Staff";
+        String serverName = profileData['name'] ?? _userName;
+        String serverAvatar =
+            profileData['image_url'] ?? profileData['image'] ?? _userAvatar;
+
+        setState(() {
+          _userName = serverName;
+          _userRole = "$serverRoleName • POS System";
+          _userAvatar = serverAvatar;
+        });
+
+        prefs.setString('name', serverName);
+        prefs.setString('role_name', serverRoleName);
+        prefs.setString('image', serverAvatar);
+      }
+    } catch (e) {
+      debugPrint("Error updating profile from API: $e");
+    }
   }
 
   @override
@@ -102,7 +126,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2563EB).withOpacity(0.3),
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -117,7 +141,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       width: 130,
                       height: 130,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.07),
+                        color: Colors.white.withValues(alpha: 0.07),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -127,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Container(
                         padding: const EdgeInsets.all(3.5),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: Colors.white.withValues(alpha: 0.3),
                           shape: BoxShape.circle,
                         ),
                         child: Container(
@@ -137,35 +161,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             shape: BoxShape.circle,
                           ),
                           child: ClipOval(
-                            child: _userAvatar.isNotEmpty && _userAvatar.startsWith('http')
+                            child:
+                                _userAvatar.isNotEmpty &&
+                                    _userAvatar.startsWith('http')
                                 ? Image.network(
-                              _userAvatar,
-                              width: 84,
-                              height: 84,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  width: 84,
-                                  height: 84,
-                                  color: Colors.grey.shade100,
-                                  child: const Icon(
-                                    Icons.person,
-                                    size: 42,
-                                    color: Color(0xFF2563EB),
-                                  ),
-                                );
-                              },
-                            )
+                                    _userAvatar,
+                                    width: 84,
+                                    height: 84,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 84,
+                                        height: 84,
+                                        color: Colors.grey.shade100,
+                                        child: const Icon(
+                                          Icons.person,
+                                          size: 42,
+                                          color: Color(0xFF2563EB),
+                                        ),
+                                      );
+                                    },
+                                  )
                                 : Container(
-                              width: 84,
-                              height: 84,
-                              color: Colors.grey.shade100,
-                              child: const Icon(
-                                Icons.person,
-                                size: 42,
-                                color: Color(0xFF2563EB),
-                              ),
-                            ),
+                                    width: 84,
+                                    height: 84,
+                                    color: Colors.grey.shade100,
+                                    child: const Icon(
+                                      Icons.person,
+                                      size: 42,
+                                      color: Color(0xFF2563EB),
+                                    ),
+                                  ),
                           ),
                         ),
                       ),
@@ -180,11 +206,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
+                      // 🟢 បង្ហាញ Role របស់អ្នកប្រើប្រាស់នៅត្រង់នេះ
                       Text(
                         _userRole,
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -195,10 +222,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
+                          color: Colors.white.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.12),
+                            color: Colors.white.withValues(alpha: 0.12),
                           ),
                         ),
                         child: Row(
@@ -232,14 +259,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 22),
 
-            // 📋 2. Settings & Info List Options Card (រៀបចំរចនាសម្ព័ន្ធម៉ឺនុយឲ្យមានគម្លាតស្អាត)
+            // 📋 Menu List Options Card
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -316,6 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 22),
 
+            // Logout Button
             SizedBox(
               width: double.infinity,
               height: 52,
@@ -370,16 +398,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             onPressed: () async {
-                              Navigator.pop(context);
-                              final prefs = await SharedPreferences.getInstance();
-                              await prefs.clear();
-
+                              Navigator.of(context, rootNavigator: true).pop();
+                              await apiAuth.logout();
                               if (context.mounted) {
                                 AppSnackBar.showSuccess(
                                   context,
                                   'Logged out successfully',
                                 );
-
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
@@ -409,7 +434,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
-
     );
   }
 
@@ -430,7 +454,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2563EB).withOpacity(0.07),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, color: const Color(0xFF2563EB), size: 22),

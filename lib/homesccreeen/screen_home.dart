@@ -21,13 +21,14 @@ import 'package:pos_inventory/stores/index_store_screen.dart';
 import 'package:pos_inventory/supplier/index_supplier_screen.dart';
 import 'package:pos_inventory/unit/create_unit_screen.dart';
 import 'package:pos_inventory/unit/unit_index_screen.dart';
-
 import 'package:pos_inventory/supplier/create_supplier_screen.dart';
 import 'package:pos_inventory/users/create_user_screen.dart';
+import 'package:pos_inventory/users/roles/manage_user_role_screen.dart';
 import 'package:pos_inventory/users/user_index_screen.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../banner/banner_screen.dart';
 import '../expensetype/create_expens_type_screen.dart';
+import '../login/authority/authority_screen.dart';
 
 class ScreenHome extends StatefulWidget {
   const ScreenHome({super.key});
@@ -42,11 +43,49 @@ class _ScreenHomeState extends State<ScreenHome> {
 
   double totalSalesValue = 0.0;
   bool isStatLoading = true;
-
+  int _roleId = 0;
+  String _userRole = "";
+  bool _isRoleLoaded = false;
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     _loadTotalSalesData();
+  }
+
+  bool _hasRole(List<String> allowedRoles) {
+    String currentRole = _userRole.trim().toLowerCase();
+    List<String> normalizedRoles = allowedRoles
+        .map((r) => r.trim().toLowerCase())
+        .toList();
+    if (currentRole == 'super admin' ||
+        currentRole == 'supper admin' ||
+        normalizedRoles.contains(currentRole)) {
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> _loadUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+
+    int roleId = prefs.getInt('role_id') ?? 0;
+    String roleName = prefs.getString('role') ?? "";
+    List<String> permissions = prefs.getStringList('user_permissions') ?? [];
+
+    // 🟢 បោះពុម្ពបង្ហាញទិន្នន័យ (Debug Print)
+    debugPrint("══════════════════════════════════════");
+    debugPrint("🔍 [DEBUG] Current Role ID: $roleId");
+    debugPrint("🔍 [DEBUG] Current Role Name: '$roleName'");
+    debugPrint("🔑 [DEBUG] Current Permissions: $permissions");
+    debugPrint("══════════════════════════════════════");
+
+    setState(() {
+      _roleId = roleId;
+      _userRole = roleName;
+      _isRoleLoaded = true;
+    });
   }
 
   Future<void> _loadTotalSalesData() async {
@@ -64,29 +103,221 @@ class _ScreenHomeState extends State<ScreenHome> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_isRoleLoaded) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF8FAFC),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
+        ),
+      );
+    }
+
+    // 📂 បញ្ជីកាត Management ទាំងអស់ ដែលយើងត្រងដាក់តាមសិទ្ធិ (គ្មានប្រលោះទំនេរ)
+    List<Widget> managementCards = [
+      _buildModernActionCard(
+        title: TranslateConstants.product.tr,
+        subtitle: TranslateConstants.manageProduct.tr,
+        icon: Icons.inventory_rounded,
+        color: const Color(0xFF3B82F6),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProductIndexScreen()),
+        ),
+      ),
+      _buildModernActionCard(
+        title: TranslateConstants.category.tr,
+        subtitle: TranslateConstants.manageCategory.tr,
+        icon: Icons.list_alt_rounded,
+        color: const Color(0xFF8B5CF6),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CategoryIndexScreen()),
+        ),
+      ),
+      _buildModernActionCard(
+        title: TranslateConstants.brand.tr,
+        subtitle: TranslateConstants.manageBrand.tr,
+        icon: Icons.storefront_rounded,
+        color: const Color(0xFF06B6D4),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const BrandIndexScreen()),
+        ),
+      ),
+      _buildModernActionCard(
+        title: TranslateConstants.unit.tr,
+        subtitle: TranslateConstants.manageUnit.tr,
+        icon: Icons.category_rounded,
+        color: const Color(0xFFF97316),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const UnitIndexScreen()),
+        ),
+      ),
+      _buildModernActionCard(
+        title: TranslateConstants.supplier.tr,
+        subtitle: TranslateConstants.manageSupplier.tr,
+        icon: Icons.local_shipping_rounded,
+        color: const Color(0xFF64748B),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const IndexSupplierScreen()),
+        ),
+      ),
+      _buildModernActionCard(
+        title: TranslateConstants.store.tr,
+        subtitle: TranslateConstants.manageStore.tr,
+        icon: Icons.storefront_outlined,
+        color: const Color(0xFF334155),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const IndexStoreScreen()),
+        ),
+      ),
+      _buildModernActionCard(
+        title: TranslateConstants.purchase.tr,
+        subtitle: TranslateConstants.managePurchase.tr,
+        icon: Icons.receipt_long_rounded,
+        color: const Color(0xFF0EA5E9),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const IndexPurchaseScreen()),
+        ),
+      ),
+    ];
+
+    // 🔒 បន្ថែម User Management សម្រាប់ Admin និង Supper Admin
+    if (_hasRole(['Admin', 'Supper Admin'])) {
+      managementCards.add(
+        _buildModernActionCard(
+          title: TranslateConstants.user.tr,
+          subtitle: TranslateConstants.manageUser.tr,
+          icon: Icons.supervisor_account_sharp,
+          color: const Color(0xFFEC4899),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const UserIndexScreen()),
+          ),
+        ),
+      );
+    }
+
+    // 🔒 បន្ថែម Auth Logs និង Role & Permissions សម្រាប់តែ Supper Admin ប៉ុណ្ណោះ
+    if (_hasRole(['Supper Admin'])) {
+      // managementCards.add(
+      //   _buildModernActionCard(
+      //     title: TranslateConstants.auth_logs.tr,
+      //     subtitle: TranslateConstants.manage_auth_logs.tr,
+      //     icon: Icons.admin_panel_settings_rounded,
+      //     color: const Color(0xFF7C3AED),
+      //     onTap: () => Navigator.push(
+      //       context,
+      //       MaterialPageRoute(builder: (context) => const AuthorityScreen()),
+      //     ),
+      //   ),
+      // );
+      managementCards.add(
+        _buildModernActionCard(
+          title: 'Role & Permissions',
+          subtitle: 'Manage roles and permissions',
+          icon: Icons.manage_accounts_sharp,
+          color: const Color(0xFFEC4899),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ManageUserRoleScreen()),
+          ),
+        ),
+      );
+    }
+
+    // កាត Customer ទូទៅ
+    managementCards.add(
+      _buildModernActionCard(
+        title: TranslateConstants.customer.tr,
+        subtitle: TranslateConstants.manage_customer.tr,
+        icon: Icons.people_alt_rounded,
+        color: const Color(0xFF10B981),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CustomerIndexScreen()),
+        ),
+      ),
+    );
+
+
+    if (_hasRole(['Admin', 'Supper Admin'])) {
+      managementCards.addAll([
+        _buildModernActionCard(
+          title: TranslateConstants.auth_logs.tr,
+          subtitle: TranslateConstants.manage_auth_logs.tr,
+          icon: Icons.admin_panel_settings_rounded,
+          color: const Color(0xFF7C3AED),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AuthorityScreen()),
+          ),
+        ),
+        _buildModernActionCard(
+          title: TranslateConstants.expense_type.tr,
+          subtitle: TranslateConstants.manage_exp.tr,
+          icon: Icons.folder_open_rounded,
+          color: const Color(0xFFEAB308),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => IndexExpensetypeSreen()),
+          ),
+        ),
+
+        _buildModernActionCard(
+          title: TranslateConstants.expense.tr,
+          subtitle: TranslateConstants.manage_expense.tr,
+          icon: Icons.payments_rounded,
+          color: const Color(0xFFEF4444),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => IndexExpenseScreen()),
+          ),
+        ),
+        _buildModernActionCard(
+          title: TranslateConstants.report.tr,
+          subtitle: TranslateConstants.manageReport.tr,
+          icon: Icons.bar_chart_rounded,
+          color: const Color(0xFF6366F1),
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ReportDashboardScreen()),
+          ),
+        ),
+      ]);
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🏷️ Modern Welcome Banner
+            // 🏷️ Premium Modern Welcome Banner
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4F46E5), Color(0xFF3B82F6)],
+                  colors: [
+                    Color(0xFF4F46E5),
+                    Color(0xFF6366F1),
+                    Color(0xFF3B82F6),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4F46E5).withOpacity(0.35),
-                    blurRadius: 16,
+                    color: const Color(0xFF4F46E5).withOpacity(0.3),
+                    blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
                 ],
@@ -94,34 +325,19 @@ class _ScreenHomeState extends State<ScreenHome> {
               child: Stack(
                 children: [
                   Positioned(
-                    right: -25,
-                    bottom: -25,
+                    right: -30,
+                    bottom: -30,
                     child: Container(
-                      width: 110,
-                      height: 110,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    right: 40,
-                    top: -30,
-                    child: Container(
-                      width: 70,
-                      height: 70,
+                      width: 120,
+                      height: 120,
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.08),
                         shape: BoxShape.circle,
                       ),
                     ),
                   ),
-
-                  // 📝 Content Section
                   Row(
                     children: [
-                      // 📝 ផ្នែកអត្ថបទខាងឆ្វេង
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,8 +350,9 @@ class _ScreenHomeState extends State<ScreenHome> {
                                     TranslateConstants.hello.tr,
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 18,
+                                      fontSize: 19,
                                       fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.2,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -144,7 +361,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                                 const SizedBox(width: 6),
                                 const Text(
                                   "👋",
-                                  style: TextStyle(fontSize: 15),
+                                  style: TextStyle(fontSize: 16),
                                 ),
                               ],
                             ),
@@ -153,8 +370,8 @@ class _ScreenHomeState extends State<ScreenHome> {
                               TranslateConstants.manage_inventory.tr,
                               style: TextStyle(
                                 color: Colors.white.withOpacity(0.9),
-                                fontSize: 12.5,
-                                height: 1.3,
+                                fontSize: 13,
+                                height: 1.4,
                               ),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
@@ -163,38 +380,40 @@ class _ScreenHomeState extends State<ScreenHome> {
                         ),
                       ),
                       const SizedBox(width: 14),
-
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.network(
-                          'https://i.pinimg.com/1200x/f8/08/b4/f808b4bc1f3d6b03d8070994a3638d7f.jpg',
-                          width: 52,
-                          height: 52,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return const SizedBox(
-                              width: 52,
-                              height: 52,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.35),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.network(
+                            'https://i.pinimg.com/1200x/f8/08/b4/f808b4bc1f3d6b03d8070994a3638d7f.jpg',
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                                  width: 56,
+                                  height: 56,
+                                  color: Colors.white.withOpacity(0.2),
+                                  child: const Icon(
+                                    Icons.storefront_rounded,
+                                    color: Colors.white,
+                                    size: 26,
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
-                                width: 52,
-                                height: 52,
-                                color: Colors.white.withOpacity(0.2),
-                                child: const Icon(
-                                  Icons.storefront_rounded,
-                                  color: Colors.white,
-                                  size: 26,
-                                ),
-                              ),
+                          ),
                         ),
                       ),
                     ],
@@ -204,27 +423,36 @@ class _ScreenHomeState extends State<ScreenHome> {
             ),
             const SizedBox(height: 24),
             const AutoPlayBanner(),
-            // const BannerProductScreen(),
             const SizedBox(height: 24),
 
-            // 📊 Quick Statistics Section
+            // 📊 Quick Statistics Section Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   TranslateConstants.overview.tr,
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: const TextStyle(
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
-                Text(
-                  TranslateConstants.real_time.tr,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade500,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4F46E5).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    TranslateConstants.real_time.tr,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF4F46E5),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -234,13 +462,17 @@ class _ScreenHomeState extends State<ScreenHome> {
             Row(
               children: [
                 Expanded(
-                  child: _buildModernStatCard(
+                  child: _buildBeautifulStatCard(
                     title: TranslateConstants.totalSale.tr,
                     value: isStatLoading
                         ? "Loading..."
                         : "\$${totalSalesValue.toStringAsFixed(2)}",
                     icon: Icons.trending_up_rounded,
-                    primaryColor: Colors.green,
+                    primaryColor: const Color(0xFF10B981),
+                    gradientColors: [
+                      const Color(0xFFECFDF5),
+                      const Color(0xFFD1FAE5),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -252,17 +484,21 @@ class _ScreenHomeState extends State<ScreenHome> {
                       if (snapshot.connectionState == ConnectionState.done) {
                         if (snapshot.hasData) {
                           displayValue =
-                              "${snapshot.data} ${TranslateConstants.item.tr}";
+                          "${snapshot.data} ${TranslateConstants.item.tr}";
                         } else {
                           displayValue = "0 Items";
                         }
                       }
 
-                      return _buildModernStatCard(
+                      return _buildBeautifulStatCard(
                         title: TranslateConstants.totalProduct.tr,
                         value: displayValue,
                         icon: Icons.inventory_2_rounded,
                         primaryColor: const Color(0xFFF59E0B),
+                        gradientColors: [
+                          const Color(0xFFFFFBEB),
+                          const Color(0xFFFEF3C7),
+                        ],
                       );
                     },
                   ),
@@ -271,18 +507,19 @@ class _ScreenHomeState extends State<ScreenHome> {
             ),
             const SizedBox(height: 24),
 
+            // ⚡ Quick Actions Section Header
             Text(
               TranslateConstants.quick_actions.tr,
-              style: TextStyle(
-                fontSize: 16,
+              style: const TextStyle(
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Color(0xFF0F172A),
               ),
             ),
             const SizedBox(height: 12),
 
             SizedBox(
-              height: 90,
+              height: 94,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
@@ -290,7 +527,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   _buildQuickActionItem(
                     title: TranslateConstants.product.tr,
                     icon: Icons.add_box_rounded,
-                    color: Colors.blue,
+                    color: const Color(0xFF3B82F6),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -302,7 +539,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   _buildQuickActionItem(
                     title: TranslateConstants.category.tr,
                     icon: Icons.create_new_folder_rounded,
-                    color: Colors.purple,
+                    color: const Color(0xFF8B5CF6),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -314,7 +551,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   _buildQuickActionItem(
                     title: TranslateConstants.brand.tr,
                     icon: Icons.branding_watermark_rounded,
-                    color: Colors.orange,
+                    color: const Color(0xFFF97316),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -326,7 +563,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   _buildQuickActionItem(
                     title: TranslateConstants.unit.tr,
                     icon: Icons.straighten_rounded,
-                    color: Colors.teal,
+                    color: const Color(0xFF14B8A6),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -338,7 +575,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   _buildQuickActionItem(
                     title: TranslateConstants.supplier.tr,
                     icon: Icons.local_shipping_rounded,
-                    color: Colors.indigo,
+                    color: const Color(0xFF6366F1),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -350,7 +587,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   _buildQuickActionItem(
                     title: TranslateConstants.purchase.tr,
                     icon: Icons.receipt_long_rounded,
-                    color: Colors.indigo,
+                    color: const Color(0xFF0EA5E9),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -358,23 +595,28 @@ class _ScreenHomeState extends State<ScreenHome> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  _buildQuickActionItem(
-                    title: TranslateConstants.user.tr,
-                    icon: Icons.people_rounded,
-                    color: Colors.indigo,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const CreateUserScreen(),
+
+                  // 🔒 ពិនិត្យសិទ្ធិបង្ហាញ Quick Action សម្រាប់ Admin / Supper Admin
+                  if (_hasRole(['Admin', 'Supper Admin'])) ...[
+                    const SizedBox(width: 10),
+                    _buildQuickActionItem(
+                      title: TranslateConstants.user.tr,
+                      icon: Icons.people_rounded,
+                      color: const Color(0xFFEC4899),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateUserScreen(),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
+
                   const SizedBox(width: 10),
                   _buildQuickActionItem(
                     title: TranslateConstants.store.tr,
                     icon: Icons.store_sharp,
-                    color: Colors.indigo,
+                    color: const Color(0xFF64748B),
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -382,200 +624,59 @@ class _ScreenHomeState extends State<ScreenHome> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  _buildQuickActionItem(
-                    title: TranslateConstants.expense_type.tr,
-                    icon: Icons.category_rounded,
-                    color: Colors.indigo,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreateExpensTypeScreen(),
-                      ),
-                    ),
-                  ),
 
-                  const SizedBox(width: 10),
-                  _buildQuickActionItem(
-                    title: TranslateConstants.expense.tr,
-                    icon: Icons.payments_rounded,
-                    color: Colors.indigo,
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CreateExpenseScreen(),
+                  // 🔒 ពិនិត្យសិទ្ធិ៖ Expense Type & Expense Quick Action សម្រាប់តែ Admin និង Supper Admin ប៉ុណ្ណោះ
+                  if (_hasRole(['Admin', 'Supper Admin'])) ...[
+                    const SizedBox(width: 10),
+                    _buildQuickActionItem(
+                      title: TranslateConstants.expense_type.tr,
+                      icon: Icons.category_rounded,
+                      color: const Color(0xFFEAB308),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreateExpensTypeScreen(),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 10),
+                    _buildQuickActionItem(
+                      title: TranslateConstants.expense.tr,
+                      icon: Icons.payments_rounded,
+                      color: const Color(0xFFEF4444),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CreateExpenseScreen(),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // 📂 Management Lists Section
+            // 📂 Management Lists Section Header
             Text(
               TranslateConstants.management.tr,
-              style: TextStyle(
-                fontSize: 16,
+              style: const TextStyle(
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Color(0xFF0F172A),
               ),
             ),
             const SizedBox(height: 12),
 
+            // 📂 Management Grid (បង្ហាញដោយគ្មានប្រលោះទំនេរ)
             GridView.count(
               crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.7,
-              children: [
-                _buildModernActionCard(
-                  title: TranslateConstants.product.tr,
-                  subtitle: TranslateConstants.manageProduct.tr,
-                  icon: Icons.inventory_rounded,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProductIndexScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.category.tr,
-                  subtitle: TranslateConstants.manageCategory.tr,
-                  icon: Icons.list_alt_rounded,
-                  color: Colors.pink,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CategoryIndexScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.brand.tr,
-                  subtitle: TranslateConstants.manageBrand.tr,
-                  icon: Icons.storefront_rounded,
-                  color: Colors.cyan,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const BrandIndexScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.unit.tr,
-                  subtitle: TranslateConstants.manageUnit.tr,
-                  icon: Icons.category_rounded,
-                  color: Colors.deepOrange,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const UnitIndexScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.supplier.tr,
-                  subtitle: TranslateConstants.manageSupplier.tr,
-                  icon: Icons.local_shipping_rounded,
-                  color: Colors.blueGrey,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const IndexSupplierScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.store.tr,
-                  subtitle: TranslateConstants.manageStore.tr,
-                  icon: Icons.storefront_outlined,
-                  color: Colors.blueGrey,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const IndexStoreScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.purchase.tr,
-                  subtitle: TranslateConstants.managePurchase.tr,
-                  icon: Icons.receipt_long_rounded,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const IndexPurchaseScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.user.tr,
-                  subtitle: TranslateConstants.manageUser.tr,
-                  icon: Icons.supervisor_account_sharp,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const UserIndexScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.customer.tr,
-                  subtitle: TranslateConstants.manage_customer.tr,
-                  icon: Icons.people_alt_rounded,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const CustomerIndexScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.expense_type.tr,
-                  subtitle: TranslateConstants.manage_exp.tr,
-                  icon: Icons.folder_open_rounded,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => IndexExpensetypeSreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.expense.tr,
-                  subtitle: TranslateConstants.manage_expense.tr,
-                  icon: Icons.payments_rounded,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => IndexExpenseScreen(),
-                    ),
-                  ),
-                ),
-                _buildModernActionCard(
-                  title: TranslateConstants.report.tr,
-                  subtitle: TranslateConstants.manageReport.tr,
-                  icon: Icons.bar_chart_rounded,
-                  color: Colors.indigo,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ReportDashboardScreen(),
-                    ),
-                  ),
-                ),
-              ],
+              childAspectRatio: 1.63,
+              children: managementCards,
             ),
             const SizedBox(height: 20),
           ],
@@ -584,24 +685,27 @@ class _ScreenHomeState extends State<ScreenHome> {
     );
   }
 
-  Widget _buildModernStatCard({
+  // ✨ Elegant & Clean Stat Card Widget
+  Widget _buildBeautifulStatCard({
     required String title,
     required String value,
     required IconData icon,
     required Color primaryColor,
+    required List<Color> gradientColors,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
+            color: const Color(0xFF64748B).withOpacity(0.06),
+            blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -612,12 +716,27 @@ class _ScreenHomeState extends State<ScreenHome> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: LinearGradient(
+                    colors: gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, color: primaryColor, size: 20),
+                child: Icon(icon, color: primaryColor, size: 22),
               ),
-              Icon(Icons.trending_up, size: 16, color: primaryColor),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.trending_up_rounded,
+                  size: 16,
+                  color: primaryColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -628,6 +747,8 @@ class _ScreenHomeState extends State<ScreenHome> {
               color: Colors.grey.shade500,
               fontWeight: FontWeight.w600,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 4),
           Text(
@@ -635,15 +756,17 @@ class _ScreenHomeState extends State<ScreenHome> {
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black87,
+              color: Color(0xFF0F172A),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  // ✨ Quick Action Vertical Item
+  // ✨ Sleek Quick Action Item
   Widget _buildQuickActionItem({
     required String title,
     required IconData icon,
@@ -651,40 +774,48 @@ class _ScreenHomeState extends State<ScreenHome> {
     required VoidCallback onTap,
   }) {
     return SizedBox(
-      width: 85,
+      width: 86,
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.shade200),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF64748B).withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: color, size: 20),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 Text(
                   title,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Color(0xFF0F172A),
                   ),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ],
             ),
@@ -694,7 +825,7 @@ class _ScreenHomeState extends State<ScreenHome> {
     );
   }
 
-  // 📂 Management Card Widget (បានកែសម្រួលឱ្យតូចស្អាតល្មម)
+  // 📂 Clean Management Card Widget
   Widget _buildModernActionCard({
     required String title,
     required String subtitle,
@@ -704,29 +835,26 @@ class _ScreenHomeState extends State<ScreenHome> {
   }) {
     return Material(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
-          ), // 💡 កាត់បន្ថយ Padding ជុំវិញឱ្យតូច
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.02),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: const Color(0xFF64748B).withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment:
-                MainAxisAlignment.center, // 💡 ទាញមាតិកាឱ្យកណ្តាលស្អាត
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -734,28 +862,35 @@ class _ScreenHomeState extends State<ScreenHome> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        10,
-                      ), // 💡 រក្សាទុកតែមួយ និងត្រឹមត្រូវ
+                      color: color.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: color, size: 18),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    color: Colors.grey.shade400,
-                    size: 12,
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.grey.shade400,
+                      size: 9,
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 8), // 💡 បន្ថយគម្លាតកម្ពស់
+              const SizedBox(height: 10),
               Text(
                 title,
                 style: const TextStyle(
-                  fontSize: 13, // 💡 បន្ថយអក្សរបន្តិចដើម្បីកុំឱ្យវែងពេក
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Color(0xFF0F172A),
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 1),
               Text(
@@ -765,6 +900,8 @@ class _ScreenHomeState extends State<ScreenHome> {
                   color: Colors.grey.shade500,
                   fontWeight: FontWeight.w500,
                 ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

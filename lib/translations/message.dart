@@ -63,11 +63,13 @@ class Messages extends Translations {
       TranslateConstants.customer:'Customers',
       TranslateConstants.manage_customer:'Manage Customers',
       TranslateConstants.manage_invoice:'View and manage customer sales invoices',
-      TranslateConstants.invoice:"Invoice Invoice Report",
+      TranslateConstants.invoice:"Invoice Report",
       TranslateConstants.scan_check_product:'Scan Check Product',
       TranslateConstants.manage_scan_check_product:'Check product price and inventory stock',
       TranslateConstants.delivery:'Manage Delivery',
-      TranslateConstants.manage_delivery:'Track and manage order deliveries'
+      TranslateConstants.manage_delivery:'Track and manage order deliveries',
+      TranslateConstants.auth_logs:'Security',
+      TranslateConstants.manage_auth_logs:"Manage verification logs"
 
     },
     'km_KH': {
@@ -133,6 +135,8 @@ class Messages extends Translations {
       TranslateConstants.manage_scan_check_product:'ពិនិត្យមើលតម្លៃផលិតផល និងស្តុកទំនិញ',
       TranslateConstants.delivery:'គ្រប់គ្រងការដឹកជញ្ជូន',
       TranslateConstants.manage_delivery:'តាមដាន និងគ្រប់គ្រងការដឹកជញ្ជូនការបញ្ជាទិញ',
+      TranslateConstants.auth_logs:"សន្តិសុខ",
+      TranslateConstants.manage_auth_logs:"គ្រប់គ្រងកំណត់ហេតុនៃការផ្ទៀងផ្ទាត់"
 
     }
   };

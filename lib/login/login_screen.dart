@@ -63,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+
   void _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
@@ -81,8 +82,14 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result['success']) {
         await _saveCredentials();
         if (!mounted) return;
+        final responseData = result['data'] ?? result;
+        final userName =
+            responseData['user']?['name'] ?? responseData['name'] ?? 'User';
+        AppSnackBar.showSuccess(
+          context,
+          "Login successful..! សូមស្វាគមន៍, $userName",
+        );
 
-        AppSnackBar.showSuccess(context, "Login successful!");
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const DashboardScreen()),
@@ -119,7 +126,6 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 🌿 Gradient Banner (Modern Soft Emerald Green)
             Container(
               padding: const EdgeInsets.only(
                 top: 75,

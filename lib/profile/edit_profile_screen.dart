@@ -21,10 +21,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
 
   bool _isLoading = false;
-
-  // 🖼️ អថេរសម្រាប់จัดการរូបភាព Profile
-  File? _imageFile;          // រូបភាពថ្មីដែលបានជ្រើសរើសពី Gallery
-  String _currentAvatarUrl = ""; // រូបភាពចាស់ដែលយកมาจาก SharedPreferences
+  File? _imageFile;
+  String _currentAvatarUrl = "";
 
   final ImagePicker _picker = ImagePicker();
   final ApiAuth _apiAuth = ApiAuth();
@@ -35,7 +33,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _loadCurrentUserData();
   }
 
-  // 📥 ទាញយកទិន្នន័យចាស់ពី SharedPreferences
   Future<void> _loadCurrentUserData() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -46,7 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     });
   }
 
-  // 🖼️ មុខងារជ្រើសរើសរូបភាពពី Gallery
+
   Future<void> _pickImage() async {
     final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
@@ -56,19 +53,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // 🚀 មុខងាររក្សាទុកការកែប្រែ Profile
+  // var result = await _apiAuth.updateProfile
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
-      //  gọi API Update Profile (រួមទាំង Image បើមានជ្រើសរើសថ្មី)
       var result = await _apiAuth.updateProfile(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
-        image: _imageFile, // 👈 ផ្ញើ File រូបភាពទៅជាមួយ
+        image: _imageFile,
       );
 
       setState(() {
@@ -78,7 +74,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) {
         if (result['success'] == true) {
           AppSnackBar.showSuccess(context, result['message'] ?? 'Profile updated successfully');
-          Navigator.pop(context, true); // 🟢 ផ្ញើ true กลับไปเพื่อ Refresh หน้า ProfileScreen
+          Navigator.pop(context, true);
         } else {
           AppSnackBar.showError(context, result['message'] ?? 'Failed to update profile');
         }

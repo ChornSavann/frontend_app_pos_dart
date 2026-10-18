@@ -80,6 +80,7 @@ flutter:
   assets:
     - assets/qrcode.jpg
     - assets/gamming.jpg
+    - assets/Savann.jpg
     - assets/fonts/
   fonts:
     - family: KhmerOSBattambang

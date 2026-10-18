@@ -58,7 +58,10 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
               margin: const pw.EdgeInsets.only(top: 8),
               child: pw.Text(
                 'Page ${context.pageNumber} of ${context.pagesCount}',
-                style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+                style: const pw.TextStyle(
+                  fontSize: 8,
+                  color: PdfColors.grey600,
+                ),
               ),
             );
           },
@@ -85,7 +88,10 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                       pw.SizedBox(height: 3),
                       pw.Text(
                         'Comprehensive stock status and pricing details',
-                        style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600),
+                        style: const pw.TextStyle(
+                          fontSize: 10,
+                          color: PdfColors.grey600,
+                        ),
                       ),
                     ],
                   ),
@@ -94,11 +100,17 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     children: [
                       pw.Text(
                         'Date: $currentDate',
-                        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey700),
+                        style: const pw.TextStyle(
+                          fontSize: 9,
+                          color: PdfColors.grey700,
+                        ),
                       ),
                       pw.SizedBox(height: 3),
                       pw.Container(
-                        padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: pw.BoxDecoration(
                           color: PdfColors.teal100,
                           borderRadius: pw.BorderRadius.circular(4),
@@ -146,7 +158,10 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                     bottom: pw.BorderSide(color: PdfColors.grey200, width: 0.4),
                   ),
                 ),
-                cellStyle: const pw.TextStyle(fontSize: 8.5, color: PdfColors.grey800),
+                cellStyle: const pw.TextStyle(
+                  fontSize: 8.5,
+                  color: PdfColors.grey800,
+                ),
 
                 // 📐 កំណត់ Width ឱ្យសមាមាត្រគ្នាដើម្បីកុំឱ្យអក្សរធ្លាក់បន្ទាត់
                 columnWidths: {
@@ -208,7 +223,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
       debugPrint("Error exporting products PDF: $e");
     }
   }
-
 
   Future<void> _exportProductsAsCSV(List<Product> products) async {
     try {
@@ -349,7 +363,6 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
       },
     );
   }
-
 
   void _confirmDelete(Product product) {
     showDialog(
@@ -495,7 +508,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
             ),
           ),
           leading: IconButton(
-            icon: const Icon(Icons.home_outlined, color: Colors.white, size: 22),
+            icon: const Icon(
+              Icons.home_outlined,
+              color: Colors.white,
+              size: 22,
+            ),
             tooltip: 'Dashboard',
             onPressed: () async {
               await Navigator.pushAndRemoveUntil(
@@ -503,7 +520,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 MaterialPageRoute(
                   builder: (context) => const DashboardScreen(),
                 ),
-                    (route) => false,
+                (route) => false,
               );
             },
           ),
@@ -522,7 +539,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
           actions: [
             // 🔍 1. Search Button (បង្ហាញជានិច្ចព្រោះត្រូវប្រើញឹកញាប់)
             IconButton(
-              icon: const Icon(Icons.search_rounded, color: Colors.white, size: 22),
+              icon: const Icon(
+                Icons.search_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
               tooltip: 'Search',
               onPressed: () async {
                 List<Product> products = await _futureProducts;
@@ -533,7 +554,7 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   delegate: ProductSearchDelegate(
                     products,
                     _refreshProductList,
-                        (product) {
+                    (product) {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -549,7 +570,11 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
 
             // ➕ 2. Add Product Button (បង្ហាញជានិច្ច)
             IconButton(
-              icon: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+              icon: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
               tooltip: 'Add Product',
               onPressed: () async {
                 final isChanged = await Navigator.push(
@@ -566,8 +591,14 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
 
             // ⚙️ 3. More Menu (ប្រមូលផ្ដុំមុខងារផ្សេងៗដូចជា Sync, Export, Barcode ក្នុងនេះកុំឱ្យញេញ៉ៃ)
             PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 22),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              icon: const Icon(
+                Icons.more_vert_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               color: Colors.white,
               elevation: 4,
               onSelected: (value) async {
@@ -609,9 +640,19 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   value: 'sync',
                   child: Row(
                     children: [
-                      Icon(Icons.cloud_sync_rounded, color: Color(0xFF4F46E5), size: 20),
+                      Icon(
+                        Icons.cloud_sync_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 20,
+                      ),
                       SizedBox(width: 12),
-                      Text('Offline Sync', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                      Text(
+                        'Offline Sync',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -619,9 +660,19 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   value: 'export',
                   child: Row(
                     children: [
-                      Icon(CupertinoIcons.square_arrow_up, color: Color(0xFF4F46E5), size: 20),
+                      Icon(
+                        CupertinoIcons.square_arrow_up,
+                        color: Color(0xFF4F46E5),
+                        size: 20,
+                      ),
                       SizedBox(width: 12),
-                      Text('Export & Share', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                      Text(
+                        'Export & Share',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -629,9 +680,19 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                   value: 'barcode',
                   child: Row(
                     children: [
-                      Icon(Icons.qr_code_2_rounded, color: Color(0xFF4F46E5), size: 20),
+                      Icon(
+                        Icons.qr_code_2_rounded,
+                        color: Color(0xFF4F46E5),
+                        size: 20,
+                      ),
                       SizedBox(width: 12),
-                      Text('Barcode Stickers', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                      Text(
+                        'Barcode Stickers',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -680,14 +741,13 @@ class _ProductIndexScreenState extends State<ProductIndexScreen> {
                 final products = snapshot.data!;
 
                 return ListView.builder(
-                  itemCount: products.length,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 12,
                   ),
+                  itemCount: products.length,
                   itemBuilder: (context, index) {
                     final product = products[index];
-
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
                       decoration: BoxDecoration(

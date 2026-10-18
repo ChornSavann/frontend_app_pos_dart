@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/models/user.dart';
 import 'package:pos_inventory/users/edit_user_sreen.dart';
+import 'package:pos_inventory/users/roles/models/role.dart';
+import '../../api/roles/api_role.dart';
 
 class UserDetailScreen extends StatefulWidget {
   final User user;
@@ -12,6 +14,31 @@ class UserDetailScreen extends StatefulWidget {
 }
 
 class _UserDetailScreenState extends State<UserDetailScreen> {
+  final ApiRole _apiRole = ApiRole();
+  List<Role> _roles = [];
+  bool _isLoadingRole = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRoles();
+  }
+
+  Future<void> _fetchRoles() async {
+    try {
+      final data = await _apiRole.fetchRoles();
+      setState(() {
+        _roles = data.map((json) => Role.fromJson(json)).toList();
+        _isLoadingRole = false;
+      });
+    } catch (e) {
+      debugPrint("Error fetching roles: $e");
+      setState(() {
+        _isLoadingRole = false;
+      });
+    }
+  }
+
   void _confirmDelete() {
     showDialog(
       context: context,
@@ -63,9 +90,17 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
     String name = widget.user.name ?? 'John Doe';
     String email = widget.user.email ?? 'johndoe@gmail.com';
     String phone = widget.user.phone ?? '012 345 678';
-    String role = 'Staff';
     bool isActive = true;
     String? imageUrl = widget.user.image;
+
+    String roleName = 'គ្មាន Role';
+    if (widget.user.roleid != null) {
+      final matchedRole = _roles.firstWhere(
+        (r) => r.id.toString() == widget.user.roleid.toString(),
+        orElse: () => Role(id: '', name: 'គ្មាន Role', description: ''),
+      );
+      roleName = matchedRole.name;
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -95,7 +130,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2563EB).withOpacity(0.3),
+                    color: const Color(0xFF2563EB).withValues(alpha: 0.3),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -107,7 +142,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
@@ -147,17 +182,26 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      role.toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoadingRole
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            roleName.toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                   const SizedBox(height: 14),
                   Container(
@@ -191,7 +235,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
+                    color: Colors.black.withValues(alpha: 0.02),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -224,14 +268,14 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                   _buildInfoRow(
                     icon: Icons.admin_panel_settings_outlined,
                     label: 'Role / Permission',
-                    value: role,
+                    value: _isLoadingRole ? 'Loading...' : roleName,
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 24),
 
-            // ⚙ Action Buttons (Edit & Delete) នៅផ្នែកខាងក្រោម
+            // ⚙ Action Buttons (Edit & Delete)
             Row(
               children: [
                 Expanded(
@@ -245,11 +289,9 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
                         ),
                       );
                       if (updated == true && mounted) {
-                        setState(
-                          () {
-
-                          },
-                        );
+                        setState(() {
+                          _fetchRoles(); // Refresh ព័ត៌មាន Role ឡើងវិញបើមានការកែប្រែ
+                        });
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -312,7 +354,7 @@ class _UserDetailScreenState extends State<UserDetailScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF2563EB).withOpacity(0.1),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(icon, size: 20, color: const Color(0xFF2563EB)),

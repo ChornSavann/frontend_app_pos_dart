@@ -1,11 +1,8 @@
 import 'dart:convert';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
-import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:pos_inventory/Productscreen/models/product_model_banner.dart';
-import 'package:pos_inventory/api/api_unit.dart';
 import 'package:pos_inventory/models/Product.dart';
 
 import 'dart:io';
@@ -14,8 +11,6 @@ import '../constants/baseurl/base_url_api.dart';
 import '../helpers/shared_preferences_helper.dart';
 import '../models/brand.dart';
 import '../models/category.dart';
-import 'api_brand.dart';
-import 'api_category.dart';
 
 class ApiProduct {
   final String baseUrl = BaseUrlApi.baseurl;
@@ -67,7 +62,8 @@ class ApiProduct {
       request.fields['brand_id'] = data['brand_id']?.toString() ?? '';
       request.fields['unit_id'] = data['unit_id']?.toString() ?? '';
       request.fields['description'] = data['description']?.toString() ?? '';
-
+      request.fields['alert_quantity'] =
+          data['alert_quantity']?.toString() ?? '5';
       if (data['image'] != null && data['image'].toString().isNotEmpty) {
         request.files.add(
           await http.MultipartFile.fromPath('image', data['image']),
@@ -172,8 +168,6 @@ class ApiProduct {
     }
   }
 
-
-
   Future<Map<String, dynamic>> updateProduct(Map<String, dynamic> data) async {
     try {
       final productId = data['id'];
@@ -190,6 +184,8 @@ class ApiProduct {
           data['selling_price']?.toString() ?? '0.0';
       request.fields['stock_quantity'] =
           data['stock_quantity']?.toString() ?? '0';
+      request.fields['alert_quantity'] =
+          data['alert_quantity']?.toString() ?? '5';
       request.fields['category_id'] = data['category_id']?.toString() ?? '';
       request.fields['brand_id'] = data['brand_id']?.toString() ?? '';
       request.fields['unit_id'] = data['unit_id']?.toString() ?? '';
@@ -267,7 +263,6 @@ class ApiProduct {
       return false;
     }
   }
-
 
   Future<int> fetchProductCount() async {
     try {
@@ -418,7 +413,6 @@ class ApiProduct {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // status == 1 មានន័យារកឃើញទំនិញក្នុង Database ពិភពលោក
         if (data['status'] == 1 && data['product'] != null) {
           final product = data['product'];
 
@@ -444,7 +438,6 @@ class ApiProduct {
         Uri.parse('$baseUrl/products/min-qty'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer YOUR_TOKEN',
         },
       );
 
@@ -459,6 +452,4 @@ class ApiProduct {
       throw Exception('Error fetching products: $e');
     }
   }
-
-
 }
