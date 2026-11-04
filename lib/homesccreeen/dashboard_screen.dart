@@ -1,9 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pos_inventory/api/api_product.dart';
 import 'package:pos_inventory/homesccreeen/screen_home.dart';
+import 'package:pos_inventory/login/login_screen.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
+import '../Productscreen/favorite/favorite_screen.dart';
 import '../Productscreen/notication/low_stock_screen.dart';
 import '../Productscreen/notication/notication_service.dart';
+import '../api/authority/api_authority.dart';
 import '../partail/app_bar_screen.dart';
 import '../partail/button_screen.dart';
 import '../stores/models/store.dart';
@@ -21,10 +26,40 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoadingLowStock = false;
   final ApiProduct _apiProduct = ApiProduct();
 
+  Timer? _authCheckTimer;
+
   @override
   void initState() {
     super.initState();
     _fetchLowStockData();
+
+    _authCheckTimer = Timer.periodic(const Duration(seconds: 8), (timer) {
+      _verifyTokenWithServer();
+    });
+  }
+
+  @override
+  void dispose() {
+    _authCheckTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _verifyTokenWithServer() async {
+
+    int statusCode = await AuthorityApiService.verifyTokenStatus();
+    if (statusCode == 401) {
+      _authCheckTimer?.cancel();
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+            (route) => false,
+      );
+    }
   }
 
   Future<void> _fetchLowStockData() async {
@@ -81,6 +116,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _navigateToFavoriteScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const FavoriteScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,21 +134,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // 🔹 1. Custom AppBar Widget
+
   PreferredSizeWidget _buildAppBar() {
     return AppBarScreen(
       store: _currentStore,
       lowStockCount: _lowStockList.length,
       onNotificationTap: _handleNotificationTap,
+      onFavoriteTap: _navigateToFavoriteScreen,
     );
   }
 
-  // 🔹 2. Main Body Widget
+
   Widget _buildBody() {
     return const ScreenHome();
   }
 
-  // 🔹 3. Floating Action Button Widget
+
   Widget _buildPOSFloatingActionButton() {
     return Transform.translate(
       offset: const Offset(0, 15),
@@ -121,7 +164,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // 🔹 4. Bottom Navigation Bar Widget
+
   Widget _buildBottomNavigationBar() {
     return const ButtonScreen(currentIndex: 0);
   }

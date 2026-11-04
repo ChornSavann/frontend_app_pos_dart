@@ -59,40 +59,39 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
     super.dispose();
   }
 
-
   // ✨ Function សម្រាប់បង្ហាញ Success Dialog ស្អាតបែប Modern
   void _showSuccessDialog(String message, {VoidCallback? onDeleteOrClose}) {
     showDialog(
       context: context,
-      barrierDismissible: false, // មិនឱ្យចុចបិទផ្ទាំងខាងក្រៅបានទេ ទាល់តែចុច OK
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
           ),
+          contentPadding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color:  Colors.green.shade50,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
                   Icons.check_circle_rounded,
-                  color: Colors.green,
-                  size: 50,
+                  color: Color(0xFF10B981),
+                  size: 56,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               const Text(
                 "Success!",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Color(0xFF0F172A),
                 ),
               ),
               const SizedBox(height: 8),
@@ -104,20 +103,20 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
+                height: 48,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: const Color(0xFF0F766E),
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 0,
                   ),
                   onPressed: () {
-                    Navigator.pop(context); // បិទ Dialog សិន
+                    Navigator.pop(context);
                     if (onDeleteOrClose != null) {
-                      onDeleteOrClose(); // បន្ទាប់មកបញ្ជូនត្រឡប់ក្រោយនិង Refresh
+                      onDeleteOrClose();
                     }
                   },
                   child: const Text(
@@ -159,7 +158,7 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
       _showSuccessDialog(
         result['message'] ?? 'Unit created successfully!',
         onDeleteOrClose: () {
-          Navigator.pop(context, true); // ត្រឡប់ទៅ Index Screen វិញនិង Refresh
+          Navigator.pop(context, true);
         },
       );
     } else {
@@ -167,6 +166,8 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
         SnackBar(
           content: Text(result['message'] ?? 'Failed to create unit'),
           backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -175,22 +176,43 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
         title: const Text(
           "Create New Unit",
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
-        backgroundColor: Colors.blueAccent,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF0F172A),
         elevation: 0,
+        centerTitle: false,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(
+        child: CircularProgressIndicator(color: Color(0xFF0F766E)),
+      )
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Form(
-                key: _formKey,
+        padding: const EdgeInsets.all(20.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🏷️ Section 1 Card Wrapper
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -199,20 +221,20 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
                     // 🏷️ Unit Name
                     TextFormField(
                       controller: _nameController,
                       decoration: _inputDecoration(
                         'Unit Name (e.g. Box, Kilogram)',
-                        Icons.straighten,
+                        Icons.straighten_rounded,
                       ),
                       validator: (v) =>
-                          v!.isEmpty ? 'Unit name is required' : null,
+                      v!.isEmpty ? 'Unit name is required' : null,
                     ),
                     const SizedBox(height: 16),
 
@@ -221,71 +243,95 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
                       controller: _shortNameController,
                       decoration: _inputDecoration(
                         'Short Name (e.g. Box, Kg, Pcs)',
-                        Icons.short_text,
+                        Icons.short_text_rounded,
                       ),
                       validator: (v) =>
-                          v!.isEmpty ? 'Short name is required' : null,
+                      v!.isEmpty ? 'Short name is required' : null,
                     ),
-                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
 
+              // 🔗 Section 2 Card Wrapper
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.grey.shade100),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     const Text(
                       "Sub-Unit Relationship (Optional)",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       "Use this if this unit depends on a base unit (e.g., 1 Box = 12 Pcs)",
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.grey.shade500,
+                      ),
                     ),
-                    const SizedBox(height: 12),
-
-                    // 🔗 Base Unit Dropdown (ប្រើប្រាស់ List ដែលបាន Cache ស្រាប់ ធ្វើឱ្យចុច Select បានរលូន)
-                    _isLoadingUnits
-                        ? DropdownButtonFormField<int>(
-                            value: null,
-                            decoration: _inputDecoration(
-                              'Loading base units...',
-                              Icons.link,
-                            ),
-                            items: const [],
-                            onChanged: null,
-                          )
-                        : DropdownButtonFormField<int>(
-                            value: _selectedBaseUnitId,
-                            decoration: _inputDecoration(
-                              'Base Unit (Optional)',
-                              Icons.link,
-                              suffixIcon: _selectedBaseUnitId != null
-                                  ? IconButton(
-                                      icon: const Icon(Icons.clear, size: 18),
-                                      onPressed: () {
-                                        setState(() {
-                                          _selectedBaseUnitId = null;
-                                        });
-                                      },
-                                    )
-                                  : null,
-                            ),
-                            items: _baseUnits.map((unit) {
-                              return DropdownMenuItem<int>(
-                                value: unit.id,
-                                child: Text("${unit.name} (${unit.shortName})"),
-                              );
-                            }).toList(),
-                            onChanged: (int? newValue) {
-                              setState(() {
-                                _selectedBaseUnitId = newValue;
-                              });
-                            },
-                          ),
                     const SizedBox(height: 16),
 
-                    // ➗ Operator Dropdown (បង្ហាញលុះត្រាតែបានរើស Base Unit)
+                    // 🔗 Base Unit Dropdown
+                    _isLoadingUnits
+                        ? DropdownButtonFormField<int>(
+                      value: null,
+                      decoration: _inputDecoration(
+                        'Loading base units...',
+                        Icons.link_rounded,
+                      ),
+                      items: const [],
+                      onChanged: null,
+                    )
+                        : DropdownButtonFormField<int>(
+                      value: _selectedBaseUnitId,
+                      decoration: _inputDecoration(
+                        'Base Unit (Optional)',
+                        Icons.link_rounded,
+                        suffixIcon: _selectedBaseUnitId != null
+                            ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _selectedBaseUnitId = null;
+                            });
+                          },
+                        )
+                            : null,
+                      ),
+                      items: _baseUnits.map((unit) {
+                        return DropdownMenuItem<int>(
+                          value: unit.id,
+                          child: Text("${unit.name} (${unit.shortName})"),
+                        );
+                      }).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _selectedBaseUnitId = newValue;
+                        });
+                      },
+                    ),
+
+                    // ➗ Operator & 🔢 Value (បង្ហាញពេលបានរើស Base Unit)
                     if (_selectedBaseUnitId != null) ...[
+                      const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
                         value: _selectedOperator,
                         decoration: _inputDecoration(
@@ -301,14 +347,12 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
                         onChanged: (val) =>
                             setState(() => _selectedOperator = val),
                         validator: (v) =>
-                            _selectedBaseUnitId != null &&
-                                (v == null || v.isEmpty)
+                        _selectedBaseUnitId != null &&
+                            (v == null || v.isEmpty)
                             ? 'Operator is required when base unit is selected'
                             : null,
                       ),
                       const SizedBox(height: 16),
-
-                      // 🔢 Value Field (បង្ហាញលុះត្រាតែបានរើស Base Unit)
                       TextFormField(
                         controller: _valueController,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -316,78 +360,86 @@ class _CreateUnitScreenState extends State<CreateUnitScreen> {
                         ),
                         decoration: _inputDecoration(
                           'Value / Multiplier (e.g. 12)',
-                          Icons.exposure,
+                          Icons.exposure_rounded,
                         ),
                         validator: (v) =>
-                            _selectedBaseUnitId != null &&
-                                (v == null || v.isEmpty)
+                        _selectedBaseUnitId != null &&
+                            (v == null || v.isEmpty)
                             ? 'Value is required when base unit is selected'
                             : null,
                       ),
-                      const SizedBox(height: 16),
                     ],
-
-                    // 💾 Save Button
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          elevation: 3,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        onPressed: _submitUnit,
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.save_rounded, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'Save Unit',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-            ),
+              const SizedBox(height: 30),
+
+              // 💾 Save Button
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0F766E),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  onPressed: _submitUnit,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.save_rounded, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Save Unit',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  // 🛠️ Helper Design សម្រាប់ InputDecoration
+  // 🛠️ Helper Design សម្រាប់ InputDecoration ឱ្យកាន់តែស្រស់ស្អាត
   InputDecoration _inputDecoration(
-    String label,
-    IconData icon, {
-    Widget? suffixIcon,
-  }) {
+      String label,
+      IconData icon, {
+        Widget? suffixIcon,
+      }) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.blueAccent, size: 22),
+      labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+      prefixIcon: Icon(icon, color: const Color(0xFF0F766E), size: 20),
       suffixIcon: suffixIcon,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: const Color(0xFFF8FAFC),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200),
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade200),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF0F766E), width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 1),
       ),
     );
   }

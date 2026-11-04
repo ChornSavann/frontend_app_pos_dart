@@ -31,6 +31,32 @@ class _LoginScreenState extends State<LoginScreen> {
     _loadSavedCredentials();
   }
 
+  // Future<void> _loadSavedCredentials() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     _rememberMe = prefs.getBool('remember_me') ?? false;
+  //     if (_rememberMe) {
+  //       _emailController.text = prefs.getString('saved_email') ?? '';
+  //       _passwordController.text = prefs.getString('saved_password') ?? '';
+  //       _isEmailValid = _emailController.text.contains('@');
+  //     }
+  //   });
+  // }
+  //
+  // Future<void> _saveCredentials() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   if (_rememberMe) {
+  //     await prefs.setBool('remember_me', true);
+  //     await prefs.setString('saved_email', _emailController.text.trim());
+  //     await prefs.setString('saved_password', _passwordController.text.trim());
+  //   } else {
+  //     await prefs.remove('remember_me');
+  //     await prefs.remove('saved_email');
+  //     await prefs.remove('saved_password');
+  //   }
+  // }
+
+
   Future<void> _loadSavedCredentials() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -38,21 +64,26 @@ class _LoginScreenState extends State<LoginScreen> {
       if (_rememberMe) {
         _emailController.text = prefs.getString('saved_email') ?? '';
         _passwordController.text = prefs.getString('saved_password') ?? '';
-        _isEmailValid = _emailController.text.contains('@');
+        _isEmailValid = _emailController.text.contains('@') && _emailController.text.trim().length > 3;
       }
     });
   }
 
   Future<void> _saveCredentials() async {
     final prefs = await SharedPreferences.getInstance();
+    print("📌 Remember Me Status: $_rememberMe");
+
     if (_rememberMe) {
       await prefs.setBool('remember_me', true);
       await prefs.setString('saved_email', _emailController.text.trim());
       await prefs.setString('saved_password', _passwordController.text.trim());
+      print("✅ Credentials Saved Successfully!");
     } else {
+
       await prefs.remove('remember_me');
       await prefs.remove('saved_email');
       await prefs.remove('saved_password');
+      print("🗑️ Credentials Cleared!");
     }
   }
 
@@ -543,7 +574,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             "Sign Up",
                             style: TextStyle(
-                              color: Color(0xFF059669), // 🍃 Green Sign Up Link
+                              color: Color(0xFF059669),
                               fontWeight: FontWeight.bold,
                               fontSize: 13.5,
                             ),

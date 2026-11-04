@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_inventory/api/api_category.dart';
-
 import '../msg/appSnackBar.dart';
 
 class CreateCategoryScreen extends StatefulWidget {
@@ -55,7 +54,6 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
       });
 
       if (success) {
-
         AppSnackBar.showSuccess(context, "រក្សាទុកជោគជ័យ!");
         _nameController.clear();
         _descController.clear();
@@ -72,21 +70,27 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
       }
     }
   }
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.cyan[700],
+        backgroundColor: const Color(0xFF0EA5E9),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         title: const Text(
           "Create Category",
           style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
@@ -101,134 +105,176 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   "Add New Category",
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Fill in the details below to create a new category.",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 24),
 
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        spreadRadius: 0,
-                        blurRadius: 16,
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 15,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // --- 🖼️ ផ្នែកជ្រើសរើសរូបភាព (Image Picker Widget) ---
-                      Center(
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.cyan.withOpacity(0.3),
-                                ),
-                                image: _imageFile != null
-                                    ? DecorationImage(
-                                        image: FileImage(_imageFile!),
-                                        fit: BoxFit.cover,
-                                      )
-                                    : null,
-                              ),
-                              child: _imageFile == null
-                                  ? const Icon(
-                                      Icons.image_outlined,
-                                      size: 40,
-                                      color: Colors.grey,
-                                    )
-                                  : null,
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: InkWell(
-                                onTap: _pickImage,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.cyan[700],
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.camera_alt,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                      Text(
+                        "Category Image",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: double.infinity,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF0EA5E9).withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                            image: _imageFile != null
+                                ? DecorationImage(
+                                    image: FileImage(_imageFile!),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: _imageFile == null
+                              ? Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(
+                                          0xFF0EA5E9,
+                                        ).withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.add_photo_alternate_rounded,
+                                        size: 30,
+                                        color: Color(0xFF0EA5E9),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "Tap to upload category image",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      "Supports: JPG, PNG",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Stack(
+                                  children: [
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.6),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.edit,
+                                          size: 16,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
 
-                      // --- ប្រអប់បញ្ចូលឈ្មោះ Category ---
                       TextFormField(
                         controller: _nameController,
-                        style: const TextStyle(fontSize: 15),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                         decoration: InputDecoration(
                           labelText: "Category Name *",
-                          labelStyle: TextStyle(color: Colors.grey[600]),
-                          hintText: "e.g. Electronics, Clothing",
+                          labelStyle: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                          hintText: "e.g. Electronics, Drinks",
                           hintStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
+                            color: Colors.grey.shade400,
+                            fontSize: 13,
                           ),
                           prefixIcon: const Icon(
                             Icons.category_rounded,
-                            color: Colors.cyan,
+                            color: Color(0xFF0EA5E9),
+                            size: 20,
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
+                          fillColor: const Color(0xFFF8FAFC),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(
-                              color: Colors.grey[200]!,
+                              color: Colors.grey.shade200,
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: const BorderSide(
-                              color: Colors.cyan,
+                              color: Color(0xFF0EA5E9),
                               width: 1.5,
                             ),
                           ),
                           errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: const BorderSide(
                               color: Colors.redAccent,
                               width: 1,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(
+                              color: Colors.redAccent,
+                              width: 1.5,
                             ),
                           ),
                         ),
@@ -239,45 +285,47 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                      // --- ប្រអប់បញ្ចូលការពិពណ៌នា Description ---
                       TextFormField(
                         controller: _descController,
                         maxLines: 4,
-                        style: const TextStyle(fontSize: 15),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                         decoration: InputDecoration(
                           labelText: "Description",
-                          labelStyle: TextStyle(color: Colors.grey[600]),
-                          hintText: "Enter some details about this category...",
+                          labelStyle: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                          hintText: "Enter details about this category...",
                           hintStyle: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 14,
+                            color: Colors.grey.shade400,
+                            fontSize: 13,
                           ),
                           prefixIcon: const Padding(
                             padding: EdgeInsets.only(bottom: 60),
                             child: Icon(
                               Icons.description_rounded,
-                              color: Colors.cyan,
+                              color: Color(0xFF0EA5E9),
+                              size: 20,
                             ),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
+                          fillColor: const Color(0xFFF8FAFC),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: BorderSide(
-                              color: Colors.grey[200]!,
+                              color: Colors.grey.shade200,
                               width: 1,
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                             borderSide: const BorderSide(
-                              color: Colors.cyan,
+                              color: Color(0xFF0EA5E9),
                               width: 1.5,
                             ),
                           ),
@@ -286,27 +334,25 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 35),
+                const SizedBox(height: 30),
 
-                // --- ប៊ូតុង រក្សាទុក (Save Button) ---
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _submitData,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.cyan[700],
+                      backgroundColor: const Color(0xFF0EA5E9),
                       foregroundColor: Colors.white,
-                      elevation: 2,
-                      shadowColor: Colors.cyan.withOpacity(0.4),
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            height: 24,
-                            width: 24,
+                            height: 22,
+                            width: 22,
                             child: CircularProgressIndicator(
                               color: Colors.white,
                               strokeWidth: 2.5,
@@ -315,9 +361,9 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
                         : const Text(
                             "Save Category",
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
+                              letterSpacing: 0.5,
                             ),
                           ),
                   ),
@@ -330,10 +376,5 @@ class _CreateCategoryScreenState extends State<CreateCategoryScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descController.dispose();
-    super.dispose();
-  }
+
 }

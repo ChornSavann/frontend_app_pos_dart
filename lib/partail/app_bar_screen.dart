@@ -11,12 +11,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../translations/language/language_switcher_button.dart';
 import '../order/card_manager.dart';
+import '../models/Product.dart';
+import '../../Productscreen/favorite/controller/favoritecontroller.dart'; // 👈 ផ្ទៀងផ្ទាត់ Path របស់ Controller ឱ្យបានត្រឹមត្រូវ
 
 class AppBarScreen extends StatefulWidget implements PreferredSizeWidget {
   final int cartItemCount;
   final int lowStockCount;
   final Store? store;
   final VoidCallback? onNotificationTap;
+  final List<Product>? favoriteProducts;
+  final VoidCallback? onFavoriteTap;
 
   const AppBarScreen({
     super.key,
@@ -24,6 +28,8 @@ class AppBarScreen extends StatefulWidget implements PreferredSizeWidget {
     this.lowStockCount = 0,
     this.store,
     this.onNotificationTap,
+    this.favoriteProducts,
+    this.onFavoriteTap,
   });
 
   @override
@@ -38,6 +44,9 @@ class _AppBarScreenState extends State<AppBarScreen> {
   Store? _fetchedStore;
   bool _isLoadingStore = false;
   String _userName = "";
+
+  // 🌙 NEW: follow the app theme (light / dark)
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
   @override
   void initState() {
@@ -73,17 +82,20 @@ class _AppBarScreenState extends State<AppBarScreen> {
 
   @override
   Widget build(context) {
+    final bool isDark = _isDark;
     final Store store =
         widget.store ??
-        _fetchedStore ??
-        Store(id: null, name: '', imageUrl: '');
+            _fetchedStore ??
+            Store(id: null, name: '', imageUrl: '');
 
     return AppBar(
       toolbarHeight: 75,
-      backgroundColor: Colors.white,
+      // 🌙 CHANGED: was Colors.white
+      backgroundColor: isDark ? const Color(0xFF151C2E) : Colors.white,
+      surfaceTintColor: Colors.transparent, // 🌙 NEW
       elevation: 0,
       scrolledUnderElevation: 2,
-      shadowColor: Colors.black12,
+      shadowColor: isDark ? Colors.black54 : Colors.black12,
       centerTitle: false,
       titleSpacing: 16,
       title: Row(
@@ -99,9 +111,18 @@ class _AppBarScreenState extends State<AppBarScreen> {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                // 🌙 CHANGED: was Colors.blue.shade50
+                color: isDark
+                    ? const Color(0xFF2563EB).withValues(alpha: 0.15)
+                    : Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.blue.shade100, width: 1.2),
+                // 🌙 CHANGED: was Colors.blue.shade100
+                border: Border.all(
+                  color: isDark
+                      ? const Color(0xFF2563EB).withValues(alpha: 0.35)
+                      : Colors.blue.shade100,
+                  width: 1.2,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.blue.withValues(alpha: 0.1),
@@ -128,33 +149,33 @@ class _AppBarScreenState extends State<AppBarScreen> {
                     }
 
                     return (store.imageUrl != null &&
-                            store.imageUrl!.isNotEmpty)
+                        store.imageUrl!.isNotEmpty)
                         ? CachedNetworkImage(
-                            imageUrl: store.imageUrl!,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const Center(
-                              child: SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Color(0xFF2563EB),
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) {
-                              return const Icon(
-                                Icons.storefront_rounded,
-                                color: Color(0xFF2563EB),
-                                size: 24,
-                              );
-                            },
-                          )
-                        : const Icon(
-                            Icons.storefront_rounded,
+                      imageUrl: store.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => const Center(
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
                             color: Color(0xFF2563EB),
-                            size: 24,
-                          );
+                          ),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) {
+                        return const Icon(
+                          Icons.storefront_rounded,
+                          color: Color(0xFF2563EB),
+                          size: 24,
+                        );
+                      },
+                    )
+                        : const Icon(
+                      Icons.storefront_rounded,
+                      color: Color(0xFF2563EB),
+                      size: 24,
+                    );
                   },
                 ),
               ),
@@ -162,7 +183,7 @@ class _AppBarScreenState extends State<AppBarScreen> {
           ),
           const SizedBox(width: 12),
 
-          // 📝 Store Name & User Info Section (ចុចលើឈ្មោះហាង ក៏លោតចូល AboutScreen ដែរ)
+          // 📝 Store Name & User Info Section
           Expanded(
             child: GestureDetector(
               onTap: () {
@@ -171,8 +192,7 @@ class _AppBarScreenState extends State<AppBarScreen> {
                   MaterialPageRoute(builder: (context) => const AboutScreen()),
                 );
               },
-              behavior: HitTestBehavior
-                  .opaque, // ធានាថាចុចត្រូវលើផ្ទៃ Column ទាំងអស់បានងាយស្រួល
+              behavior: HitTestBehavior.opaque,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -182,10 +202,13 @@ class _AppBarScreenState extends State<AppBarScreen> {
                         ? store.name
                         : TranslateConstants.khmerApp.tr,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 16,
-                      color: Color(0xFF1E293B),
+                      // 🌙 CHANGED: was Color(0xFF1E293B)
+                      color: isDark
+                          ? const Color(0xFFF1F5F9)
+                          : const Color(0xFF1E293B),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -208,7 +231,10 @@ class _AppBarScreenState extends State<AppBarScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade600,
+                            // 🌙 CHANGED: was Colors.grey.shade600
+                            color: isDark
+                                ? const Color(0xFF94A3B8)
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ),
@@ -224,11 +250,60 @@ class _AppBarScreenState extends State<AppBarScreen> {
         // 🌐 Language Switcher
         const Center(
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.0),
+            padding: EdgeInsets.symmetric(horizontal: 2.0),
             child: LanguageSwitcherButton(),
           ),
         ),
         const SizedBox(width: 2),
+
+
+        Obx(() {
+          final FavoriteController favController = Get.find<FavoriteController>();
+          final favoriteList = favController.favoriteList;
+
+          if (favoriteList.isEmpty) {
+            return const SizedBox.shrink();
+          }
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                _buildActionCircle(
+                  Icons.favorite_rounded,
+                  widget.onFavoriteTap ?? () {},
+                  iconColor: Colors.redAccent,
+                ),
+                Positioned(
+                  right: 2,
+                  top: -2,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '${favoriteList.length}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
 
         // 🔔 Notification Action Button
         Stack(
@@ -317,14 +392,26 @@ class _AppBarScreenState extends State<AppBarScreen> {
     );
   }
 
-  Widget _buildActionCircle(IconData icon, VoidCallback onTap) {
+  // 🌙 CHANGED: iconColor is now optional so the default can follow dark mode
+  Widget _buildActionCircle(IconData icon, VoidCallback onTap, {Color? iconColor}) {
+    final bool isDark = _isDark;
+    final Color resolvedIconColor =
+        iconColor ?? (isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569));
+
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.grey.shade50,
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.grey.shade200,
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -335,7 +422,7 @@ class _AppBarScreenState extends State<AppBarScreen> {
       ),
       child: IconButton(
         padding: EdgeInsets.zero,
-        icon: Icon(icon, color: const Color(0xFF475569), size: 20),
+        icon: Icon(icon, color: resolvedIconColor, size: 20),
         onPressed: onTap,
       ),
     );

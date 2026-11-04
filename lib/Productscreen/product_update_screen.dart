@@ -5,6 +5,7 @@ import 'package:pos_inventory/api/api_brand.dart';
 import 'package:pos_inventory/api/api_category.dart';
 import 'package:pos_inventory/api/api_product.dart';
 import 'package:pos_inventory/models/Product.dart';
+import 'package:pos_inventory/models/category.dart';
 
 import '../msg/appSnackBar.dart';
 
@@ -38,7 +39,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
 
   File? _selectedImage;
   bool _isLoading = false;
-  List<dynamic> _categories = [];
+  List<CategoryModel> _categories = [];
   List<dynamic> _units = [];
   List<dynamic> _brand = [];
 
@@ -307,7 +308,6 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    // 🌟 Premium Large Image Banner Section
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -334,8 +334,7 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                           ),
                           const SizedBox(height: 12),
                           GestureDetector(
-                            onTap:
-                                _showImageSourceActionSheet,
+                            onTap: _showImageSourceActionSheet,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(16),
                               child: Stack(
@@ -607,12 +606,12 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Category Dropdown
+                          // 🌟 Category Dropdown (កែសម្រួលប្រើ cat.id និង cat.name)
                           DropdownButtonFormField<String>(
                             value:
                                 _categories.any(
                                   (cat) =>
-                                      cat['id'].toString() ==
+                                      cat.id.toString() ==
                                       _categoryIdController.text,
                                 )
                                 ? _categoryIdController.text
@@ -623,8 +622,8 @@ class _ProductUpdateScreenState extends State<ProductUpdateScreen> {
                             ),
                             items: _categories.map((cat) {
                               return DropdownMenuItem<String>(
-                                value: cat['id'].toString(),
-                                child: Text(cat['name'].toString()),
+                                value: cat.id.toString(),
+                                child: Text(cat.name),
                               );
                             }).toList(),
                             onChanged: (value) => setState(

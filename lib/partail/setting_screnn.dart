@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/api/api_auth.dart';
 import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
@@ -11,9 +12,34 @@ import 'package:pos_inventory/settings/about_screen.dart';
 import 'package:pos_inventory/settings/cash_drawer_setup_screen.dart';
 import 'package:pos_inventory/settings/currency_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../homesccreeen/darkmode/them_controller.dart';
 import '../settings/data_sync_screen.dart';
 import '../settings/printer_screen.dart';
 import 'button_screen.dart';
+
+/// 🎨 Colour palette for light / dark appearance
+class _Pal {
+  final bool dark;
+  const _Pal(this.dark);
+
+  Color get bg => dark ? const Color(0xFF0B1120) : const Color(0xFFF4F6FB);
+  Color get card => dark ? const Color(0xFF151C2E) : Colors.white;
+  Color get text => dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+  Color get subtext =>
+      dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color get label => dark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+  Color get divider =>
+      dark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFEEF1F6);
+  Color get border =>
+      dark ? Colors.white.withValues(alpha: 0.07) : Colors.transparent;
+  Color get chevronBg =>
+      dark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFF1F5F9);
+  Color get chevron => const Color(0xFF94A3B8);
+  Color get shadow => Colors.black.withValues(alpha: dark ? 0.35 : 0.05);
+  List<Color> get headerGradient => dark
+      ? const [Color(0xFF1E3A8A), Color(0xFF1D4ED8), Color(0xFF2563EB)]
+      : const [Color(0xFF2563EB), Color(0xFF1D4ED8), Color(0xFF3B82F6)];
+}
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -25,7 +51,10 @@ class SettingScreen extends StatefulWidget {
 class _SettingScreenState extends State<SettingScreen> {
   final ApiAuth _apiAuth = ApiAuth();
   final baseImageUrl = BaseImageUrl.BaseimageUrl;
-  bool _isDarkMode = false;
+
+  // 👇 CHANGED: dark mode now comes from the app theme (global), not local state
+  bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
+
   bool _autoPrintReceipt = true;
   bool _soundEnabled = true;
 
@@ -33,6 +62,8 @@ class _SettingScreenState extends State<SettingScreen> {
   String _userRole = "Cashier • Register #01";
   String _userAvatar =
       "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
+
+  _Pal get _p => _Pal(_isDarkMode);
 
   @override
   void initState() {
@@ -52,8 +83,8 @@ class _SettingScreenState extends State<SettingScreen> {
         if (profileData['role'] is Map) {
           role =
               profileData['role']['name'] ??
-              profileData['role']['title'] ??
-              "Cashier";
+                  profileData['role']['title'] ??
+                  "Cashier";
         } else if (profileData['role'] is String) {
           role = profileData['role'];
         } else if (profileData['role_name'] != null) {
@@ -96,560 +127,542 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final backgroundColor = _isDarkMode
-        ? const Color(0xFF121212)
-        : const Color(0xFFF8F9FA);
-    final cardColor = _isDarkMode ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = _isDarkMode ? Colors.white : const Color(0xFF1E293B);
-    final subtitleColor = _isDarkMode ? Colors.grey[400] : Colors.grey[500];
+    final p = _p;
 
-    final tileBgColor = _isDarkMode
-        ? Colors.blueAccent.withValues(alpha: 0.25)
-        : Colors.blueAccent.withValues(alpha: 0.1);
-
-    final dividerColor = _isDarkMode ? Colors.grey[850]! : Colors.grey[200]!;
-    final arrowBgColor = _isDarkMode
-        ? const Color(0xFF2C2C2C)
-        : Colors.grey[100]!;
-    final arrowIconColor = _isDarkMode ? Colors.grey[400]! : Colors.grey;
-
-    return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        centerTitle: true,
-        title: Text(
-          TranslateConstants.settings.tr,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: textColor,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: _isDarkMode
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: p.bg,
+        appBar: AppBar(
+          backgroundColor: p.bg,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          centerTitle: true,
+          title: Text(
+            TranslateConstants.settings.tr,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: p.text,
+            ),
           ),
         ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.only(top: 10.0),
-        child: SingleChildScrollView(
+        body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GestureDetector(
-                onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfileScreen(),
-                    ),
-                  );
+              _buildProfileCard(p),
+              const SizedBox(height: 28),
 
-                  if (result == true && mounted) {
-                    _loadUserData();
-                  }
-                },
+              // ⚙️ ផ្នែកទី ១៖ HARDWARE & POS
+              _buildSectionLabel("HARDWARE & POS", p),
+              _buildCard(p, [
+                _buildSwitchTile(
+                  icon: Icons.print_rounded,
+                  iconColor: const Color(0xFF3B82F6),
+                  title: "Auto Print Receipt",
+                  subtitle: "Print receipt automatically after payment",
+                  value: _autoPrintReceipt,
+                  onChanged: (val) {
+                    setState(() {
+                      _autoPrintReceipt = val;
+                    });
+                  },
+                ),
+                _buildDivider(p),
+                _buildMenuTile(
+                  icon: Icons.bluetooth_searching_rounded,
+                  iconColor: const Color(0xFF6366F1),
+                  title: "Bluetooth Receipt Printer",
+                  subtitle: "Connected (POS-80 Printer)",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PrinterScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(p),
+                _buildMenuTile(
+                  icon: Icons.point_of_sale_rounded,
+                  iconColor: const Color(0xFF10B981),
+                  title: "Cash Drawer Setup",
+                  subtitle: "Configure cash drawer trigger",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CashDrawerSetupScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(p),
+                _buildMenuTile(
+                  icon: Icons.history_rounded,
+                  iconColor: const Color(0xFFF59E0B),
+                  title: "History Order",
+                  subtitle: "History Order product trigger",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderHistoryScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+              const SizedBox(height: 28),
+
+              // 🎨 ផ្នែកទី ២៖ PREFERENCES
+              _buildSectionLabel("PREFERENCES", p),
+              _buildCard(p, [
+                _buildSwitchTile(
+                  icon: _isDarkMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  iconColor: const Color(0xFF8B5CF6),
+                  title: "Dark Mode",
+                  subtitle: "Switch to dark theme appearance",
+                  value: _isDarkMode,
+                  // 👇 CHANGED: toggles the global theme + saves it
+                  onChanged: (val) {
+                    Get.find<ThemeController>().setDark(val);
+                  },
+                ),
+                _buildDivider(p),
+                _buildMenuTile(
+                  icon: Icons.language_rounded,
+                  iconColor: const Color(0xFF0EA5E9),
+                  title: "Language / ភាសា",
+                  subtitle: "Khmer / English",
+                  onTap: () {},
+                ),
+                _buildDivider(p),
+                _buildSwitchTile(
+                  icon: Icons.volume_up_rounded,
+                  iconColor: const Color(0xFFEC4899),
+                  title: "Sound Effects",
+                  subtitle: "Play sound on button click & scan",
+                  value: _soundEnabled,
+                  onChanged: (val) {
+                    setState(() {
+                      _soundEnabled = val;
+                    });
+                  },
+                ),
+                _buildDivider(p),
+                _buildMenuTile(
+                  icon: Icons.currency_exchange_rounded,
+                  iconColor: const Color(0xFF14B8A6),
+                  title: "Currency / រូបិយប័ណ្ណ",
+                  subtitle: "USD (\$ / ៛ Riel)",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CurrencyScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ]),
+              const SizedBox(height: 28),
+
+              // 💻 ផ្នែកទី ៣៖ SYSTEM
+              _buildSectionLabel("SYSTEM", p),
+              _buildCard(p, [
+                _buildMenuTile(
+                  icon: Icons.cloud_sync_rounded,
+                  iconColor: const Color(0xFF2563EB),
+                  title: "Sync Data with Server",
+                  subtitle: "Last synced: Just now",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DataSyncScreen(),
+                      ),
+                    );
+                  },
+                ),
+                _buildDivider(p),
+                _buildMenuTile(
+                  icon: Icons.info_outline_rounded,
+                  iconColor: const Color(0xFF64748B),
+                  title: "About Khmer APP",
+                  subtitle: "Version 1.0.0 (Build 2026)",
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => AboutScreen()),
+                    );
+                  },
+                ),
+              ]),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+        // 👇 CHANGED: ButtonScreen now follows the app theme by itself
+        bottomNavigationBar: const ButtonScreen(currentIndex: 3),
+        floatingActionButton: Transform.translate(
+          offset: const Offset(0, 15),
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CartScreen()),
+              );
+            },
+            backgroundColor: Colors.blueAccent,
+            foregroundColor: Colors.white,
+            elevation: _isDarkMode ? 0 : 2.0,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.point_of_sale_rounded, size: 26),
+          ),
+        ),
+        floatingActionButtonLocation:
+        FloatingActionButtonLocation.centerDocked,
+      ),
+    );
+  }
+
+  // ───────────────────────── Profile header ─────────────────────────
+
+  Widget _buildProfileCard(_Pal p) {
+    return GestureDetector(
+      onTap: () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfileScreen()),
+        );
+
+        if (result == true && mounted) {
+          _loadUserData();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: p.headerGradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: _isDarkMode ? 0.08 : 0.0),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(
+                0xFF2563EB,
+              ).withValues(alpha: _isDarkMode ? 0.25 : 0.35),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // 🌟 Decorative background shapes
+              Positioned(
+                right: -26,
+                bottom: -30,
+                child: Icon(
+                  Icons.admin_panel_settings_rounded,
+                  size: 120,
+                  color: Colors.white.withValues(alpha: 0.07),
+                ),
+              ),
+              Positioned(
+                left: -40,
+                top: -50,
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  width: 110,
+                  height: 110,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [
-                        Color(0xFF2563EB),
-                        Color(0xFF1D4ED8),
-                        Color(0xFF3B82F6),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF2563EB).withValues(alpha: 0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  // 🖼️ Avatar with ring + online dot
+                  Stack(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            width: 2,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: CircleAvatar(
+                          radius: 30,
+                          backgroundColor: Colors.white,
+                          backgroundImage: _userAvatar.startsWith('http')
+                              ? NetworkImage(_userAvatar)
+                              : AssetImage(_userAvatar) as ImageProvider,
+                        ),
+                      ),
+                      Positioned(
+                        right: 2,
+                        bottom: 2,
+                        child: Container(
+                          width: 15,
+                          height: 15,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFF1D4ED8),
+                              width: 2.5,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
-                  child: Stack(
-                    children: [
-                      // 🌟 Background Decorative Circle (เพิ่มมิติความสวยงามแบบ Abstract)
-                      Positioned(
-                        right: -20,
-                        bottom: -20,
-                        child: Icon(
-                          Icons.admin_panel_settings_rounded,
-                          size: 110,
-                          color: Colors.white.withValues(alpha: 0.07),
+                  const SizedBox(width: 16),
+
+                  // 📝 User info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _userName,
+                          style: const TextStyle(
+                            fontSize: 19,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Row(
-                        children: [
-                          // 🖼️ Profile Avatar with Elegant Border & Glow
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                width: 2.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: CircleAvatar(
-                              radius: 32,
-                              backgroundColor: Colors.white,
-                              backgroundImage: _userAvatar.startsWith('http')
-                                  ? NetworkImage(_userAvatar)
-                                  : AssetImage(_userAvatar) as ImageProvider,
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.22),
                             ),
                           ),
-                          const SizedBox(width: 16),
-
-                          // 📝 User Info Section
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _userName,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.verified_user_rounded,
+                                size: 13,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 5),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 150,
+                                ),
+                                child: Text(
+                                  _userRole,
                                   style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11.5,
                                     color: Colors.white,
-                                    letterSpacing: 0.3,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(height: 6),
-
-                                // 🛡️ Role Badge with small icon
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 10,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withValues(alpha: 0.18),
-                                    borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.verified_user_rounded,
-                                        size: 13,
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 5),
-                                      ConstrainedBox(
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 150,
-                                        ),
-                                        child: Text(
-                                          _userRole,
-                                          style: const TextStyle(
-                                            fontSize: 11.5,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-
-                          // ✏️ Modern Rounded Edit Button
-                          Material(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(14),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(14),
-                              onTap: () async {
-                                final result = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const EditProfileScreen(),
-                                  ),
-                                );
-
-                                if (result == true) {
-                                  _loadUserData();
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(11),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.35),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.edit_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
+                  const SizedBox(width: 8),
 
-              // ⚙️ ផ្នែកទី ១៖ HARDWARE & POS
-              const Text(
-                "HARDWARE & POS",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color:
-                      cardColor, // 👈 ប្រើប្រាស់ cardColor ដែលដូរតាម Dark Mode
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: _isDarkMode ? 0.3 : 0.05,
+                  // ✏️ Edit button
+                  Material(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(14),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(14),
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditProfileScreen(),
+                          ),
+                        );
+
+                        if (result == true) {
+                          _loadUserData();
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(11),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.edit_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
                     ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildSwitchTile(
-                      icon: Icons.print_rounded,
-                      title: "Auto Print Receipt",
-                      subtitle: "Print receipt automatically after payment",
-                      value: _autoPrintReceipt,
-                      textColor: textColor,
-                      tileBgColor: tileBgColor,
-                      subtitleColor: subtitleColor,
-                      onChanged: (val) {
-                        setState(() {
-                          _autoPrintReceipt = val;
-                        });
-                      },
-                    ),
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildMenuTile(
-                      icon: Icons.bluetooth_searching_rounded,
-                      title: "Bluetooth Receipt Printer",
-                      subtitle: "Connected (POS-80 Printer)",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PrinterScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildMenuTile(
-                      icon: Icons.point_of_sale_rounded,
-                      title: "Cash Drawer Setup",
-                      subtitle: "Configure cash drawer trigger",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CashDrawerSetupScreen(),
-                          ),
-                        );
-                      },
-                    ),
-
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildMenuTile(
-                      icon: Icons.history_rounded,
-                      title: "History Order",
-                      subtitle: "History Order product trigger",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => OrderHistoryScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-
-              // 🎨 ផ្នែកទី ២៖ PREFERENCES
-              const Text(
-                "PREFERENCES",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: cardColor, // 👈 ប្រែពណ៌តាម Dark Mode
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: _isDarkMode ? 0.3 : 0.05,
-                      ),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildSwitchTile(
-                      icon: Icons.dark_mode_outlined,
-                      title: "Dark Mode",
-                      subtitle: "Switch to dark theme appearance",
-                      value: _isDarkMode,
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      onChanged: (val) {
-                        setState(() {
-                          _isDarkMode = val;
-                        });
-                      },
-                    ),
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildMenuTile(
-                      icon: Icons.language_rounded,
-                      title: "Language / ភាសា",
-                      subtitle: "Khmer / English",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {},
-                    ),
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildSwitchTile(
-                      icon: Icons.volume_up_rounded,
-                      title: "Sound Effects",
-                      subtitle: "Play sound on button click & scan",
-                      value: _soundEnabled,
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      onChanged: (val) {
-                        setState(() {
-                          _soundEnabled = val;
-                        });
-                      },
-                    ),
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildMenuTile(
-                      icon: Icons.currency_exchange_rounded,
-                      title: "Currency / រូបិយប័ណ្ណ",
-                      subtitle: "USD (\$ / ៛ Riel)",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CurrencyScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 💻 ផ្នែកទី ៣៖ SYSTEM
-              const Text(
-                "SYSTEM",
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: cardColor, // 👈 ប្រែពណ៌តាម Dark Mode
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: _isDarkMode ? 0.3 : 0.05,
-                      ),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _buildMenuTile(
-                      icon: Icons.cloud_sync_rounded,
-                      title: "Sync Data with Server",
-                      subtitle: "Last synced: Just now",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DataSyncScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    Divider(height: 1, indent: 68, color: dividerColor),
-                    _buildMenuTile(
-                      icon: Icons.info_outline_rounded,
-                      title: "About Khmer APP",
-                      subtitle: "Version 1.0.0 (Build 2026)",
-                      textColor: textColor,
-                      subtitleColor: subtitleColor,
-                      tileBgColor: tileBgColor,
-                      arrowBgColor: arrowBgColor,
-                      arrowIconColor: arrowIconColor,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AboutScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: const ButtonScreen(currentIndex: 3),
-      floatingActionButton: Transform.translate(
-        offset: const Offset(0, 15),
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const CartScreen()),
-            );
-          },
-          backgroundColor: Colors.blueAccent,
-          foregroundColor: Colors.white,
-          elevation: 2.0,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.point_of_sale_rounded, size: 26),
+    );
+  }
+
+  // ───────────────────────── Building blocks ─────────────────────────
+
+  Widget _buildSectionLabel(String text, _Pal p) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 13,
+            decoration: BoxDecoration(
+              color: Colors.blueAccent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: p.label,
+              letterSpacing: 1.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCard(_Pal p, List<Widget> children) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      decoration: BoxDecoration(
+        color: p.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: p.border),
+        boxShadow: [
+          BoxShadow(
+            color: p.shadow,
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: Column(children: children),
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    );
+  }
+
+  Widget _buildDivider(_Pal p) {
+    return Divider(
+      height: 1,
+      thickness: 1,
+      indent: 76,
+      endIndent: 16,
+      color: p.divider,
+    );
+  }
+
+  Widget _buildIconBadge(IconData icon, Color color) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: _isDarkMode ? 0.20 : 0.12),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(icon, color: color, size: 22),
     );
   }
 
   Widget _buildMenuTile({
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
-    required Color textColor,
-    required Color? subtitleColor,
-    required Color tileBgColor,
-    required Color arrowBgColor,
-    required Color arrowIconColor,
     required VoidCallback onTap,
   }) {
+    final p = _p;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: tileBgColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: Colors.blueAccent, size: 22),
-      ),
+      leading: _buildIconBadge(icon, iconColor),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: textColor,
+          fontWeight: FontWeight.w700,
+          color: p.text,
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(fontSize: 12, color: subtitleColor),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: p.subtext),
+        ),
       ),
       trailing: Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(color: arrowBgColor, shape: BoxShape.circle),
+        padding: const EdgeInsets.all(7),
+        decoration: BoxDecoration(color: p.chevronBg, shape: BoxShape.circle),
         child: Icon(
           Icons.arrow_forward_ios_rounded,
-          size: 12,
-          color: arrowIconColor,
+          size: 11,
+          color: p.chevron,
         ),
       ),
       onTap: onTap,
@@ -658,38 +671,41 @@ class _SettingScreenState extends State<SettingScreen> {
 
   Widget _buildSwitchTile({
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
     required bool value,
-    required Color textColor,
-    required Color? subtitleColor,
-    required Color tileBgColor,
     required ValueChanged<bool> onChanged,
   }) {
+    final p = _p;
     return SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      secondary: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: tileBgColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: Colors.blueAccent, size: 22),
-      ),
+      secondary: _buildIconBadge(icon, iconColor),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: textColor,
+          fontWeight: FontWeight.w700,
+          color: p.text,
         ),
       ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(fontSize: 12, color: subtitleColor),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Text(
+          subtitle,
+          style: TextStyle(fontSize: 12, color: p.subtext),
+        ),
       ),
       value: value,
-      activeThumbColor: Colors.blueAccent,
+      activeThumbColor: Colors.white,
+      activeTrackColor: Colors.blueAccent,
+      inactiveThumbColor: _isDarkMode
+          ? const Color(0xFF94A3B8)
+          : Colors.white,
+      inactiveTrackColor: _isDarkMode
+          ? const Color(0xFF2A3350)
+          : const Color(0xFFCBD5E1),
+      trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       onChanged: onChanged,
     );
   }

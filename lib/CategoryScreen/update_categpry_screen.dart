@@ -2,22 +2,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:pos_inventory/api/api_category.dart';
-import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
 
+import '../models/category.dart';
 import '../msg/appSnackBar.dart';
 
 class UpdateCategoryScreen extends StatefulWidget {
   final int id;
-  final String currentName;
-  final String? currentDescription;
-  final String? currentImage;
 
   const UpdateCategoryScreen({
     super.key,
     required this.id,
-    required this.currentName,
-    this.currentDescription,
-    this.currentImage,
   });
 
   @override
@@ -26,14 +20,38 @@ class UpdateCategoryScreen extends StatefulWidget {
 
 class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  late TextEditingController _descController;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descController = TextEditingController();
 
   final ApiCategory _apiCategory = ApiCategory();
-  bool _isLoading = false;
+  bool _isLoading = true;
+  bool _isSaving = false;
+
+  CategoryModel? _category;
   File? _imageFile;
   final ImagePicker _picker = ImagePicker();
-  final String baseUrl = BaseImageUrl.BaseimageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategoryData();
+  }
+
+  Future<void> _fetchCategoryData() async {
+    setState(() => _isLoading = true);
+
+    CategoryModel? category = await _apiCategory.getCategoryById(widget.id);
+
+    if (category != null) {
+      _nameController.text = category.name;
+      _descController.text = category.description ?? "";
+    }
+
+    setState(() {
+      _category = category;
+      _isLoading = false;
+    });
+  }
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -48,24 +66,13 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.currentName);
-    _descController = TextEditingController(
-      text: widget.currentDescription ?? "",
-    );
-    print("RECEIVED CURRENT IMAGE: ${widget.currentImage}");
-  }
-
   void _updateData() async {
     if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
+      setState(() => _isSaving = true);
 
       String name = _nameController.text.trim();
       String description = _descController.text.trim();
+
       bool success = await _apiCategory.updateCategory(
         widget.id,
         name,
@@ -73,13 +80,10 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
         _imageFile,
       );
 
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isSaving = false);
 
       if (success) {
         AppSnackBar.showSuccess(context, "ធ្វើបច្ចុប្បន្នភាពជោគជ័យ!");
-
         Navigator.pop(context, true);
       } else {
         AppSnackBar.showError(context, "ការកែប្រែបរាជ័យ!");
@@ -90,18 +94,24 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.orangeAccent,
+        backgroundColor: const Color(0xFF0EA5E9),
         iconTheme: const IconThemeData(color: Colors.white),
         centerTitle: true,
         title: const Text(
           "Update Category",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: GestureDetector(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFF0EA5E9)))
+          : GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -110,171 +120,149 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   "Edit Category Information",
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   "Modify the fields below to update this category.",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
                 ),
-                const SizedBox(height: 25),
+                const SizedBox(height: 24),
 
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 16,
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 15,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Center(
-                        child: Stack(
-                          children: [
-                            Container(
-                              width: 100,
-                              height: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.orange.withOpacity(0.3),
-                                ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Builder(
-                                  builder: (context) {
-                                    if (_imageFile != null) {
-                                      return Image.file(
-                                        _imageFile!,
-                                        fit: BoxFit.cover,
-                                        width: 100,
-                                        height: 100,
-                                      );
-                                    }
-
-                                    if (widget.currentImage != null &&
-                                        widget.currentImage!.isNotEmpty) {
-                                      String cleanImage =
-                                          widget.currentImage!.startsWith('/')
-                                          ? widget.currentImage!.substring(1)
-                                          : widget.currentImage!;
-
-                                      String finalImageUrl =
-                                          cleanImage.startsWith('http')
-                                          ? cleanImage
-                                          : '$baseUrl/$cleanImage';
-
-                                      print("DEBUG IMAGE URL: $finalImageUrl");
-
-                                      return Image.network(
-                                        finalImageUrl,
-                                        fit: BoxFit.cover,
-                                        width: 100,
-                                        height: 100,
-                                        loadingBuilder:
-                                            (context, child, loadingProgress) {
-                                              if (loadingProgress == null)
-                                                return child;
-                                              return const Center(
-                                                child: SizedBox(
-                                                  width: 24,
-                                                  height: 24,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                              print("IMAGE ERROR: $error");
-                                              return const Center(
-                                                child: Icon(
-                                                  Icons.broken_image_rounded,
-                                                  size: 35,
-                                                  color: Colors.redAccent,
-                                                ),
-                                              );
-                                            },
-                                      );
-                                    }
-
-                                    return const Center(
-                                      child: Icon(
-                                        Icons.image_outlined,
-                                        size: 40,
-                                        color: Colors.grey,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: InkWell(
-                                onTap: _pickImage,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.orange[700],
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.camera_alt,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                      Text(
+                        "Category Image",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      // ប្រអប់កែប្រែឈ្មោះ
-                      TextFormField(
-                        controller: _nameController,
-                        style: const TextStyle(fontSize: 15),
-                        decoration: InputDecoration(
-                          labelText: "Category Name *",
-                          prefixIcon: const Icon(
-                            Icons.category_rounded,
-                            color: Colors.orange,
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey[50],
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[200]!),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.orange,
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Container(
+                          width: double.infinity,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF0EA5E9).withOpacity(0.3),
                               width: 1.5,
                             ),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Builder(
+                              builder: (context) {
+                                if (_imageFile != null) {
+                                  return Image.file(
+                                    _imageFile!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 180,
+                                  );
+                                }
+
+                                if (_category?.imageUrl != null &&
+                                    _category!.imageUrl!.isNotEmpty) {
+                                  return Image.network(
+                                    _category!.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 180,
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) =>
+                                    const Center(
+                                      child: Icon(
+                                        Icons.broken_image_rounded,
+                                        size: 35,
+                                        color: Colors.redAccent,
+                                      ),
+                                    ),
+                                  );
+                                }
+
+                                return Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0EA5E9).withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.add_photo_alternate_rounded,
+                                        size: 30,
+                                        color: Color(0xFF0EA5E9),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "Tap to change category image",
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // --- Name Field ---
+                      TextFormField(
+                        controller: _nameController,
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        decoration: InputDecoration(
+                          labelText: "Category Name *",
+                          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: Color(0xFF0EA5E9), width: 1.5),
                           ),
                         ),
                         validator: (value) {
@@ -284,73 +272,64 @@ class _UpdateCategoryScreenState extends State<UpdateCategoryScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                      // ប្រអប់កែប្រែការពិពណ៌នា
+                      // --- Description Field ---
                       TextFormField(
                         controller: _descController,
                         maxLines: 4,
-                        style: const TextStyle(fontSize: 15),
+                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                         decoration: InputDecoration(
                           labelText: "Description",
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.only(bottom: 60),
-                            child: Icon(
-                              Icons.description_rounded,
-                              color: Colors.orange,
-                            ),
-                          ),
+                          labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 13),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: const Color(0xFFF8FAFC),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey[200]!),
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: BorderSide(color: Colors.grey.shade200, width: 1),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Colors.orange,
-                              width: 1.5,
-                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            borderSide: const BorderSide(color: Color(0xFF0EA5E9), width: 1.5),
                           ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 35),
+                const SizedBox(height: 30),
 
+                // --- Update Button ---
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _updateData,
+                    onPressed: _isSaving ? null : _updateData,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange[700],
+                      backgroundColor: const Color(0xFF0EA5E9),
                       foregroundColor: Colors.white,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      elevation: 2,
-                      shadowColor: Colors.orange.withOpacity(0.4),
                     ),
-                    child: _isLoading
+                    child: _isSaving
                         ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
                         : const Text(
-                            "Update Category",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                            ),
-                          ),
+                      "Update Category",
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                 ),
               ],

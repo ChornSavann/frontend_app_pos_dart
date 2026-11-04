@@ -10,44 +10,15 @@ import '../main.dart';
 
 class ApiAuth {
   final String baseUrl = BaseUrlApi.baseurl;
+
   static Future<void> handleSessionExpired() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-
     navigatorKey.currentState?.pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const SplashScreen()),
       (route) => false,
     );
   }
-
-  // Future<Map<String, dynamic>> register({
-  //   required String name,
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse('$baseUrl/auth/create-user'),
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Accept': 'application/json',
-  //       },
-  //       body: jsonEncode({'name': name, 'email': email, 'password': password}),
-  //     );
-  //
-  //     final data = jsonDecode(response.body);
-  //
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       return {'success': true, 'data': data};
-  //     } else {
-  //       return {
-  //         'success': false,
-  //         'message': data['message'] ?? 'Registration failed',
-  //       };
-  //     }
-  //   } catch (e) {
-  //     return {'success': false, 'message': 'Network error: $e'};
-  //   }
 
   Future<Map<String, dynamic>> register({
     required String name,
@@ -107,7 +78,6 @@ class ApiAuth {
           userData['permissions'] ?? [],
         );
 
-        // 🖼️ จัดการ Image Avatar
         String rawImage = userData['image_url'] ?? userData['image'] ?? "";
         String userAvatar;
 
@@ -160,208 +130,6 @@ class ApiAuth {
     }
   }
 
-  // Future<Map<String, dynamic>> login({
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse('$baseUrl/login-user'),
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Accept': 'application/json',
-  //       },
-  //       body: jsonEncode({'email': email, 'password': password}),
-  //     );
-  //
-  //     if (response.body.isEmpty) {
-  //       return {'success': false, 'message': 'Server returned empty response.'};
-  //     }
-  //
-  //     final data = jsonDecode(response.body);
-  //
-  //     if (response.statusCode == 200) {
-  //       if (data == null) {
-  //         return {'success': false, 'message': 'Data representation is null'};
-  //       }
-  //
-  //       final userData = data['data']?['user'] ?? data['user'] ?? data;
-  //       final token = data['data']?['token'] ?? data['token'] ?? '';
-  //
-  //       if (userData == null || userData is! Map) {
-  //         return {'success': false, 'message': 'User profile data missing.'};
-  //       }
-  //
-  //       String userName = userData['name'] ?? "";
-  //       String userEmail = userData['email'] ?? email;
-  //       String userPhone = userData['phone'] ?? "";
-  //       String userRole = userData['role'] ?? "Cashier #01";
-  //       int? userId = userData['id'];
-  //
-  //       String rawImage = userData['image'] ?? "";
-  //       String userAvatar;
-  //
-  //
-  //       String domainUrl = baseUrl.endsWith('/api')
-  //           ? baseUrl.substring(0, baseUrl.length - 4)
-  //           : baseUrl;
-  //
-  //       if (rawImage.isNotEmpty) {
-  //         if (rawImage.startsWith('http')) {
-  //           userAvatar = rawImage;
-  //         } else {
-  //           String cleanPath = rawImage.startsWith('/') ? rawImage.substring(1) : rawImage;
-  //
-  //           if (cleanPath.startsWith('storage/')) {
-  //             userAvatar = '$domainUrl/$cleanPath';
-  //           } else if (cleanPath.startsWith('users/')) {
-  //             userAvatar = '$domainUrl/$cleanPath';
-  //           } else {
-  //             userAvatar = '$domainUrl/users/$cleanPath';
-  //           }
-  //         }
-  //       } else {
-  //         userAvatar =
-  //         "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
-  //       }
-  //
-  //       final prefs = await SharedPreferences.getInstance();
-  //       if (userId != null) {
-  //         await prefs.setInt('user_id', userId);
-  //       }
-  //       await prefs.setString('token', token);
-  //       await prefs.setString('name', userName);
-  //       await prefs.setString('email', userEmail);
-  //       await prefs.setString('phone', userPhone);
-  //       await prefs.setString('role', userRole);
-  //       await prefs.setString('image', userAvatar);
-  //
-  //       return {'success': true, 'data': data};
-  //     } else {
-  //       String errorMessage = 'Invalid credentials';
-  //       if (data != null && data is Map) {
-  //         if (data['message'] != null) {
-  //           errorMessage = data['message'];
-  //         } else if (data['errors'] != null) {
-  //           errorMessage = data['errors'].toString();
-  //         }
-  //       }
-  //       return {'success': false, 'message': errorMessage};
-  //     }
-  //   } catch (e) {
-  //     return {'success': false, 'message': 'Network error: $e'};
-  //   }
-  // }
-
-  // Future<Map<String, dynamic>> login({
-  //   required String email,
-  //   required String password,
-  // }) async {
-  //   try {
-  //     final response = await http.post(
-  //       Uri.parse('$baseUrl/login-user'),
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Accept': 'application/json',
-  //       },
-  //       body: jsonEncode({'email': email, 'password': password}),
-  //     );
-  //
-  //     if (response.body.isEmpty) {
-  //       return {'success': false, 'message': 'Server returned empty response.'};
-  //     }
-  //
-  //     final data = jsonDecode(response.body);
-  //
-  //     if (response.statusCode == 200) {
-  //       if (data == null) {
-  //         return {'success': false, 'message': 'Data representation is null'};
-  //       }
-  //
-  //       final userData = data['data']?['user'] ?? data['user'] ?? data;
-  //       final token = data['data']?['token'] ?? data['token'] ?? '';
-  //
-  //       if (userData == null || userData is! Map) {
-  //         return {'success': false, 'message': 'User profile data missing.'};
-  //       }
-  //
-  //       String userName = userData['name'] ?? "";
-  //       String userEmail = userData['email'] ?? email;
-  //       String userPhone = userData['phone'] ?? "";
-  //       int? userId = userData['id'];
-  //
-  //       String userRoleName = "Cashier";
-  //       int roleId = userData['role_id'] ?? 0;
-  //
-  //       if (userData['role'] is Map) {
-  //         userRoleName = userData['role']['name'] ?? "Cashier";
-  //         roleId = userData['role']['id'] ?? roleId;
-  //       } else if (userData['role'] is String) {
-  //         userRoleName = userData['role'];
-  //       }
-  //
-  //       List<String> userPermissions = List<String>.from(
-  //         userData['permissions'] ?? [],
-  //       );
-  //
-  //       String rawImage = userData['image_url'] ?? userData['image'] ?? "";
-  //       String userAvatar;
-  //
-  //       String domainUrl = baseUrl.endsWith('/api')
-  //           ? baseUrl.substring(0, baseUrl.length - 4)
-  //           : baseUrl;
-  //
-  //       if (rawImage.isNotEmpty) {
-  //         if (rawImage.startsWith('http')) {
-  //           userAvatar = rawImage;
-  //         } else {
-  //           String cleanPath = rawImage.startsWith('/')
-  //               ? rawImage.substring(1)
-  //               : rawImage;
-  //
-  //           if (cleanPath.startsWith('storage/')) {
-  //             userAvatar = '$domainUrl/$cleanPath';
-  //           } else if (cleanPath.startsWith('users/')) {
-  //             userAvatar = '$domainUrl/$cleanPath';
-  //           } else {
-  //             userAvatar = '$domainUrl/users/$cleanPath';
-  //           }
-  //         }
-  //       } else {
-  //         userAvatar =
-  //             "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
-  //       }
-  //
-  //       final prefs = await SharedPreferences.getInstance();
-  //       if (userId != null) {
-  //         await prefs.setInt('user_id', userId);
-  //       }
-  //
-  //       await prefs.setInt('role_id', roleId);
-  //       await prefs.setString('token', token);
-  //       await prefs.setString('name', userName);
-  //       await prefs.setString('email', userEmail);
-  //       await prefs.setString('phone', userPhone);
-  //       await prefs.setString('role', userRoleName);
-  //       await prefs.setString('image', userAvatar);
-  //       await prefs.setStringList('user_permissions', userPermissions);
-  //
-  //       return {'success': true, 'data': data};
-  //     } else {
-  //       String errorMessage = 'Invalid credentials';
-  //       if (data != null && data is Map) {
-  //         if (data['message'] != null) {
-  //           errorMessage = data['message'];
-  //         } else if (data['errors'] != null) {
-  //           errorMessage = data['errors'].toString();
-  //         }
-  //       }
-  //       return {'success': false, 'message': errorMessage};
-  //     }
-  //   } catch (e) {
-  //     return {'success': false, 'message': 'Network error: $e'};
-  //   }
-  // }
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -382,7 +150,6 @@ class ApiAuth {
 
       final data = jsonDecode(response.body);
 
-      // 🟢 1. ព្រីនមើល Response ទាំងមូលក្នុង Terminal ដើម្បីឆែកមើលโครงสร้าง JSON ពី Backend
       debugPrint("📥 [DEBUG LOGIN RAW RESPONSE]: $data");
 
       if (response.statusCode == 200) {
@@ -402,7 +169,6 @@ class ApiAuth {
         String userPhone = userData['phone'] ?? "";
         int? userId = userData['id'];
 
-        // 🟢 2. ទាញយក role_id ដោយការពារករណី Key ឈ្មោះខុសគ្នា
         int roleId = 0;
         if (userData['role_id'] != null) {
           roleId = int.tryParse(userData['role_id'].toString()) ?? 0;
@@ -410,7 +176,6 @@ class ApiAuth {
           roleId = int.tryParse(userData['role']['id'].toString()) ?? 0;
         }
 
-        // 🟢 3. ទាញយក role name យ៉ាងហ្មត់ចត់
         String userRoleName = "Cashier";
         if (userData['role'] != null) {
           if (userData['role'] is Map) {
@@ -420,7 +185,6 @@ class ApiAuth {
           }
         }
 
-        // 💡 ករណី Backup៖ បើ Backend អត់ផ្ញើឈ្មោះ Role មក ប៉ុន្តែផ្ញើ role_id មក (ឧ. 2 = Admin, 3 = Supper Admin)
         if (userRoleName == "Cashier" || userRoleName.isEmpty) {
           if (roleId == 3) {
             userRoleName = "Supper Admin";
@@ -436,7 +200,6 @@ class ApiAuth {
         String rawImage = userData['image_url'] ?? userData['image'] ?? "";
         String userAvatar;
 
-        // 🟢 កែសម្រួល domainUrl មិនឱ្យមានបញ្ហា syntax error ពេលកាត់ string
         String domainUrl = baseUrl.endsWith('/api')
             ? baseUrl.substring(0, baseUrl.length - 4)
             : baseUrl;
@@ -461,7 +224,6 @@ class ApiAuth {
               "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg";
         }
 
-        // 💾 រក្សាទុកចូល SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         if (userId != null) {
           await prefs.setInt('user_id', userId);
@@ -496,14 +258,43 @@ class ApiAuth {
     }
   }
 
+  // Future<bool> logout() async {
+  //   try {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     final String? token = prefs.getString('token');
+  //
+  //     if (token != null && token.isNotEmpty) {
+  //       await http.post(
+  //         Uri.parse('${baseUrl}/logout'),
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           'Accept': 'application/json',
+  //           'Authorization': 'Bearer $token',
+  //         },
+  //       );
+  //     }
+  //
+  //     await prefs.clear();
+  //     return true;
+  //   } catch (e) {
+  //     final prefs = await SharedPreferences.getInstance();
+  //     await prefs.clear();
+  //     return true;
+  //   }
+  // }
+
   Future<bool> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      final bool rememberMe = prefs.getBool('remember_me') ?? false;
+      final String savedEmail = prefs.getString('saved_email') ?? '';
+      final String savedPassword = prefs.getString('saved_password') ?? '';
+
       final String? token = prefs.getString('token');
 
       if (token != null && token.isNotEmpty) {
         await http.post(
-          Uri.parse('${baseUrl}/logout'),
+          Uri.parse('$baseUrl/logout'),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
@@ -513,10 +304,28 @@ class ApiAuth {
       }
 
       await prefs.clear();
+      if (rememberMe) {
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('saved_email', savedEmail);
+        await prefs.setString('saved_password', savedPassword);
+      }
+
       return true;
     } catch (e) {
+      debugPrint("❌ Logout Error: $e");
       final prefs = await SharedPreferences.getInstance();
+      final bool rememberMe = prefs.getBool('remember_me') ?? false;
+      final String savedEmail = prefs.getString('saved_email') ?? '';
+      final String savedPassword = prefs.getString('saved_password') ?? '';
+
       await prefs.clear();
+
+      if (rememberMe) {
+        await prefs.setBool('remember_me', true);
+        await prefs.setString('saved_email', savedEmail);
+        await prefs.setString('saved_password', savedPassword);
+      }
+
       return true;
     }
   }

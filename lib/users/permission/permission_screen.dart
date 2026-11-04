@@ -1,9 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pos_inventory/users/permission/models/permission.dart';
 import 'package:pos_inventory/users/permission/create_permission_screen.dart';
 import 'package:pos_inventory/users/permission/update_permission_screen.dart';
 import '../../api/permission/api_permission.dart';
 import '../../msg/appSnackBar.dart';
+
+class _C {
+  static const bg = Color(0xFFF0F4F4);
+  static const ink = Color(0xFF0F1F1D);
+  static const muted = Color(0xFF5E7476);
+  static const line = Color(0xFFE3EBEA);
+  static const brand = Color(0xFF0F766E);
+  static const heroA = Color(0xFF063B37);
+  static const heroB = Color(0xFF14A596);
+  static const danger = Color(0xFFD32F2F);
+  static const hot = Color(0xFFEF5B16);
+  static const hotB = Color(0xFFFF8A3D);
+}
+
+TextStyle _t(
+  double size,
+  FontWeight w,
+  Color c, {
+  double? height,
+  double? spacing,
+}) => TextStyle(
+  fontSize: size,
+  fontWeight: w,
+  color: c,
+  height: height,
+  letterSpacing: spacing,
+);
+
 
 class PermissionScreen extends StatefulWidget {
   const PermissionScreen({super.key});
@@ -14,8 +43,13 @@ class PermissionScreen extends StatefulWidget {
 
 class _PermissionScreenState extends State<PermissionScreen> {
   final ApiPermission _apiPermission = ApiPermission();
+  final TextEditingController _searchCtrl = TextEditingController();
+
   List<Permission> _permissions = [];
   bool _isLoading = true;
+  bool _hasError = false;
+  String? _deletingId;
+  String _query = '';
 
   @override
   void initState() {
@@ -23,273 +57,807 @@ class _PermissionScreenState extends State<PermissionScreen> {
     _loadPermissions();
   }
 
-  Future<void> _loadPermissions() async {
-    setState(() => _isLoading = true);
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPermissions({bool silent = false}) async {
+    if (!silent) {
+      setState(() {
+        _isLoading = true;
+        _hasError = false;
+      });
+    }
     try {
-      final List<Permission> list = await _apiPermission.fetchPermissions();
+      final list = await _apiPermission.fetchPermissions();
+      if (!mounted) return;
       setState(() {
         _permissions = list;
-        _isLoading = false;
+        _hasError = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        AppSnackBar.showError(
-          context,
-          'មិនអាចទាញយកទិន្នន័យ Permissions បានទេ: $e',
-        );
-      }
+      debugPrint('Error loading permissions: $e');
+      if (!mounted) return;
+      setState(() => _hasError = true);
+      if (silent)
+        AppSnackBar.showError(context, 'មិនអាចទាញយកទិន្នន័យ Permissions បានទេ');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _deletePermission(String id) async {
-    final bool? confirm = await showDialog<bool>(
+  Future<void> _deletePermission(Permission permission) async {
+    HapticFeedback.mediumImpact();
+    final id = permission.id.toString();
+
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('បញ្ជាក់ការលុប'),
-        content: const Text('តើអ្នកពិតជាចង់លុប Permission នេះមែនទេ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('បោះបង់', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        backgroundColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: _C.danger.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.delete_outline_rounded,
+                  color: _C.danger,
+                  size: 34,
+                ),
               ),
-            ),
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('លុប'),
+              const SizedBox(height: 16),
+              Text('បញ្ជាក់ការលុប', style: _t(18, FontWeight.w800, _C.ink)),
+              const SizedBox(height: 8),
+              Text(
+                'តើអ្នកពិតជាចង់លុប Permission "${permission.name ?? ''}" នេះមែនទេ?',
+                textAlign: TextAlign.center,
+                style: _t(13.5, FontWeight.w400, _C.muted, height: 1.5),
+              ),
+              const SizedBox(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: _C.ink,
+                        side: const BorderSide(color: _C.line),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        'បោះបង់',
+                        style: _t(14, FontWeight.w800, _C.ink),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _C.danger,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      child: Text(
+                        'លុប',
+                        style: _t(14, FontWeight.w800, Colors.white),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
 
-    if (confirm == true) {
-      try {
-        final result = await _apiPermission.deletePermission(id);
+    if (confirm != true || !mounted) return;
 
-        if (result['success'] == true) {
-          AppSnackBar.showSuccess(
-            context,
-            result['message'] ?? 'លុប Permission បានជោគជ័យ',
-          );
-          _loadPermissions();
-        } else {
-          AppSnackBar.showError(
-            context,
-            result['message'] ?? 'មានបញ្ហាក្នុងការលុប',
-          );
-        }
-      } catch (e) {
-        AppSnackBar.showError(context, 'Error deleting permission: $e');
+    setState(() => _deletingId = id);
+    try {
+      final result = await _apiPermission.deletePermission(id);
+      if (!mounted) return;
+      if (result['success'] == true) {
+        AppSnackBar.showSuccess(
+          context,
+          result['message'] ?? 'លុប Permission បានជោគជ័យ',
+        );
+        await _loadPermissions(silent: true);
+      } else {
+        AppSnackBar.showError(
+          context,
+          result['message'] ?? 'មានបញ្ហាក្នុងការលុប',
+        );
       }
+    } catch (e) {
+      if (mounted)
+        AppSnackBar.showError(context, 'Error deleting permission: $e');
+    } finally {
+      if (mounted) setState(() => _deletingId = null);
     }
+  }
+
+  Future<void> _editPermission(Permission permission) async {
+    final bool? updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UpdatePermissionScreen(permission: permission),
+      ),
+    );
+    if (updated == true) _loadPermissions(silent: true);
+  }
+
+  Future<void> _createPermission() async {
+    final bool? created = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreatePermissionScreen()),
+    );
+    if (created == true) _loadPermissions(silent: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'Permissions',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Color(0xFF1E293B),
+    final q = _query.trim().toLowerCase();
+    final visible = _permissions.where((p) {
+      if (q.isEmpty) return true;
+      return '${p.name ?? ''} ${p.description ?? ''}'.toLowerCase().contains(q);
+    }).toList();
+
+    final hasData = !_isLoading && !_hasError && _permissions.isNotEmpty;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: _C.bg,
+        body: RefreshIndicator(
+          color: _C.brand,
+          edgeOffset: 120,
+          onRefresh: () => _loadPermissions(silent: true),
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: _Hero(
+                  count: _permissions.length,
+                  shown: visible.length,
+                  filtering: q.isNotEmpty,
+                  showSearch: hasData,
+                  controller: _searchCtrl,
+                  onChanged: (v) => setState(() => _query = v),
+                  onClear: () {
+                    _searchCtrl.clear();
+                    setState(() => _query = '');
+                  },
+                  onRefresh: _loadPermissions,
+                ),
+              ),
+              if (_isLoading)
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 110),
+                  sliver: SliverToBoxAdapter(child: _SkeletonList()),
+                )
+              else if (_hasError)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _MessageState(
+                    icon: Icons.cloud_off_rounded,
+                    color: _C.muted,
+                    title: 'មិនអាចទាញយកទិន្នន័យ Permissions បានទេ',
+                    actionLabel: 'សាកល្បងម្តងទៀត',
+                    onAction: _loadPermissions,
+                  ),
+                )
+              else if (_permissions.isEmpty)
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _MessageState(
+                    icon: Icons.security_outlined,
+                    color: _C.brand,
+                    title: 'មិនមានទិន្នន័យ Permissions ទេ',
+                    subtitle: 'បង្កើត Permission ដំបូងរបស់អ្នក',
+                    actionLabel: 'បង្កើត Permission',
+                    onAction: _createPermission,
+                  ),
+                )
+              else if (visible.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: _MessageState(
+                    icon: Icons.search_off_rounded,
+                    color: _C.muted,
+                    title: 'រកមិនឃើញ Permission',
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+                  sliver: SliverList.separated(
+                    itemCount: visible.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) {
+                      final p = visible[i];
+                      return _FadeSlide(
+                        index: i,
+                        child: _PermissionCard(
+                          permission: p,
+                          deleting: _deletingId == p.id.toString(),
+                          onEdit: () => _editPermission(p),
+                          onDelete: () => _deletePermission(p),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0.5,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF2563EB)),
-            tooltip: 'Refresh',
-            onPressed: _loadPermissions,
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
-            )
-          : _permissions.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.security_outlined,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'មិនមានទិន្នន័យ Permissions ទេ',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 15),
-                  ),
-                ],
+        floatingActionButton: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [_C.hot, _C.hotB]),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: _C.hot.withValues(alpha: 0.38),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadPermissions,
-              color: const Color(0xFF2563EB),
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _permissions.length,
-                itemBuilder: (context, index) {
-                  final Permission permission = _permissions[index];
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: _createPermission,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 13,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.add_rounded,
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.02),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      size: 22,
                     ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Icon(
-                          Icons.vpn_key_rounded,
-                          color: Color(0xFF2563EB),
-                          size: 22,
-                        ),
-                      ),
-                      title: Text(
-                        permission.name ?? 'No Name',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                          fontSize: 15,
-                        ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          permission.description != null &&
-                                  permission.description!.isNotEmpty
-                              ? permission.description!
-                              : 'គ្មានការពិពណ៌នា',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        icon: const Icon(
-                          Icons.more_vert_rounded,
-                          color: Colors.grey,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        onSelected: (value) async {
-                          if (value == 'edit') {
-                            debugPrint(
-                              "🚀 Sending Permission to Update -> ID: ${permission.id}, Name: ${permission.name}, Desc: ${permission.description}",
-                            );
-                            final bool? isUpdated = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => UpdatePermissionScreen(
-                                  permission: permission,
-                                ),
-                              ),
-                            );
+                    const SizedBox(width: 6),
+                    Text(
+                      'New permission',
+                      style: _t(14, FontWeight.w800, Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-                            if (isUpdated == true) {
-                              _loadPermissions();
-                            }
-                          } else if (value == 'delete') {
-                            _deletePermission(permission.id.toString());
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.edit_rounded,
-                                  color: Color(0xFF2563EB),
-                                  size: 20,
-                                ),
-                                SizedBox(width: 10),
-                                Text(
-                                  'កែប្រែ (Edit)',
-                                  style: TextStyle(fontWeight: FontWeight.w500),
-                                ),
-                              ],
-                            ),
+// ─────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────
+class _FadeSlide extends StatelessWidget {
+  final int index;
+  final Widget child;
+  const _FadeSlide({required this.index, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final delay = (index > 6 ? 6 : index) * 50;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 300 + delay),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, c) => Opacity(
+        opacity: v,
+        child: Transform.translate(offset: Offset(0, (1 - v) * 16), child: c),
+      ),
+      child: child,
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Hero
+// ─────────────────────────────────────────────────────────────
+class _Hero extends StatelessWidget {
+  final int count;
+  final int shown;
+  final bool filtering;
+  final bool showSearch;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+  final VoidCallback onRefresh;
+
+  const _Hero({
+    required this.count,
+    required this.shown,
+    required this.filtering,
+    required this.showSearch,
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+      child: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [_C.heroA, _C.heroB],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: -40,
+              top: -50,
+              child: Container(
+                width: 170,
+                height: 170,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.07),
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(16, top + 6, 12, 18),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      if (Navigator.of(context).canPop())
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 36,
+                            minHeight: 36,
                           ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          onPressed: () => Navigator.of(context).maybePop(),
+                        ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Permissions',
+                              style: _t(
+                                21,
+                                FontWeight.w800,
+                                Colors.white,
+                                spacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Row(
                               children: [
-                                Icon(
-                                  Icons.delete_rounded,
-                                  color: Colors.red,
-                                  size: 20,
+                                const Icon(
+                                  Icons.vpn_key_rounded,
+                                  size: 13,
+                                  color: Colors.white70,
                                 ),
-                                SizedBox(width: 10),
+                                const SizedBox(width: 5),
                                 Text(
-                                  'លុប (Delete)',
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.w500,
+                                  filtering
+                                      ? '$shown / $count Permissions'
+                                      : '$count Permissions',
+                                  style: _t(
+                                    12.5,
+                                    FontWeight.w600,
+                                    Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
                               ],
                             ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          tooltip: 'Refresh',
+                          icon: const Icon(
+                            Icons.refresh_rounded,
+                            color: Colors.white,
+                            size: 21,
                           ),
-                        ],
+                          onPressed: onRefresh,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (showSearch) ...[
+                    const SizedBox(height: 14),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Container(
+                        height: 46,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: TextField(
+                          controller: controller,
+                          onChanged: onChanged,
+                          cursorColor: _C.brand,
+                          style: _t(14, FontWeight.w500, _C.ink),
+                          decoration: InputDecoration(
+                            hintText: 'ស្វែងរក Permission',
+                            hintStyle: _t(13.5, FontWeight.w400, _C.muted),
+                            prefixIcon: const Icon(
+                              Icons.search_rounded,
+                              color: _C.muted,
+                            ),
+                            suffixIcon: controller.text.isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(
+                                      Icons.close_rounded,
+                                      size: 20,
+                                      color: _C.muted,
+                                    ),
+                                    onPressed: onClear,
+                                  ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 13,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                },
+                  ],
+                ],
               ),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final bool? isCreated = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const CreatePermissionScreen(),
-            ),
-          );
+          ],
+        ),
+      ),
+    );
+  }
+}
 
-          if (isCreated == true) {
-            _loadPermissions();
-          }
-        },
-        backgroundColor: const Color(0xFF2563EB),
-        elevation: 3,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.add, color: Colors.white),
+// ─────────────────────────────────────────────────────────────
+// Permission card
+// ─────────────────────────────────────────────────────────────
+enum _Action { edit, delete }
+
+class _PermissionCard extends StatelessWidget {
+  final Permission permission;
+  final bool deleting;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _PermissionCard({
+    required this.permission,
+    required this.deleting,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final desc = permission.description?.trim() ?? '';
+    final hasDesc = desc.isNotEmpty;
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: _C.heroA.withValues(alpha: 0.07),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: deleting ? null : onEdit,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _C.brand.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.vpn_key_rounded,
+                    color: _C.brand,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        permission.name ?? 'No Name',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: _t(15, FontWeight.w800, _C.ink),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        hasDesc ? desc : 'គ្មានការពិពណ៌នា',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: _t(
+                          12.5,
+                          hasDesc ? FontWeight.w500 : FontWeight.w400,
+                          _C.muted,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (deleting)
+                  const Padding(
+                    padding: EdgeInsets.all(14),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: _C.danger,
+                      ),
+                    ),
+                  )
+                else
+                  PopupMenuButton<_Action>(
+                    tooltip: 'More',
+                    icon: const Icon(Icons.more_vert_rounded, color: _C.muted),
+                    color: Colors.white,
+                    elevation: 8,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    onSelected: (a) {
+                      switch (a) {
+                        case _Action.edit:
+                          onEdit();
+                        case _Action.delete:
+                          onDelete();
+                      }
+                    },
+                    itemBuilder: (_) => [
+                      PopupMenuItem(
+                        value: _Action.edit,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.edit_rounded,
+                              size: 18,
+                              color: _C.brand,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'កែប្រែ (Edit)',
+                              style: _t(13.5, FontWeight.w700, _C.ink),
+                            ),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: _Action.delete,
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.delete_rounded,
+                              size: 18,
+                              color: _C.danger,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'លុប (Delete)',
+                              style: _t(13.5, FontWeight.w700, _C.danger),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Skeleton + empty / error
+// ─────────────────────────────────────────────────────────────
+class _SkeletonList extends StatefulWidget {
+  const _SkeletonList();
+
+  @override
+  State<_SkeletonList> createState() => _SkeletonListState();
+}
+
+class _SkeletonListState extends State<_SkeletonList>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1000),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Widget _bar(double w, double h) => Container(
+    width: w,
+    height: h,
+    decoration: BoxDecoration(
+      color: _C.line,
+      borderRadius: BorderRadius.circular(6),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.45, end: 1).animate(_ctrl),
+      child: Column(
+        children: List.generate(
+          6,
+          (i) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: _C.line,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _bar(130, 14),
+                      const SizedBox(height: 8),
+                      _bar(double.infinity, 11),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MessageState extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String? subtitle;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+
+  const _MessageState({
+    required this.icon,
+    required this.color,
+    required this.title,
+    this.subtitle,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 40, color: color),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: _t(15, FontWeight.w800, _C.ink, height: 1.4),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              subtitle!,
+              textAlign: TextAlign.center,
+              style: _t(13, FontWeight.w400, _C.muted, height: 1.5),
+            ),
+          ],
+          if (actionLabel != null) ...[
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onAction,
+              style: FilledButton.styleFrom(
+                backgroundColor: _C.brand,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 22,
+                  vertical: 12,
+                ),
+              ),
+              child: Text(
+                actionLabel!,
+                style: _t(13, FontWeight.bold, Colors.white),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

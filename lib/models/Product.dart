@@ -15,8 +15,7 @@ class Product {
   final String? imageUrl;
   final int isActive;
   bool isFavorite;
-  final String ?createdAt;
-
+  final String? createdAt;
   final String? categoryName;
   final String? brandName;
   final String? unitName;
@@ -41,15 +40,38 @@ class Product {
     this.brandName,
     this.unitName,
     this.isFavorite = false,
-     this.createdAt,
+    this.createdAt,
   });
+  Product copyWith({double? sellingPrice}) {
+    return Product(
+      id: id,
+      name: name,
+      description: description,
+      sellingPrice: sellingPrice ?? this.sellingPrice,
+      costPrice: costPrice,
+      stockQuantity: stockQuantity,
+      imageUrl: imageUrl,
+      categoryId: categoryId,
+      brandId: brandId,
+      isActive: isActive,
+      sku: sku,
+      slug: slug,
+      unitId: unitId,
+    );
+  }
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'] as int,
-      categoryId: json['category_id'] is String ? int.parse(json['category_id']) : json['category_id'] as int,
-      brandId: json['brand_id'] is String ? int.parse(json['brand_id']) : json['brand_id'] as int,
-      unitId: json['unit_id'] is String ? int.parse(json['unit_id']) : json['unit_id'] as int,
+      categoryId: json['category_id'] is String
+          ? int.parse(json['category_id'])
+          : json['category_id'] as int,
+      brandId: json['brand_id'] is String
+          ? int.parse(json['brand_id'])
+          : json['brand_id'] as int,
+      unitId: json['unit_id'] is String
+          ? int.parse(json['unit_id'])
+          : json['unit_id'] as int,
       name: json['name'] as String,
       slug: json['slug'] as String? ?? '',
       sku: json['sku'] as String? ?? '',
@@ -69,20 +91,23 @@ class Product {
           : (json['stock_quantity'] as num).toDouble(),
 
       alertQuantity: json['alert_quantity'] != null
-          ? (json['alert_quantity'] is String ? double.parse(json['alert_quantity']) : (json['alert_quantity'] as num).toDouble())
+          ? (json['alert_quantity'] is String
+                ? double.parse(json['alert_quantity'])
+                : (json['alert_quantity'] as num).toDouble())
           : null,
       imageUrl: json['image_url'] as String?,
 
-      isActive: json['is_active'] is String ? int.parse(json['is_active']) : (json['is_active'] as int? ?? 1),
+      isActive: json['is_active'] is String
+          ? int.parse(json['is_active'])
+          : (json['is_active'] as int? ?? 1),
 
       categoryName: json['category'] != null ? json['category']['name'] : null,
       brandName: json['brand'] != null ? json['brand']['name'] : null,
       unitName: json['unit'] != null ? json['unit']['name'] : null,
       isFavorite: json['is_favorite'] ?? false,
-      createdAt: json['created_at']
+      createdAt: json['created_at'],
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {
@@ -101,7 +126,7 @@ class Product {
       'alert_quantity': alertQuantity,
       'image': imageUrl,
       'is_active': isActive,
-      'createdAt':createdAt
+      'createdAt': createdAt,
     };
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:pos_inventory/Productscreen/models/product_promotion_model.dart';
 import 'package:pos_inventory/api/api_product.dart';
+import 'package:pos_inventory/api/promotion/api_promotion.dart';
 import 'package:pos_inventory/models/Product.dart';
 
 import '../msg/appSnackBar.dart';
@@ -19,26 +21,46 @@ class _ShowProductScreenState extends State<ShowProductScreen> {
   bool _isLoading = true;
   Product? _product;
   int _quantity = 1;
+
   final ApiProduct apiProduct = ApiProduct();
+  final ApiPromotion _apiPromotion = ApiPromotion();
+  ProductPromotionModel? _activePromo;
 
   @override
   void initState() {
     super.initState();
-    _fetchProductDetails();
+    _fetchProductDetailsAndPromo();
   }
 
-  Future<void> _fetchProductDetails() async {
+  Future<void> _fetchProductDetailsAndPromo() async {
     setState(() => _isLoading = true);
 
     try {
-      final Product productData = await apiProduct.getProductById(
-        widget.productId,
-      );
+      final results = await Future.wait([
+        apiProduct.getProductById(widget.productId),
+        _apiPromotion.fetchPromotions(),
+      ]);
+
+      final Product productData = results[0] as Product;
+      final List<ProductPromotionModel> promotions =
+          results[1] as List<ProductPromotionModel>;
+
+      ProductPromotionModel? foundPromo;
+      try {
+        foundPromo = promotions.firstWhere(
+          (p) =>
+              p.productId.toString() == widget.productId.toString() &&
+              p.isActive,
+        );
+      } catch (_) {
+        foundPromo = null;
+      }
 
       if (!mounted) return;
 
       setState(() {
         _product = productData;
+        _activePromo = foundPromo;
         _isLoading = false;
       });
     } catch (e) {
@@ -59,10 +81,23 @@ class _ShowProductScreenState extends State<ShowProductScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final double totalPrice = (_product != null) ? _product!.sellingPrice * _quantity : 0.0;
+
+    double originalPrice = _product?.sellingPrice ?? 0.0;
+    double finalPrice = originalPrice;
+
+    if (_activePromo != null) {
+      double discountAmount = _activePromo!.discountType == 'percentage'
+          ? (originalPrice * _activePromo!.discountValue) / 100
+          : _activePromo!.discountValue;
+      finalPrice = (originalPrice - discountAmount).clamp(0.0, double.infinity);
+    }
+
+    final double totalPrice = finalPrice * _quantity;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      backgroundColor: isDarkMode
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: const Text(
           "ព័ត៌មានលម្អិតទំនិញ",
@@ -80,392 +115,565 @@ class _ShowProductScreenState extends State<ShowProductScreen> {
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6366F1)))
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF6366F1)),
+            )
           : _product == null
           ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_off_rounded, size: 64, color: Colors.grey[400]),
-            const SizedBox(height: 12),
-            const Text(
-              "រកមិនឃើញទំនិញនេះទេ",
-              style: TextStyle(color: Colors.grey, fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-      )
-          : SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 🖼️ Product Image Banner with Glow Shadow & Glassmorphism Badge
-            Center(
-              child: Container(
-                height: 320,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-                  borderRadius: BorderRadius.circular(28),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.15),
-                      blurRadius: 25,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Background Image with smooth BoxFit
-                      (_product!.imageUrl != null && _product!.imageUrl!.isNotEmpty)
-                          ? Image.network(
-                        _product!.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(Icons.broken_image_rounded, size: 60, color: Colors.grey[400]),
-                          );
-                        },
-                      )
-                          : Center(
-                        child: Icon(Icons.image_not_supported_rounded, size: 60, color: Colors.grey[400]),
-                      ),
-
-                      // Smooth Gradient Overlay
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.black.withValues(alpha: 0.4),
-                              Colors.transparent,
-                              Colors.black.withValues(alpha: 0.5),
-                            ],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                          ),
-                        ),
-                      ),
-
-                      // ✨ Glassmorphism Category Badge
-                      if (_product!.categoryName != null)
-                        Positioned(
-                          top: 16,
-                          left: 16,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.auto_awesome, color: Colors.amberAccent, size: 12),
-                                    const SizedBox(width: 5),
-                                    Text(
-                                      _product!.categoryName!.toUpperCase(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.search_off_rounded,
+                    size: 64,
+                    color: Colors.grey[400],
                   ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 22),
-
-            // 🏷️ Product Name, Price & Stock Card (Modern Card Style)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "រកមិនឃើញទំនិញនេះទេ",
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ],
               ),
+            )
+          : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // តម្លៃលក់ (Selling Price) លេចធ្លោរខ្លាំង
-                      ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ).createShader(bounds),
-                        child: Text(
-                          "\$${_product!.sellingPrice.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                  Center(
+                    child: Container(
+                      height: 320,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? const Color(0xFF1E293B)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF6366F1,
+                            ).withValues(alpha: 0.15),
+                            blurRadius: 25,
+                            offset: const Offset(0, 12),
                           ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            // Background Image with smooth BoxFit
+                            (_product!.imageUrl != null &&
+                                    _product!.imageUrl!.isNotEmpty)
+                                ? Image.network(
+                                    _product!.imageUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 60,
+                                          color: Colors.grey[400],
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
+                                    child: Icon(
+                                      Icons.image_not_supported_rounded,
+                                      size: 60,
+                                      color: Colors.grey[400],
+                                    ),
+                                  ),
+
+                            // Smooth Gradient Overlay
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.4),
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.5),
+                                  ],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ),
+                              ),
+                            ),
+
+                            // 🏷️ Promotion Discount Badge บนรูป (ถ้ามี Promotion)
+                            if (_activePromo != null)
+                              Positioned(
+                                top: 16,
+                                left: 16,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.deepOrange,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    _activePromo!.discountType == 'percentage'
+                                        ? "-${_activePromo!.discountValue}%"
+                                        : "-\$${_activePromo!.discountValue}",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                            // ✨ Glassmorphism Category Badge
+                            if (_product!.categoryName != null)
+                              Positioned(
+                                top: 16,
+                                right: 16,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 10,
+                                      sigmaY: 10,
+                                    ),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 7,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.2,
+                                        ),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.auto_awesome,
+                                            color: Colors.amberAccent,
+                                            size: 12,
+                                          ),
+                                          const SizedBox(width: 5),
+                                          Text(
+                                            _product!.categoryName!
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 0.8,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      // ស្តុក Status Badge แบบมี Glow
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          // 🟢 កន្លែង Stock Badge Background
-                          color: _product!.stockQuantity > 0 ? Colors.green.shade50 : Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: _product!.stockQuantity > 0 ? Colors.green.shade200 : Colors.red.shade200,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+
+                  // 🏷️ Product Name, Price & Stock Card (Modern Card Style)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? const Color(0xFF1E293B)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDarkMode ? 0.3 : 0.03,
+                          ),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // 💰 តម្លៃ (បង្ហាញតម្លៃ Promotion ឬតម្លៃធម្មតា)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (_activePromo != null)
+                                  Text(
+                                    "\$${originalPrice.toStringAsFixed(2)}",
+                                    style: TextStyle(
+                                      color: Colors.grey.shade400,
+                                      fontSize: 14,
+                                      decoration: TextDecoration.lineThrough,
+                                    ),
+                                  ),
+                                ShaderMask(
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                        colors: [
+                                          Color(0xFF6366F1),
+                                          Color(0xFF8B5CF6),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ).createShader(bounds),
+                                  child: Text(
+                                    "\$${finalPrice.toStringAsFixed(2)}",
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // ស្តុក Status Badge แบบมี Glow
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    (_product!.stockQuantity ?? 0) >
+                                        (_product!.alertQuantity ?? 0)
+                                    ? Colors.green.shade50
+                                    : Colors.red.shade50,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color:
+                                      (_product!.stockQuantity ?? 0) >
+                                          (_product!.alertQuantity ?? 0)
+                                      ? Colors.green.shade200
+                                      : Colors.red.shade200,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    (_product!.stockQuantity ?? 0) >
+                                            (_product!.alertQuantity ?? 0)
+                                        ? Icons.check_circle_rounded
+                                        : Icons.cancel_rounded,
+                                    size: 14,
+                                    color:
+                                        (_product!.stockQuantity ?? 0) >
+                                            (_product!.alertQuantity ?? 0)
+                                        ? Colors.green.shade700
+                                        : Colors.red.shade700,
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Text(
+                                    (_product!.stockQuantity ?? 0) >
+                                            (_product!.alertQuantity ?? 0)
+                                        ? "ស្តុក: ${_product!.stockQuantity?.toInt()}"
+                                        : "អស់ពីស្តុក",
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color:
+                                          (_product!.stockQuantity ?? 0) >
+                                              (_product!.alertQuantity ?? 0)
+                                          ? Colors.green.shade700
+                                          : Colors.red.shade700,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          _product!.name,
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: isDarkMode
+                                ? Colors.white
+                                : const Color(0xFF1E293B),
                           ),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              _product!.stockQuantity > 0 ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                              size: 14,
-                              color: _product!.stockQuantity > 0 ? Colors.green.shade700 : Colors.red.shade700,
+                        if (_activePromo?.title != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            "Promotion: ${_activePromo!.title}",
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF0F766E),
+                              fontWeight: FontWeight.w600,
                             ),
-                            const SizedBox(width: 5),
-                            Text(
-                              _product!.stockQuantity > 0 ? "ស្តុក: ${_product!.stockQuantity}" : "អស់ពីស្តុក",
+                          ),
+                        ],
+                        if (_product!.description != null &&
+                            _product!.description!.isNotEmpty) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            _product!.description!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDarkMode
+                                  ? Colors.grey[400]
+                                  : Colors.grey[600],
+                              height: 1.6,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 🔖 General Details Card (SKU, Barcode, Brand)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? const Color(0xFF1E293B)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(
+                            alpha: isDarkMode ? 0.3 : 0.03,
+                          ),
+                          blurRadius: 15,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        _buildInfoRow(
+                          Icons.qr_code_rounded,
+                          "SKU",
+                          _product!.sku,
+                          isDarkMode
+                              ? Colors.grey[300]!
+                              : const Color(0xFF334155),
+                          isDarkMode,
+                        ),
+                        const Divider(
+                          height: 24,
+                          thickness: 0.5,
+                          color: Colors.grey,
+                        ),
+                        _buildInfoRow(
+                          Icons.qr_code_scanner_rounded,
+                          "Barcode",
+                          _product!.barcode ?? 'N/A',
+                          isDarkMode
+                              ? Colors.grey[300]!
+                              : const Color(0xFF334155),
+                          isDarkMode,
+                        ),
+                        const Divider(
+                          height: 24,
+                          thickness: 0.5,
+                          color: Colors.grey,
+                        ),
+                        _buildInfoRow(
+                          Icons.branding_watermark_rounded,
+                          "ប្រេន (Brand)",
+                          _product!.brandName ?? 'ណាមួយ',
+                          const Color(0xFF6366F1),
+                          isDarkMode,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+      bottomSheet: _isLoading || _product == null
+          ? null
+          : Container(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                16,
+                20,
+                MediaQuery.of(context).padding.bottom + 16,
+              ),
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, -8),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  // ➖➕ Quantity Selector (Modern Styled)
+                  Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? const Color(0xFF0F172A)
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: Colors.grey.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove, size: 18),
+                          onPressed: () {
+                            if (_quantity > 1) setState(() => _quantity--);
+                          },
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Text(
+                            "$_quantity",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.add, size: 18),
+                          onPressed: () {
+                            if (_quantity < (_product!.stockQuantity ?? 0)) {
+                              setState(() => _quantity++);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // 🚀 Add to Cart Button with Promotion Price Support
+                  Expanded(
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(
+                              0xFF6366F1,
+                            ).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_activePromo != null &&
+                              _activePromo!.quantity != null &&
+                              _activePromo!.quantity! <= 0) {
+                            AppSnackBar.showError(
+                              context,
+                              "ស្តុកបញ្ចុះតម្លៃសម្រាប់ ${_product!.name} បានអស់ហើយ!",
+                            );
+                            return;
+                          }
+
+                          CartManager.addProduct(
+                            context,
+                            _product!,
+                            quantity: _quantity,
+                            promoPrice: _activePromo != null
+                                ? finalPrice
+                                : null,
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              "បញ្ជាទិញ",
                               style: TextStyle(
-                                fontSize: 12,
-                                color: _product!.stockQuantity > 0 ? Colors.green.shade700 : Colors.red.shade700,
+                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              "(\$${totalPrice.toStringAsFixed(2)})",
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white70,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    _product!.name,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDarkMode ? Colors.white : const Color(0xFF1E293B),
                     ),
-                  ),
-                  if (_product!.description != null && _product!.description!.isNotEmpty) ...[
-                    const SizedBox(height: 10),
-                    Text(
-                      _product!.description!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-                        height: 1.6,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 🔖 General Details Card (SKU, Barcode, Brand)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDarkMode ? 0.3 : 0.03),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  _buildInfoRow(
-                    Icons.qr_code_rounded,
-                    "SKU",
-                    _product!.sku,
-                    isDarkMode ? Colors.grey[300]! : const Color(0xFF334155),
-                    isDarkMode,
-                  ),
-                  const Divider(height: 24, thickness: 0.5, color: Colors.grey),
-                  _buildInfoRow(
-                    Icons.qr_code_scanner_rounded,
-                    "Barcode",
-                    _product!.barcode ?? 'N/A',
-                    isDarkMode ? Colors.grey[300]! : const Color(0xFF334155),
-                    isDarkMode,
-                  ),
-                  const Divider(height: 24, thickness: 0.5, color: Colors.grey),
-                  _buildInfoRow(
-                    Icons.branding_watermark_rounded,
-                    "ប្រេន (Brand)",
-                    _product!.brandName ?? 'ណាមួយ',
-                    const Color(0xFF6366F1),
-                    isDarkMode,
                   ),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-      // 🛒 Sticky Bottom Action Bar with Modern Gradient & Glow Effect
-      bottomSheet: _isLoading || _product == null
-          ? null
-          : Container(
-        padding: EdgeInsets.fromLTRB(20, 16, 20, MediaQuery.of(context).padding.bottom + 16),
-        decoration: BoxDecoration(
-          color: isDarkMode ? const Color(0xFF1E293B) : Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, -8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // ➖➕ Quantity Selector (Modern Styled)
-            Container(
-              height: 52,
-              decoration: BoxDecoration(
-                color: isDarkMode ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove, size: 18),
-                    onPressed: () {
-                      if (_quantity > 1) setState(() => _quantity--);
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      "$_quantity",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.add, size: 18),
-                    onPressed: () {
-                      if (_quantity < _product!.stockQuantity) {
-                        setState(() => _quantity++);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 14),
-
-            // 🚀 Add to Cart Button with Premium Gradient & Total Price
-            Expanded(
-              child: Container(
-                height: 52,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: ElevatedButton(
-                  onPressed: () {
-                    CartManager.addProduct(_product!, quantity: _quantity);
-                    AppSnackBar.showSuccess(
-                      context,
-                      "បានបន្ថែម ${_product!.name} (ចំនួន $_quantity) ចូលកន្ត្រក!",
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    elevation: 0,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.shopping_bag_outlined,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        "បញ្ជាទិញ",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "(\$${totalPrice.toStringAsFixed(2)})",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
   Widget _buildInfoRow(
-      IconData icon,
-      String label,
-      String value,
-      Color valueColor,
-      bool isDarkMode,
-      ) {
+    IconData icon,
+    String label,
+    String value,
+    Color valueColor,
+    bool isDarkMode,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -492,7 +700,11 @@ class _ShowProductScreenState extends State<ShowProductScreen> {
         ),
         Text(
           value,
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: valueColor),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: valueColor,
+          ),
         ),
       ],
     );

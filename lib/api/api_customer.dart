@@ -69,11 +69,12 @@ class ApiCustomer {
         }),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonResponse = jsonDecode(response.body);
-        if (jsonResponse['success'] == true) {
-          return true;
+        if (jsonResponse is Map && jsonResponse.containsKey('success')) {
+          return jsonResponse['success'] == true;
         }
+        return true;
       }
 
       return false;
@@ -110,7 +111,10 @@ class ApiCustomer {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/customers'),
-        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode(data),
       );
       print('Response Code: ${response.statusCode}');
@@ -150,6 +154,28 @@ class ApiCustomer {
     } catch (e) {
       print('កំហុសក្នុងការអាប់ដេត៖ $e');
       return false;
+    }
+  }
+
+  Future<Customer?> getCustomerById(int customerId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/customers/$customerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final jsonResponse = jsonDecode(response.body);
+        final data = jsonResponse['data'] ?? jsonResponse;
+        return Customer.fromJson(data);
+      }
+      return null;
+    } catch (e) {
+      print('Error fetching customer by ID: $e');
+      return null;
     }
   }
 

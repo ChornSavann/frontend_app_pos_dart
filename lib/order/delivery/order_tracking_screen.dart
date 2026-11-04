@@ -535,14 +535,45 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen>
                                     color: Colors.grey.shade200,
                                   ),
                                 ),
-                                child: const Center(
-                                  child: Text(
-                                    "សូមស្កេន KHQR ដើម្បីទូទាត់",
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'KhmerOSBattambang',
-                                    ),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: Colors.grey.shade200),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.03),
+                                              blurRadius: 6,
+                                            ),
+                                          ],
+                                        ),
+                                        child: Image.asset(
+                                          "assets/qrcode.jpg",
+                                          height: 120,
+                                          width: 120,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (c, e, s) => const Icon(
+                                            Icons.qr_code,
+                                            size: 60,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      const Text(
+                                        "សូមស្កេន KHQR",
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'KhmerOSBattambang',
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),

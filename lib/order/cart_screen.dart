@@ -45,7 +45,6 @@ class _CartScreenState extends State<CartScreen> {
       builder: (context, count, child) {
         final items = CartManager.cartItems;
 
-        // 🧮 គណនាតម្លៃ Subtotal, Discount, Tax និង Grand Total
         double subtotal = 0;
         for (var item in items) {
           subtotal += item.product.sellingPrice * item.quantity;
@@ -221,6 +220,7 @@ class _CartScreenState extends State<CartScreen> {
                                           InkWell(
                                             onTap: () => setState(
                                               () => CartManager.updateQuantity(
+                                                context,
                                                 index,
                                                 -1,
                                               ),
@@ -249,6 +249,7 @@ class _CartScreenState extends State<CartScreen> {
                                           InkWell(
                                             onTap: () => setState(
                                               () => CartManager.updateQuantity(
+                                                context,
                                                 index,
                                                 1,
                                               ),
@@ -1904,6 +1905,9 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    int currentUserId = prefs.getInt('user_id') ?? _userId ?? 1;
+
     double changeAmount = actualUSDReceived - totalAmount;
     List<Map<String, dynamic>> orderItems = CartManager.cartItems.map((
       cartItem,
@@ -1931,7 +1935,8 @@ class _CartScreenState extends State<CartScreen> {
         customerId: customerId,
         customerName: customerName.isEmpty ? 'Guest' : customerName,
         customerPhone: customerPhone.isEmpty ? null : customerPhone,
-        userId: _userId ?? 1,
+        userId:
+            currentUserId, // 👈 ប្រើប្រាស់ currentUserId ដែលបានទាញយកមកថ្មីៗត្រឹមត្រូវ
         subtotal: totalAmount - (orderType == 'delivery' ? deliveryFee : 0),
         discount: discountAmount,
         tax: taxAmount,

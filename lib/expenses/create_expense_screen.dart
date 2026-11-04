@@ -114,323 +114,434 @@ class _CreateExpenseScreenState extends State<CreateExpenseScreen> {
     }
   }
 
+  // ───────────────────────── UI ONLY (no logic changes) ─────────────────────────
+
+  static const Color _primary = Color(0xFF2563EB);
+  static const Color _ink = Color(0xFF0F172A);
+  static const Color _muted = Color(0xFF64748B);
+  static const Color _bg = Color(0xFFF6F7FB);
+
+  Widget _label(String text, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: _primary),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
+              color: _ink,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _decoration(String hint, {IconData? icon}) {
+    OutlineInputBorder border(Color c, [double w = 1]) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: c, width: w),
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13.5),
+      prefixIcon: icon != null ? Icon(icon, color: _muted, size: 20) : null,
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: border(const Color(0xFFE8EDF3)),
+      enabledBorder: border(const Color(0xFFE8EDF3)),
+      focusedBorder: border(_primary, 1.6),
+      errorBorder: border(Colors.redAccent),
+      focusedErrorBorder: border(Colors.redAccent, 1.6),
+    );
+  }
+
+  Widget _sectionCard({required List<Widget> children}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFEEF1F6)),
+        boxShadow: [
+          BoxShadow(
+            color: _ink.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text(
           "Add New Expense",
           style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+            fontWeight: FontWeight.w800,
+            color: _ink,
             fontSize: 18,
             fontFamily: 'KantumruyPro',
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: _bg,
+        surfaceTintColor: _bg,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+        iconTheme: const IconThemeData(color: _ink),
       ),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 📋 Main Form Card Container
+              // 💰 1. Amount (Hero input)
               Container(
-                padding: const EdgeInsets.all(20),
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1D4ED8), Color(0xFF3B82F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: _primary.withValues(alpha: 0.3),
+                      blurRadius: 22,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 💰 1. Amount Field
-                    const Text(
-                      "Amount (\$)",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.account_balance_wallet_rounded,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "Amount (\$)",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.85),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     TextFormField(
                       controller: _amountController,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
+                      textAlign: TextAlign.center,
+                      cursorColor: Colors.white,
+                      style: const TextStyle(
+                        fontSize: 38,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
                       decoration: InputDecoration(
                         hintText: "0.00",
-                        prefixIcon: const Icon(
-                          Icons.attach_money_rounded,
-                          color: Color(0xFF2563EB),
+                        hintStyle: TextStyle(
+                          fontSize: 38,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white.withValues(alpha: 0.4),
                         ),
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        prefixText: "\$ ",
+                        prefixStyle: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
+                        errorStyle: const TextStyle(
+                          color: Color(0xFFFFE4E6),
+                          fontWeight: FontWeight.w600,
+                        ),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white, width: 2),
+                        ),
+                        errorBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Color(0xFFFFE4E6)),
+                        ),
+                        focusedErrorBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Color(0xFFFFE4E6),
+                            width: 2,
+                          ),
                         ),
                       ),
                       validator: (value) => value == null || value.isEmpty
                           ? 'Please enter amount'
                           : null,
                     ),
-                    const SizedBox(height: 18),
-
-                    // 📂 2. Expense Type Dropdown
-                    const Text(
-                      "Expense Type",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _isLoadingTypes
-                        ? const Center(child: CircularProgressIndicator())
-                        : Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.grey.shade200),
-                            ),
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<int>(
-                                value: _selectedExpenseTypeId,
-                                isExpanded: true,
-                                icon: const Icon(
-                                  Icons.keyboard_arrow_down_rounded,
-                                ),
-                                items: _expenseTypes.map((type) {
-                                  return DropdownMenuItem<int>(
-                                    value: type.id,
-                                    child: Text(type.name ?? 'Unnamed'),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _selectedExpenseTypeId = value;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                    const SizedBox(height: 18),
-
-                    // 💳 3. Payment Method Dropdown (Cash, ABA, Wing...)
-                    const Text(
-                      "Payment Method",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedPaymentMethod,
-                          isExpanded: true,
-                          icon: const Icon(Icons.keyboard_arrow_down_rounded),
-                          items: _paymentMethods.map((method) {
-                            return DropdownMenuItem<String>(
-                              value: method,
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    method == 'Cash'
-                                        ? Icons.money_rounded
-                                        : Icons.account_balance_wallet_rounded,
-                                    size: 20,
-                                    color: const Color(0xFF2563EB),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(method),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedPaymentMethod = value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // 🔖 4. Reference Number
-                    const Text(
-                      "Reference No (Optional)",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _referenceController,
-                      decoration: InputDecoration(
-                        hintText: "Enter ref number (e.g., REF-001)",
-                        prefixIcon: const Icon(
-                          Icons.tag_rounded,
-                          color: Color(0xFF2563EB),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // 📅 5. Expense Date
-                    const Text(
-                      "Expense Date",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _dateController,
-                      readOnly: true,
-                      onTap: () async {
-                        DateTime? pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2101),
-                        );
-                        if (pickedDate != null) {
-                          setState(() {
-                            _dateController.text = pickedDate
-                                .toIso8601String()
-                                .split('T')[0];
-                          });
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: "Select date",
-                        prefixIcon: const Icon(
-                          Icons.calendar_today_rounded,
-                          color: Color(0xFF2563EB),
-                        ),
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-
-                    // 📝 6. Note / Description
-                    const Text(
-                      "Note (Optional)",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _noteController,
-                      maxLines: 3,
-                      decoration: InputDecoration(
-                        hintText: "Add any additional details...",
-                        filled: true,
-                        fillColor: Colors.grey.shade50,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          borderSide: BorderSide(color: Colors.grey.shade200),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 16),
 
-              // 💾 Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2563EB),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
+              // 📂 2. Type + 💳 3. Payment
+              _sectionCard(
+                children: [
+                  _label("Expense Type", Icons.category_rounded),
+                  _isLoadingTypes
+                      ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: _primary,
+                        ),
+                      ),
+                    ),
+                  )
+                      : Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFE8EDF3)),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<int>(
+                        value: _selectedExpenseTypeId,
+                        isExpanded: true,
+                        borderRadius: BorderRadius.circular(16),
+                        dropdownColor: Colors.white,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: _ink,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        icon: const Icon(
+                          Icons.keyboard_arrow_down_rounded,
+                          color: _muted,
+                        ),
+                        items: _expenseTypes.map((type) {
+                          return DropdownMenuItem<int>(
+                            value: type.id,
+                            child: Text(type.name ?? 'Unnamed'),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedExpenseTypeId = value;
+                          });
+                        },
+                      ),
                     ),
                   ),
-                  onPressed: _isSubmitting ? null : _submitExpense,
+                  const SizedBox(height: 18),
 
-                  child: _isSubmitting
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                  _label("Payment Method", Icons.credit_card_rounded),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _paymentMethods.map((method) {
+                      final bool selected = _selectedPaymentMethod == method;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedPaymentMethod = method;
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
                           ),
-                        )
-                      : const Text(
-                          "Save Expense",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.3,
-                            fontFamily: 'KantumruyPro',
+                          decoration: BoxDecoration(
+                            color: selected ? _primary : const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: selected
+                                  ? _primary
+                                  : const Color(0xFFE8EDF3),
+                            ),
+                            boxShadow: selected
+                                ? [
+                              BoxShadow(
+                                color: _primary.withValues(alpha: 0.28),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                method == 'Cash'
+                                    ? Icons.payments_rounded
+                                    : Icons.account_balance_wallet_rounded,
+                                size: 17,
+                                color: selected ? Colors.white : _muted,
+                              ),
+                              const SizedBox(width: 7),
+                              Text(
+                                method,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: selected ? Colors.white : _ink,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // 🔖 4. Reference + 📅 5. Date + 📝 6. Note
+              _sectionCard(
+                children: [
+                  _label("Reference No (Optional)", Icons.tag_rounded),
+                  TextFormField(
+                    controller: _referenceController,
+                    decoration: _decoration(
+                      "Enter ref number (e.g., REF-001)",
+                      icon: Icons.tag_rounded,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _label("Expense Date", Icons.event_rounded),
+                  TextFormField(
+                    controller: _dateController,
+                    readOnly: true,
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2101),
+                      );
+                      if (pickedDate != null) {
+                        setState(() {
+                          _dateController.text = pickedDate
+                              .toIso8601String()
+                              .split('T')[0];
+                        });
+                      }
+                    },
+                    decoration: _decoration(
+                      "Select date",
+                      icon: Icons.calendar_today_rounded,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+
+                  _label("Note (Optional)", Icons.notes_rounded),
+                  TextFormField(
+                    controller: _noteController,
+                    maxLines: 3,
+                    decoration: _decoration("Add any additional details..."),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // 💾 Submit Button (ជាប់នៅខាងក្រោម)
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: _ink.withValues(alpha: 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primary,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: _primary.withValues(alpha: 0.6),
+                disabledForegroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              const SizedBox(height: 20),
-            ],
+              onPressed: _isSubmitting ? null : _submitExpense,
+
+              child: _isSubmitting
+                  ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+                  : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_rounded, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    "Save Expense",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.3,
+                      fontFamily: 'KantumruyPro',
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

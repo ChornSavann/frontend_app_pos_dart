@@ -30,6 +30,25 @@ import '../banner/banner_screen.dart';
 import '../expensetype/create_expens_type_screen.dart';
 import '../login/authority/authority_screen.dart';
 
+/// 🎨 Light / dark palette for the home screen
+class _HomePal {
+  final bool dark;
+  const _HomePal(this.dark);
+
+  Color get bg => dark ? const Color(0xFF0B1120) : const Color(0xFFF8FAFC);
+  Color get card => dark ? const Color(0xFF151C2E) : Colors.white;
+  Color get text => dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
+  Color get subtext => dark ? const Color(0xFF94A3B8) : Colors.grey.shade500;
+  Color get border =>
+      dark ? Colors.white.withOpacity(0.07) : const Color(0xFFE2E8F0);
+  Color get chevronBg =>
+      dark ? Colors.white.withOpacity(0.06) : const Color(0xFFF1F5F9);
+  Color get chevron => dark ? const Color(0xFF64748B) : Colors.grey.shade400;
+  Color shadow(double lightAlpha) => dark
+      ? Colors.black.withOpacity(0.30)
+      : const Color(0xFF64748B).withOpacity(lightAlpha);
+}
+
 class ScreenHome extends StatefulWidget {
   const ScreenHome({super.key});
 
@@ -46,6 +65,10 @@ class _ScreenHomeState extends State<ScreenHome> {
   int _roleId = 0;
   String _userRole = "";
   bool _isRoleLoaded = false;
+
+  _HomePal get _p =>
+      _HomePal(Theme.of(context).brightness == Brightness.dark);
+
   @override
   void initState() {
     super.initState();
@@ -103,10 +126,12 @@ class _ScreenHomeState extends State<ScreenHome> {
 
   @override
   Widget build(BuildContext context) {
+    final p = _p;
+
     if (!_isRoleLoaded) {
-      return const Scaffold(
-        backgroundColor: Color(0xFFF8FAFC),
-        body: Center(
+      return Scaffold(
+        backgroundColor: p.bg,
+        body: const Center(
           child: CircularProgressIndicator(color: Color(0xFF4F46E5)),
         ),
       );
@@ -218,8 +243,8 @@ class _ScreenHomeState extends State<ScreenHome> {
       // );
       managementCards.add(
         _buildModernActionCard(
-          title: 'Role & Permissions',
-          subtitle: 'Manage roles and permissions',
+          title: TranslateConstants.role_permission.tr,
+          subtitle: TranslateConstants.manage_role_permission.tr,
           icon: Icons.manage_accounts_sharp,
           color: const Color(0xFFEC4899),
           onTap: () => Navigator.push(
@@ -244,7 +269,6 @@ class _ScreenHomeState extends State<ScreenHome> {
       ),
     );
 
-
     if (_hasRole(['Admin', 'Supper Admin'])) {
       managementCards.addAll([
         _buildModernActionCard(
@@ -267,7 +291,6 @@ class _ScreenHomeState extends State<ScreenHome> {
             MaterialPageRoute(builder: (context) => IndexExpensetypeSreen()),
           ),
         ),
-
         _buildModernActionCard(
           title: TranslateConstants.expense.tr,
           subtitle: TranslateConstants.manage_expense.tr,
@@ -285,14 +308,16 @@ class _ScreenHomeState extends State<ScreenHome> {
           color: const Color(0xFF6366F1),
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ReportDashboardScreen()),
+            MaterialPageRoute(
+              builder: (context) => const ReportDashboardScreen(),
+            ),
           ),
         ),
       ]);
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: p.bg,
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 20.0),
@@ -314,9 +339,14 @@ class _ScreenHomeState extends State<ScreenHome> {
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(p.dark ? 0.08 : 0.0),
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF4F46E5).withOpacity(0.3),
+                    color: const Color(
+                      0xFF4F46E5,
+                    ).withOpacity(p.dark ? 0.22 : 0.3),
                     blurRadius: 18,
                     offset: const Offset(0, 8),
                   ),
@@ -431,10 +461,10 @@ class _ScreenHomeState extends State<ScreenHome> {
               children: [
                 Text(
                   TranslateConstants.overview.tr,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: p.text,
                   ),
                 ),
                 Container(
@@ -443,14 +473,18 @@ class _ScreenHomeState extends State<ScreenHome> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4F46E5).withOpacity(0.08),
+                    color: const Color(
+                      0xFF4F46E5,
+                    ).withOpacity(p.dark ? 0.20 : 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     TranslateConstants.real_time.tr,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF4F46E5),
+                      color: p.dark
+                          ? const Color(0xFFA5B4FC)
+                          : const Color(0xFF4F46E5),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -510,10 +544,10 @@ class _ScreenHomeState extends State<ScreenHome> {
             // ⚡ Quick Actions Section Header
             Text(
               TranslateConstants.quick_actions.tr,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: p.text,
               ),
             ),
             const SizedBox(height: 12),
@@ -660,10 +694,10 @@ class _ScreenHomeState extends State<ScreenHome> {
             // 📂 Management Lists Section Header
             Text(
               TranslateConstants.management.tr,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: p.text,
               ),
             ),
             const SizedBox(height: 12),
@@ -685,7 +719,7 @@ class _ScreenHomeState extends State<ScreenHome> {
     );
   }
 
-  // ✨ Elegant & Clean Stat Card Widget
+
   Widget _buildBeautifulStatCard({
     required String title,
     required String value,
@@ -693,19 +727,20 @@ class _ScreenHomeState extends State<ScreenHome> {
     required Color primaryColor,
     required List<Color> gradientColors,
   }) {
+    final p = _p;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: p.card,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF64748B).withOpacity(0.06),
+            color: p.shadow(0.06),
             blurRadius: 14,
             offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+        border: Border.all(color: p.border, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -717,7 +752,12 @@ class _ScreenHomeState extends State<ScreenHome> {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: gradientColors,
+                    colors: p.dark
+                        ? [
+                      primaryColor.withOpacity(0.24),
+                      primaryColor.withOpacity(0.12),
+                    ]
+                        : gradientColors,
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -728,7 +768,7 @@ class _ScreenHomeState extends State<ScreenHome> {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(0.1),
+                  color: primaryColor.withOpacity(p.dark ? 0.18 : 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -744,7 +784,7 @@ class _ScreenHomeState extends State<ScreenHome> {
             title,
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade500,
+              color: p.subtext,
               fontWeight: FontWeight.w600,
             ),
             maxLines: 1,
@@ -753,10 +793,10 @@ class _ScreenHomeState extends State<ScreenHome> {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0F172A),
+              color: p.text,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -773,10 +813,11 @@ class _ScreenHomeState extends State<ScreenHome> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final p = _p;
     return SizedBox(
       width: 86,
       child: Material(
-        color: Colors.white,
+        color: p.card,
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           onTap: onTap,
@@ -785,10 +826,10 @@ class _ScreenHomeState extends State<ScreenHome> {
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              border: Border.all(color: p.border, width: 1),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF64748B).withOpacity(0.04),
+                  color: p.shadow(0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -800,7 +841,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                 Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: color.withOpacity(p.dark ? 0.20 : 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -808,10 +849,10 @@ class _ScreenHomeState extends State<ScreenHome> {
                 const SizedBox(height: 8),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: p.text,
                   ),
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
@@ -833,8 +874,9 @@ class _ScreenHomeState extends State<ScreenHome> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final p = _p;
     return Material(
-      color: Colors.white,
+      color: p.card,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -845,12 +887,12 @@ class _ScreenHomeState extends State<ScreenHome> {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF64748B).withOpacity(0.05),
+                color: p.shadow(0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
-            border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+            border: Border.all(color: p.border, width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -862,7 +904,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.12),
+                      color: color.withOpacity(p.dark ? 0.20 : 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(icon, color: color, size: 18),
@@ -870,12 +912,12 @@ class _ScreenHomeState extends State<ScreenHome> {
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
+                      color: p.chevronBg,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.arrow_forward_ios_rounded,
-                      color: Colors.grey.shade400,
+                      color: p.chevron,
                       size: 9,
                     ),
                   ),
@@ -884,10 +926,10 @@ class _ScreenHomeState extends State<ScreenHome> {
               const SizedBox(height: 10),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: p.text,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -897,7 +939,7 @@ class _ScreenHomeState extends State<ScreenHome> {
                 subtitle,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.grey.shade500,
+                  color: p.subtext,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,

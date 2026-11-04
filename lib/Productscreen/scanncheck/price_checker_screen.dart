@@ -159,7 +159,6 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
             )
           : Stack(
               children: [
-                // 📷 Scanner
                 MobileScanner(
                   controller: _controller,
                   onDetect: (capture) {
@@ -173,7 +172,6 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
                   },
                 ),
 
-                // 🎯 Modern Scanner Overlay Framework (មានភ្លើងសញ្ញាបៃតងពេលចាប់បាន Barcode)
                 Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -303,7 +301,6 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
                               ),
                               const SizedBox(width: 14),
 
-                              // 📝 Details Info
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -364,7 +361,6 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
                           Divider(height: 1, color: Colors.grey.shade100),
                           const SizedBox(height: 14),
 
-                          // 🔘 Action Buttons (View Details & Add Stock)
                           Row(
                             children: [
                               Expanded(
@@ -419,7 +415,6 @@ class _PriceCheckerScreenState extends State<PriceCheckerScreen> {
                               ),
                               const SizedBox(width: 12),
 
-                              // Add Stock Button
                               Expanded(
                                 child: ElevatedButton.icon(
                                   onPressed: () async {

@@ -69,7 +69,11 @@ class Messages extends Translations {
       TranslateConstants.delivery:'Manage Delivery',
       TranslateConstants.manage_delivery:'Track and manage order deliveries',
       TranslateConstants.auth_logs:'Security',
-      TranslateConstants.manage_auth_logs:"Manage verification logs"
+      TranslateConstants.manage_auth_logs:"Manage verification logs",
+      TranslateConstants.role_permission:'Role & Permissions',
+      TranslateConstants.manage_role_permission:'Manage roles and permissions',
+      TranslateConstants.promotion:'Product Promotion',
+      TranslateConstants.manage_promotion:'Manage product promotions and discounts',
 
     },
     'km_KH': {
@@ -136,7 +140,11 @@ class Messages extends Translations {
       TranslateConstants.delivery:'គ្រប់គ្រងការដឹកជញ្ជូន',
       TranslateConstants.manage_delivery:'តាមដាន និងគ្រប់គ្រងការដឹកជញ្ជូនការបញ្ជាទិញ',
       TranslateConstants.auth_logs:"សន្តិសុខ",
-      TranslateConstants.manage_auth_logs:"គ្រប់គ្រងកំណត់ហេតុនៃការផ្ទៀងផ្ទាត់"
+      TranslateConstants.manage_auth_logs:"គ្រប់គ្រងកំណត់ហេតុនៃការផ្ទៀងផ្ទាត់",
+      TranslateConstants.role_permission:'តួនាទីនិងសិទ្ធិអនុញ្ញាត',
+      TranslateConstants.manage_role_permission:'គ្រប់គ្រងតួនាទីនិងសិទ្ធិ',
+      TranslateConstants.promotion:'ការបញ្ចុះតម្លៃផលិតផល',
+      TranslateConstants.manage_promotion:'គ្រប់គ្រងការផ្សព្វផ្សាយផលិតផល និងការបញ្ចុះតម្លៃ',
 
     }
   };

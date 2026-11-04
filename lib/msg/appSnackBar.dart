@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:top_snackbar_flutter/top_snack_bar.dart';
 
 class AppSnackBar {
+  static OverlayEntry? _currentOverlay;
   // 🟢 Success SnackBar (Design ថ្មីស្អាត ទាន់សម័យ)
   static void showSuccess(BuildContext context, String message) {
+    _currentOverlay?.remove(); // 🧹 លុបอันចាស់ចោលជាមុនសិន បើមាន
     showTopSnackBar(
       Overlay.of(context),
       Material(
@@ -77,6 +79,7 @@ class AppSnackBar {
 
   // 🔴 Error SnackBar (Design ថ្មីស្អាត ទាន់សម័យ)
   static void showError(BuildContext context, String message) {
+    _currentOverlay?.remove(); // 🧹 លុបอันចាស់ចោលជាមុនសិន បើមាន
     showTopSnackBar(
       Overlay.of(context),
       Material(

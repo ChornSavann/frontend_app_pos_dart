@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
+import 'package:pos_inventory/homesccreeen/darkmode/them_controller.dart'; // 👈 NEW
 import 'package:pos_inventory/login/plash_screnn.dart';
 import 'package:pos_inventory/translations/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'Productscreen/favorite/controller/favoritecontroller.dart';
 import 'Productscreen/notication/notication_service.dart';
 import 'Productscreen/offline/product_sync_service.dart';
-
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -19,8 +22,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final String? token = prefs.getString('token');
+  Get.put(FavoriteController());
 
-  // ៣. បង្កើតលក្ខខណ្ឌ៖ បើមាន Token ឱ្យទៅ Home បើគ្មានទេឱ្យទៅ Login
+  // 👇 NEW: register + load saved dark mode BEFORE runApp
+  final themeController = Get.put(ThemeController());
+  await themeController.load();
+
   Widget initialScreen = (token != null && token.isNotEmpty)
       ? const DashboardScreen()
       : const SplashScreen();
@@ -47,19 +54,23 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       title: 'Laravel Flutter Auth',
       translations: Messages(),
-      locale: Locale(
-        TranslateConstants.km,
-        TranslateConstants.kh,
-      ),
+      locale: Locale(TranslateConstants.km, TranslateConstants.kh),
       fallbackLocale: Locale(TranslateConstants.en, TranslateConstants.us),
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
+
+      // ☀️ light theme (same as before)
       theme: ThemeData(
         primarySwatch: Colors.blue,
         // textTheme: GoogleFonts.kantumruyProTextTheme(
         //   Theme.of(context).textTheme,
         // ),
       ),
+
+      // 🌙 NEW: dark theme + saved mode
+      darkTheme: ThemeController.darkTheme,
+      themeMode: Get.find<ThemeController>().themeMode,
+
       home: initialScreen,
       // home: const GenerateStickerScreen(products: []),
     );

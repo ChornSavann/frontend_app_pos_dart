@@ -14,94 +14,157 @@ class UserLogDetailScreen extends StatelessWidget {
     const Color primaryColor = Color(0xFF10B981);
     final User? user = log.user;
     bool isLogin = log.action == 'LOGIN';
+    const Color primaryDark = Color(0xFF047857);
+    final Color actionColor = isLogin ? Colors.green : Colors.red;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        title: const Text(
-          'User Authority Details',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: textColor,
-            fontFamily: 'KantumruyPro',
-          ),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: textColor),
-      ),
+      backgroundColor: const Color(0xFFF5F7FB),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // 🌟 Profile Header Card with Gradient & Shadow
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
+            Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.only(bottom: 76),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [primaryColor, primaryDark],
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(36),
+                      bottomRight: Radius.circular(36),
+                    ),
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  // 🖼️ User Avatar with elegant border
-                  Stack(
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.18),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back_ios_new_rounded,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                          const Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  'User Authority Details',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 18,
+                                    fontFamily: 'KantumruyPro',
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'ព័ត៌មានលម្អិតសកម្មភាព',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 40),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -56,
+                  child: Stack(
                     alignment: Alignment.bottomRight,
                     children: [
                       Container(
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
+                          color: Colors.white,
                           shape: BoxShape.circle,
-                          border: Border.all(color: primaryColor.withOpacity(0.3), width: 3),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.14),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
                         ),
                         child: CircleAvatar(
-                          radius: 50,
+                          radius: 52,
                           backgroundColor: primaryColor.withOpacity(0.1),
-                          backgroundImage: (user?.image != null && user!.image!.isNotEmpty)
+                          backgroundImage:
+                          (user?.image != null && user!.image!.isNotEmpty)
                               ? NetworkImage(user.image!)
                               : const NetworkImage(
                             "https://i.pinimg.com/736x/a4/dc/0b/a4dc0b965816c932da67f6e32af547cc.jpg",
-                          ) as ImageProvider,
+                          )
+                          as ImageProvider,
                         ),
                       ),
-                      // Online / Status Dot
+                      // Status Dot
                       Container(
-                        padding: const EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(7),
                         decoration: BoxDecoration(
-                          color: isLogin ? Colors.green : Colors.red,
+                          color: actionColor,
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
+                          border: Border.all(color: Colors.white, width: 2.5),
                         ),
                         child: Icon(
                           isLogin ? Icons.login_rounded : Icons.logout_rounded,
                           color: Colors.white,
-                          size: 12,
+                          size: 13,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 68),
+
+            // ───── Name + ID ─────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
                   // 👤 User Name
                   Text(
                     user?.name ?? 'Unknown User',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: textColor,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   // 🆔 User ID Tag
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -118,125 +181,163 @@ class UserLogDetailScreen extends StatelessWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
 
-            // 📋 Contact & Account Info Section
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: [
-                  _buildInfoTile(
-                    icon: Icons.email_rounded,
-                    iconColor: Colors.blue,
-                    title: 'Email Address',
-                    subtitle: user?.email ?? 'N/A',
-                  ),
-                  Divider(height: 1, indent: 68, endIndent: 20, color: Colors.grey.shade100),
-                  _buildInfoTile(
-                    icon: Icons.phone_rounded,
-                    iconColor: primaryColor,
-                    title: 'Phone Number',
-                    subtitle: (user?.phone != null && user!.phone!.isNotEmpty)
-                        ? user.phone!
-                        : 'មិនមានលេខទូរស័ព្ទ',
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // 🛡️ Security Activity Status Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'ស្ថានភាពសកម្មភាពចុងក្រោយ',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
+                  // 🛡️ Security Activity Status Card
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _sectionTitle('ស្ថានភាពសកម្មភាពចុងក្រោយ'),
+                        const SizedBox(height: 18),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: actionColor.withOpacity(0.06),
+                            borderRadius: BorderRadius.circular(18),
+                            border: Border.all(
+                              color: actionColor.withOpacity(0.15),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: actionColor.withOpacity(0.12),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isLogin
+                                      ? Icons.login_rounded
+                                      : Icons.logout_rounded,
+                                  color: actionColor,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          'សកម្មភាព៖ ',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        Text(
+                                          log.action,
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w800,
+                                            color: actionColor,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.access_time_rounded,
+                                          size: 14,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                        const SizedBox(width: 5),
+                                        Expanded(
+                                          child: Text(
+                                            log.timestamp,
+                                            style: TextStyle(
+                                              fontSize: 12.5,
+                                              fontWeight: FontWeight.w500,
+                                              color: Colors.grey.shade600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: isLogin
-                              ? Colors.green.withOpacity(0.1)
-                              : Colors.red.withOpacity(0.1),
-                          shape: BoxShape.circle,
+
+                  // 📋 Contact & Account Info Section
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(4, 20, 4, 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryColor.withOpacity(0.08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 8),
                         ),
-                        child: Icon(
-                          isLogin ? Icons.login_rounded : Icons.logout_rounded,
-                          color: isLogin ? Colors.green : Colors.red,
-                          size: 24,
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: _sectionTitle('ព័ត៌មានទំនាក់ទំនង'),
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'សកម្មភាព៖ ',
-                                  style: TextStyle(fontSize: 13, color: Colors.grey),
-                                ),
-                                Text(
-                                  log.action,
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.bold,
-                                    color: isLogin ? Colors.green : Colors.red,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(Icons.access_time_rounded, size: 14, color: Colors.grey.shade400),
-                                const SizedBox(width: 4),
-                                Text(
-                                  log.timestamp,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                        const SizedBox(height: 4),
+                        _buildInfoTile(
+                          icon: Icons.email_rounded,
+                          iconColor: Colors.blue,
+                          title: 'Email Address',
+                          subtitle: user?.email ?? 'N/A',
                         ),
-                      ),
-                    ],
+                        Divider(
+                          height: 1,
+                          indent: 76,
+                          endIndent: 20,
+                          color: Colors.grey.shade100,
+                        ),
+                        _buildInfoTile(
+                          icon: Icons.phone_rounded,
+                          iconColor: primaryColor,
+                          title: 'Phone Number',
+                          subtitle:
+                          (user?.phone != null && user!.phone!.isNotEmpty)
+                              ? user.phone!
+                              : 'មិនមានលេខទូរស័ព្ទ',
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 28 + MediaQuery.of(context).viewPadding.bottom,
                   ),
                 ],
               ),
@@ -247,7 +348,31 @@ class UserLogDetailScreen extends StatelessWidget {
     );
   }
 
-  // Widget សម្រាប់បង្ហាញជួរព័ត៌មាននីមួយៗឱ្យកាន់តែស្អាត
+  // ចំណងជើង section មានបន្ទាត់ពណ៌នៅខាងមុខ
+  Widget _sectionTitle(String text) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 16,
+          decoration: BoxDecoration(
+            color: const Color(0xFF10B981),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1E293B),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoTile({
     required IconData icon,
     required Color iconColor,
@@ -275,7 +400,7 @@ class UserLogDetailScreen extends StatelessWidget {
                   title,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade400,
+                    color: Colors.grey.shade500,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -283,7 +408,7 @@ class UserLogDetailScreen extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 14.5,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1E293B),
                   ),

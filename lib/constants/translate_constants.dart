@@ -70,6 +70,10 @@ class TranslateConstants {
   static const String manage_delivery="manage_delivery";
   static const String auth_logs="auth_logs";
   static const String manage_auth_logs="manage_auth_logs";
+  static const String role_permission="role_permission";
+  static const String manage_role_permission="manage_role_permission";
+  static const String promotion="promotion";
+  static const String manage_promotion='manage_promotion';
 
 
 

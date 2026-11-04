@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:pos_inventory/Productscreen/product_index_screen.dart';
-import 'package:pos_inventory/Productscreen/product_view_screen.dart'; // ឧទាហរណ៍ Screen Home របស់បង
+import 'package:pos_inventory/Productscreen/product_view_screen.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
 import 'package:pos_inventory/partail/profile_screen.dart';
@@ -11,7 +11,7 @@ import 'package:pos_inventory/report/history/dashboard_history_screen.dart';
 
 class ButtonScreen extends StatelessWidget {
   final int
-  currentIndex; // 🟢 ទទួលយកសន្ទស្សន៍បច្ចុប្បន្ន (0: Home, 1: Menu, 2: Profile, 3: Settings)
+  currentIndex;
 
   const ButtonScreen({super.key, required this.currentIndex});
 
@@ -43,10 +43,15 @@ class ButtonScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🌙 NEW: follow the app theme (light / dark)
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return BottomAppBar(
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
-      color: Colors.white,
+      // 🌙 CHANGED: was Colors.white
+      color: isDark ? const Color(0xFF151C2E) : Colors.white,
+      surfaceTintColor: Colors.transparent, // 🌙 NEW: stop Material 3 tint
       elevation: 15,
       child: SizedBox(
         height: 60,

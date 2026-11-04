@@ -1,6 +1,46 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import 'package:pos_inventory/api/api_customer.dart';
+
+class _C {
+  static const navy = Color(0xFF0E2A47);
+  static const red = Color(0xFFD32F2F);
+  static const green = Color(0xFF2E9E6B);
+
+  static const avatarColors = <Color>[
+    Color(0xFF0E2A47),
+    Color(0xFF0F766E),
+    Color(0xFF6D28D9),
+    Color(0xFFEF6C00),
+    Color(0xFF2E9E6B),
+    Color(0xFFBE185D),
+  ];
+}
+
+class _P {
+  final bool dark;
+  const _P(this.dark);
+
+  Color get bg => dark ? const Color(0xFF0F141B) : const Color(0xFFF2F4F8);
+  Color get card => dark ? const Color(0xFF1B222C) : Colors.white;
+  Color get field => dark ? const Color(0xFF252E3A) : const Color(0xFFF2F4F8);
+  Color get ink => dark ? Colors.white : const Color(0xFF142033);
+  Color get muted => dark ? const Color(0xFF9AA7B8) : const Color(0xFF6C7A8E);
+  Color get line => dark ? const Color(0xFF2B3542) : const Color(0xFFE0E6EE);
+  Color get hero => dark ? const Color(0xFF0B2038) : _C.navy;
+  Color get accent => dark ? const Color(0xFF8DB8F0) : _C.navy;
+}
+
+const _font = 'KhmerOSBattambang';
+
+TextStyle _t(double size, FontWeight w, Color c, {double? height}) => TextStyle(
+  fontSize: size,
+  fontWeight: w,
+  color: c,
+  fontFamily: _font,
+  height: height,
+);
 
 class CustomerCreateScreen extends StatefulWidget {
   const CustomerCreateScreen({super.key});
@@ -10,10 +50,8 @@ class CustomerCreateScreen extends StatefulWidget {
 }
 
 class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
-  // 🔑 Key សម្រាប់គ្រប់គ្រង Form Validation
   final _formKey = GlobalKey<FormState>();
-
-  // 📝 Controllers សម្រាប់យកតម្លៃពី TextField នីមួយៗ
+  final ApiCustomer _apiCustomer = ApiCustomer();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -23,9 +61,6 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   final TextEditingController _addressController = TextEditingController();
 
   bool _isLoading = false;
-
-  // 🌐 API Base URL (ប្រសិនបើប្រើ Emulator ប្រើ 10.0.2.2, ប្រសិនបើទូរស័ព្ទពិត ប្រើ IP កុំព្យូទ័រ)
-  final String baseUrl = "http://10.0.2.2:8000/api";
 
   @override
   void dispose() {
@@ -37,19 +72,21 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     super.dispose();
   }
 
-  // 🟢 មុខងារបង្ហាញ Dialog ជូនដំណឹង (ជោគជ័យ ឬបរាជ័យ)
   void _showMyDialog({
     required String title,
     required String message,
     required bool isSuccess,
   }) {
+    final p = _P(Theme.of(context).brightness == Brightness.dark);
+
     showDialog(
       context: context,
-      barrierDismissible: false, // មិនឱ្យចុចបិទខាងក្រៅបានទេ
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: p.card,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(28),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -58,49 +95,38 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: (isSuccess ? Colors.green : Colors.red).withValues(
-                    alpha: 0.1,
+                  color: (isSuccess ? _C.green : _C.red).withValues(
+                    alpha: 0.12,
                   ),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isSuccess ? Icons.check_circle_rounded : Icons.error_rounded,
-                  color: isSuccess ? Colors.green : Colors.redAccent,
+                  color: isSuccess ? _C.green : _C.red,
                   size: 50,
                 ),
               ),
               const SizedBox(height: 20),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'KhmerOSBattambang',
-                  color: isSuccess ? Colors.green : Colors.redAccent,
-                ),
+                style: _t(20, FontWeight.bold, isSuccess ? _C.green : _C.red),
               ),
               const SizedBox(height: 8),
               Text(
                 message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontFamily: 'KhmerOSBattambang',
-                  color: Colors.grey,
-                ),
+                style: _t(14, FontWeight.w400, p.muted, height: 1.5),
               ),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isSuccess
-                        ? Colors.green
-                        : Colors.redAccent,
+                    backgroundColor: isSuccess ? _C.green : _C.red,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     elevation: 0,
                   ),
@@ -130,52 +156,52 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     );
   }
 
-  // 🚀 Function បញ្ជូនទិន្នន័យទៅកាន់ Laravel API (Store)
+  // 🚀 Function បញ្ជូនទិន្នន័យទៅកាន់ Laravel API (Store) តាមរយៈ ApiCustomer
   Future<void> _createCustomer() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/customers'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
-          'name': _nameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim().isEmpty
-              ? null
-              : _phoneController.text.trim(),
-          'points': int.tryParse(_pointsController.text) ?? 0,
-          'address': _addressController.text.trim().isEmpty
-              ? null
-              : _addressController.text.trim(),
-        }),
+      final dynamic result = await _apiCustomer.createCustomer(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim().isEmpty
+            ? ''
+            : _emailController.text.trim(),
+        phone: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        points: int.tryParse(_pointsController.text.trim()) ?? 0,
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
       );
 
       if (!mounted) return;
       setState(() => _isLoading = false);
+      bool isSuccess = false;
+      String errorMessage = 'មានបញ្ហាក្នុងការបង្កើតទិន្នន័យ';
 
-      final jsonResponse = jsonDecode(response.body);
+      if (result is bool) {
+        isSuccess = result;
+      } else if (result is Map<String, dynamic>) {
+        isSuccess = result['success'] == true;
+        if (!isSuccess) {
+          errorMessage = result['message'] ?? errorMessage;
+        }
+      } else if (result != null) {
+        isSuccess = true;
+      }
 
-      if (response.statusCode == 201 && jsonResponse['success'] == true) {
-        // 🎉 បង្ហាញ Dialog ជោគជ័យ
+      if (isSuccess) {
         _showMyDialog(
           title: "ជោគជ័យ!",
           message: "បានបង្កើតអតិថិជនថ្មីដោយជោគជ័យ!",
           isSuccess: true,
         );
       } else {
-        String message =
-            jsonResponse['message'] ?? 'មានបញ្ហាក្នុងការបង្កើតទិន្នន័យ';
-        if (jsonResponse['errors'] != null) {
-          final errors = jsonResponse['errors'] as Map<String, dynamic>;
-          message = errors.values.first.first; // យក Error ទី១ មកបង្ហាញ
-        }
-        _showErrorSnackBar(message);
+        _showErrorSnackBar(errorMessage);
       }
     } catch (e) {
       if (!mounted) return;
@@ -194,8 +220,219 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
             color: Colors.white,
           ),
         ),
-        backgroundColor: Colors.redAccent,
+        backgroundColor: _C.red,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
+
+  Widget _buildHero(BuildContext context, _P p) {
+    final top = MediaQuery.of(context).padding.top;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(8, top + 4, 8, 24),
+      decoration: BoxDecoration(
+        color: p.hero,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+              ),
+              Expanded(
+                child: Text(
+                  "បង្កើតអតិថិជនថ្មី",
+                  textAlign: TextAlign.center,
+                  style: _t(17, FontWeight.bold, Colors.white),
+                ),
+              ),
+              const SizedBox(width: 48),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _nameController,
+              builder: (context, value, _) {
+                final name = value.text.trim();
+                final bool hasName = name.isNotEmpty;
+                final Color avatarColor = hasName
+                    ? _C.avatarColors[name.codeUnitAt(0) %
+                          _C.avatarColors.length]
+                    : _C.avatarColors[0];
+
+                return Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      child: hasName
+                          ? Text(
+                              name[0].toUpperCase(),
+                              style: TextStyle(
+                                color: avatarColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 28,
+                                fontFamily: 'KhmerOSBattambang',
+                              ),
+                            )
+                          : Icon(
+                              Icons.person_add_alt_1_rounded,
+                              color: _C.navy.withValues(alpha: 0.6),
+                              size: 30,
+                            ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hasName ? name : 'អតិថិជនថ្មី',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: _t(
+                              19,
+                              FontWeight.bold,
+                              hasName
+                                  ? Colors.white
+                                  : Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'បំពេញព័ត៌មានខាងក្រោម',
+                            style: _t(
+                              12,
+                              FontWeight.w500,
+                              Colors.white.withValues(alpha: 0.65),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _card(
+    _P p, {
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: p.card,
+        borderRadius: BorderRadius.circular(22),
+        border: p.dark ? Border.all(color: p.line) : null,
+        boxShadow: p.dark
+            ? null
+            : [
+                BoxShadow(
+                  color: _C.navy.withValues(alpha: 0.07),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: p.accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(11),
+                ),
+                child: Icon(icon, size: 18, color: p.accent),
+              ),
+              const SizedBox(width: 10),
+              Text(title, style: _t(15, FontWeight.bold, p.ink)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomBar(BuildContext context, _P p) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        12,
+        20,
+        12 + MediaQuery.of(context).padding.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: p.card,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: p.dark ? 0.3 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SizedBox(
+        height: 54,
+        child: FilledButton(
+          onPressed: _isLoading ? null : _createCustomer,
+          style: FilledButton.styleFrom(
+            backgroundColor: p.dark ? const Color(0xFF2F6DB5) : _C.navy,
+            disabledBackgroundColor: _C.navy.withValues(alpha: 0.5),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 24,
+                  width: 24,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_rounded, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      "រក្សាទុក (Save Customer)",
+                      style: _t(15, FontWeight.bold, Colors.white),
+                    ),
+                  ],
+                ),
+        ),
       ),
     );
   }
@@ -203,153 +440,116 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final p = _P(isDarkMode);
 
-    return Scaffold(
-      backgroundColor: isDarkMode
-          ? const Color(0xFF121212)
-          : const Color(0xFFF8F9FA),
-      appBar: AppBar(
-        title: const Text(
-          "បង្កើតអតិថិជនថ្មី",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            fontFamily: 'KhmerOSBattambang',
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-        foregroundColor: isDarkMode ? Colors.white : Colors.black87,
-        elevation: 0.5,
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 📦 Form Card Wrapper
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: isDarkMode ? const Color(0xFF1E1E1E) : Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: isDarkMode ? 0.3 : 0.05,
-                      ),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    // 👤 Name Field
-                    _buildTextField(
-                      controller: _nameController,
-                      label: "ឈ្មោះអតិថិជន (Name)",
-                      icon: Icons.person_rounded,
-                      isDarkMode: isDarkMode,
-                      validator: (value) => value == null || value.isEmpty
-                          ? 'សូមបញ្ចូលឈ្មោះអតិថិជន'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: Scaffold(
+        backgroundColor: p.bg,
+        body: Column(
+          children: [
+            _buildHero(context, p),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // 📦 Contact card
+                      _card(
+                        p,
+                        icon: Icons.contact_page_rounded,
+                        title: "ព័ត៌មានទំនាក់ទំនង",
+                        child: Column(
+                          children: [
+                            // 👤 Name Field
+                            _buildTextField(
+                              controller: _nameController,
+                              label: "ឈ្មោះអតិថិជន (Name)",
+                              icon: Icons.person_rounded,
+                              isDarkMode: isDarkMode,
+                              validator: (value) =>
+                                  value == null || value.isEmpty
+                                  ? 'សូមបញ្ចូលឈ្មោះអតិថិជន'
+                                  : null,
+                            ),
+                            const SizedBox(height: 16),
 
-                    // 📧 Email Field
-                    _buildTextField(
-                      controller: _emailController,
-                      label: "អ៊ីម៉ែល (Email)",
-                      icon: Icons.email_rounded,
-                      keyboardType: TextInputType.emailAddress,
-                      isDarkMode: isDarkMode,
-                      validator: (value) {
-                        if (value == null || value.isEmpty)
-                          return 'សូមបញ្ចូលអ៊ីម៉ែល';
-                        if (!value.contains('@'))
-                          return 'ទម្រង់អ៊ីម៉ែលមិនត្រឹមត្រូវ';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
+                            // 📧 Email Field
+                            _buildTextField(
+                              controller: _emailController,
+                              label: "អ៊ីម៉ែល (Email)",
+                              icon: Icons.email_rounded,
+                              keyboardType: TextInputType.emailAddress,
+                              isDarkMode: isDarkMode,
+                              validator: (value) {
+                                if (value == null || value.isEmpty)
+                                  return 'សូមបញ្ចូលអ៊ីម៉ែល';
+                                if (!value.contains('@'))
+                                  return 'ទម្រង់អ៊ីម៉ែលមិនត្រឹមត្រូវ';
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
 
-                    // 📱 Phone Field
-                    _buildTextField(
-                      controller: _phoneController,
-                      label: "លេខទូរស័ព្ទ (Phone)",
-                      icon: Icons.phone_rounded,
-                      keyboardType: TextInputType.phone,
-                      isDarkMode: isDarkMode,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // ⭐ Points Field
-                    _buildTextField(
-                      controller: _pointsController,
-                      label: "ពិន្ទុ (Points)",
-                      icon: Icons.stars_rounded,
-                      keyboardType: TextInputType.number,
-                      isDarkMode: isDarkMode,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // 📍 Address Field
-                    _buildTextField(
-                      controller: _addressController,
-                      label: "អាសយដ្ឋាន (Address)",
-                      icon: Icons.location_on_rounded,
-                      maxLines: 3,
-                      isDarkMode: isDarkMode,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 🚀 Submit Button
-              SizedBox(
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _createCustomer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 2,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          "រក្សាទុក (Save Customer)",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'KhmerOSBattambang',
-                          ),
+                            // 📱 Phone Field
+                            _buildTextField(
+                              controller: _phoneController,
+                              label: "លេខទូរស័ព្ទ (Phone)",
+                              icon: Icons.phone_rounded,
+                              keyboardType: TextInputType.phone,
+                              isDarkMode: isDarkMode,
+                            ),
+                          ],
                         ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // ⭐ Points and address card
+                      _card(
+                        p,
+                        icon: Icons.stars_rounded,
+                        title: "ពិន្ទុ និងអាសយដ្ឋាន",
+                        child: Column(
+                          children: [
+                            // ⭐ Points Field
+                            _buildTextField(
+                              controller: _pointsController,
+                              label: "ពិន្ទុ (Points)",
+                              icon: Icons.stars_rounded,
+                              keyboardType: TextInputType.number,
+                              isDarkMode: isDarkMode,
+                            ),
+                            const SizedBox(height: 16),
+
+                            // 📍 Address Field
+                            _buildTextField(
+                              controller: _addressController,
+                              label: "អាសយដ្ឋាន (Address)",
+                              icon: Icons.location_on_rounded,
+                              maxLines: 3,
+                              isDarkMode: isDarkMode,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
+        bottomNavigationBar: _buildBottomBar(context, p),
       ),
     );
   }
 
-  // Widget ជំនួយសម្រាប់រៀបចំ Input TextField ឱ្យស្អាតដាច់គេ
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -359,44 +559,39 @@ class _CustomerCreateScreenState extends State<CustomerCreateScreen> {
     required bool isDarkMode,
     String? Function(String?)? validator,
   }) {
+    final p = _P(isDarkMode);
+
+    OutlineInputBorder border(Color c, [double w = 1]) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(16),
+      borderSide: BorderSide(color: c, width: w),
+    );
+
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
-      style: TextStyle(
-        fontFamily: 'KhmerOSBattambang',
-        color: isDarkMode ? Colors.white : Colors.black87,
-        fontSize: 14,
-      ),
+      style: _t(14, FontWeight.w600, p.ink),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(
-          fontFamily: 'KhmerOSBattambang',
-          color: isDarkMode ? Colors.grey[400] : Colors.grey[600],
-          fontSize: 14,
+        labelStyle: _t(14, FontWeight.w400, p.muted),
+        floatingLabelStyle: _t(13, FontWeight.w600, p.accent),
+        errorStyle: _t(11.5, FontWeight.w500, _C.red),
+        prefixIcon: Padding(
+          padding: EdgeInsets.only(bottom: maxLines > 1 ? 44 : 0),
+          child: Icon(icon, color: p.accent, size: 20),
         ),
-        prefixIcon: Icon(icon, color: Colors.blueAccent),
         filled: true,
-        fillColor: isDarkMode ? const Color(0xFF2C2C2C) : Colors.grey[50],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
+        fillColor: p.field,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: isDarkMode ? Colors.grey[800]! : Colors.grey.shade200,
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent, width: 1),
-        ),
+        border: border(p.line),
+        enabledBorder: border(Colors.transparent),
+        focusedBorder: border(p.accent, 1.6),
+        errorBorder: border(_C.red),
+        focusedErrorBorder: border(_C.red, 1.6),
       ),
     );
   }

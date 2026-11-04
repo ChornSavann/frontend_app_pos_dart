@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:hive/hive.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../models/Product.dart';
+import '../models/category.dart';
 import '../msg/appSnackBar.dart';
 
 class CreateProductScreen extends StatefulWidget {
@@ -220,17 +221,43 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
       }
     }
   }
+  //
+  // // 📂 Categories Offline Aware
+  // Future<List<dynamic>> _fetchCategoriesOfflineAware() async {
+  //   var connectivityResult = await Connectivity().checkConnectivity();
+  //   var box = Hive.box('offline_categories');
+  //
+  //   if (connectivityResult != ConnectivityResult.none) {
+  //     try {
+  //       List<dynamic> categories = await ApiCategory().fetchCategory();
+  //       await box.clear();
+  //       await box.put('categories_data', categories);
+  //       return categories;
+  //     } catch (e) {
+  //       debugPrint("Error fetching categories from API, fallback to local: $e");
+  //     }
+  //   }
+  //
+  //   var localData = box.get('categories_data');
+  //   if (localData != null) {
+  //     return List<dynamic>.from(localData);
+  //   }
+  //   return [];
+  // }
 
-  // 📂 Categories Offline Aware
-  Future<List<dynamic>> _fetchCategoriesOfflineAware() async {
+
+// 📂 Categories Offline Aware (For older connectivity_plus version)
+  Future<List<CategoryModel>> _fetchCategoriesOfflineAware() async {
     var connectivityResult = await Connectivity().checkConnectivity();
     var box = Hive.box('offline_categories');
-
     if (connectivityResult != ConnectivityResult.none) {
       try {
-        List<dynamic> categories = await ApiCategory().fetchCategory();
+        List<CategoryModel> categories = await ApiCategory().fetchCategory();
+
         await box.clear();
-        await box.put('categories_data', categories);
+        List<Map<String, dynamic>> jsonList = categories.map((cat) => cat.toJson()).toList();
+        await box.put('categories_data', jsonList);
+
         return categories;
       } catch (e) {
         debugPrint("Error fetching categories from API, fallback to local: $e");
@@ -239,8 +266,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
     var localData = box.get('categories_data');
     if (localData != null) {
-      return List<dynamic>.from(localData);
+      List<dynamic> rawList = List<dynamic>.from(localData);
+      return rawList.map((json) {
+        return CategoryModel.fromJson(Map<String, dynamic>.from(json));
+      }).toList();
     }
+
     return [];
   }
 
@@ -786,6 +817,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
               ),
               const SizedBox(height: 16),
 
+
               // 🗂️ 3. Organization Card (គាំទ្រ Offline Mode ຜ່ານ Hive)
               Container(
                 padding: const EdgeInsets.all(16),
@@ -813,11 +845,9 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Category Dropdown
-                    FutureBuilder<List<dynamic>>(
+                    FutureBuilder<List<CategoryModel>>(
                       future: _fetchCategoriesOfflineAware(),
                       builder: (context, snapshot) {
-                        // 🟢 បើកំពុង Loading មិនបាច់បង្ហាញ LinearProgressIndicator ទេ ទុកឱ្យវាបង្ហាញ Dropdown ទទេរស្អាត
                         final categoryList = snapshot.data ?? [];
                         return DropdownButtonFormField<int>(
                           value: _selectedCategoryId,
@@ -827,14 +857,12 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                           ),
                           items: categoryList.map((category) {
                             return DropdownMenuItem<int>(
-                              value: category['id'] is int
-                                  ? category['id']
-                                  : int.parse(category['id'].toString()),
-                              child: Text(category['name'].toString()),
+                              value: category.id,
+                              child: Text(category.name),
                             );
                           }).toList(),
                           validator: (value) =>
-                              value == null ? 'Please select a category' : null,
+                          value == null ? 'Please select a category' : null,
                           onChanged: (int? newValue) =>
                               setState(() => _selectedCategoryId = newValue),
                         );
@@ -842,7 +870,6 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Brand Dropdown
                     FutureBuilder<List<dynamic>>(
                       future: _fetchBrandsOfflineAware(),
                       builder: (context, snapshot) {
@@ -864,7 +891,7 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
                             );
                           }).toList(),
                           validator: (value) =>
-                              value == null ? 'Please select a brand' : null,
+                          value == null ? 'Please select a brand' : null,
                           onChanged: (int? newValue) =>
                               setState(() => _selectedBrandId = newValue),
                         );
@@ -892,11 +919,11 @@ class _CreateProductScreenState extends State<CreateProductScreen> {
 
                             return DropdownMenuItem<int>(
                               value: id is int ? id : int.parse(id.toString()),
-                              child: Text("$name ($shortName)"),
+                              child: Text("$name"),
                             );
                           }).toList(),
                           validator: (value) =>
-                              value == null ? 'Please select a unit' : null,
+                          value == null ? 'Please select a unit' : null,
                           onChanged: (int? newValue) =>
                               setState(() => _selectedUnitId = newValue),
                         );

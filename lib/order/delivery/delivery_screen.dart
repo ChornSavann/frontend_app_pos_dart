@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/api/api_order.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../msg/appSnackBar.dart';
 import '../card_manager.dart';
 import 'map_picker_screen.dart';
@@ -39,8 +40,6 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
   String _selectedService = 'Grab Express';
   double _deliveryFee = 2.50;
 
-
-  // 🗺️ កូអរដោនេពិតប្រាកដ (Default ទុកនៅទីតាំងជាក់ស្តែងក្នុងរាជធានីភ្នំពេញ)
   double _storeLat = 11.5564;
   double _storeLng = 104.9282;
   double _customerLat = 11.5650;
@@ -57,8 +56,6 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
 
   Future<void> _loadServices() async {
     setState(() => _isLoadingServices = true);
-
-    // ហៅទាញយកទិន្នន័យពី API មកបង្ហាញ
     final services = await _apiOrder.fetchDeliveryServicesFromApi();
 
     setState(() {
@@ -109,12 +106,106 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
     );
   }
 
+  // Future<void> _submitDeliveryOrder() async {
+  //   if (!_formKey.currentState!.validate()) return;
+  //
+  //   setState(() => _isSubmitting = true);
+  //
+  //   try {
+  //     final cartItems = CartManager.cartItems;
+  //     String orderNumber = "ORD-${DateTime.now().millisecondsSinceEpoch}";
+  //
+  //     List<Map<String, dynamic>> itemsList = cartItems.map((item) {
+  //       return {
+  //         'product_id': item.product.id,
+  //         'product_name': item.product.name,
+  //         'unit_price': item.product.sellingPrice,
+  //         'quantity': item.quantity,
+  //         'total_price': item.product.sellingPrice * item.quantity,
+  //       };
+  //     }).toList();
+  //
+  //     // 🟢 បញ្ជូនកូអរដោនេ Lat & Lng ចូលទៅក្នុង Function ហៅ API
+  //     bool isSuccess = await _apiOrder.createOrderWithPayment(
+  //       orderNumber: orderNumber,
+  //       userId: 1,
+  //       subtotal: widget.totalAmount,
+  //       discount: 0.0,
+  //       tax: 0.0,
+  //       total: widget.totalAmount + _deliveryFee,
+  //       paymentMethod: 'cash_on_delivery',
+  //       amountPaid: 0.00,
+  //       changeAmount: 0.00,
+  //       customerName: _nameController.text.trim(),
+  //       customerPhone: _phoneController.text.trim(),
+  //       customerAddress: _addressController.text.trim(),
+  //       orderType: 'delivery',
+  //       deliveryAddress: _addressController.text.trim(),
+  //       deliveryFee: _deliveryFee,
+  //       pickupAddress: _pickupController.text.trim(),
+  //       deliveryPartner: _selectedService,
+  //       receiverName: _nameController.text.trim(),
+  //       receiverPhone: _phoneController.text.trim(),
+  //       note: _noteController.text.trim(),
+  //       items: itemsList,
+  //
+  //       // 🗺️️ បន្ថែមប៉ារ៉ាម៉ែត្រកូអរដោនេទីតាំង
+  //       storeLat: _storeLat,
+  //       storeLng: _storeLng,
+  //       customerLat: _customerLat,
+  //       customerLng: _customerLng,
+  //     );
+  //
+  //     if (isSuccess) {
+  //       final deliveryData = {
+  //         'order_number': orderNumber,
+  //         'pickup_address': _pickupController.text.trim(),
+  //         'name': _nameController.text.trim(),
+  //         'phone': _phoneController.text.trim(),
+  //         'address': _addressController.text.trim(),
+  //         'note': _noteController.text.trim(),
+  //         'delivery_partner': _selectedService,
+  //         'delivery_fee': _deliveryFee,
+  //         'grand_total': widget.totalAmount + _deliveryFee,
+  //         'store_lat': _storeLat,
+  //         'store_lng': _storeLng,
+  //         'customer_lat': _customerLat,
+  //         'customer_lng': _customerLng,
+  //       };
+  //
+  //       widget.onConfirmDelivery(deliveryData);
+  //
+  //       if (mounted) {
+  //         CartManager.clearCart();
+  //         Navigator.pop(context);
+  //         Navigator.pop(context);
+  //         AppSnackBar.showSuccess(
+  //           context,
+  //           "បានបង្កើតការកុម្ម៉ង់ដឹកជញ្ជូនជោគជ័យ! សូមពិនិត្យក្នុងបញ្ជីរង់ចាំដឹក។",
+  //         );
+  //       }
+  //     }
+  //   } catch (e) {
+  //     if (mounted) {
+  //       AppSnackBar.showError(context, "មានបញ្ហាក្នុងការបញ្ជាទិញ: $e");
+  //     }
+  //   } finally {
+  //     if (mounted) {
+  //       setState(() => _isSubmitting = false);
+  //     }
+  //   }
+  // }
+
   Future<void> _submitDeliveryOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
 
     try {
+
+      final prefs = await SharedPreferences.getInstance();
+      int currentUserId = prefs.getInt('user_id') ?? 1;
+
       final cartItems = CartManager.cartItems;
       String orderNumber = "ORD-${DateTime.now().millisecondsSinceEpoch}";
 
@@ -127,11 +218,9 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
           'total_price': item.product.sellingPrice * item.quantity,
         };
       }).toList();
-
-      // 🟢 បញ្ជូនកូអរដោនេ Lat & Lng ចូលទៅក្នុង Function ហៅ API
       bool isSuccess = await _apiOrder.createOrderWithPayment(
         orderNumber: orderNumber,
-        userId: 1,
+        userId: currentUserId,
         subtotal: widget.totalAmount,
         discount: 0.0,
         tax: 0.0,
@@ -152,7 +241,7 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
         note: _noteController.text.trim(),
         items: itemsList,
 
-        // 🗺️️ បន្ថែមប៉ារ៉ាម៉ែត្រកូអរដោនេទីតាំង
+
         storeLat: _storeLat,
         storeLng: _storeLng,
         customerLat: _customerLat,
@@ -198,7 +287,6 @@ class _DeliveryScreenState extends State<DeliveryScreen> {
       }
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final cartItems = CartManager.cartItems;

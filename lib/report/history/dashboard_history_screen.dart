@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:pos_inventory/Productscreen/product_expire/expired_product_screen.dart';
+import 'package:pos_inventory/Productscreen/promotion/promotion_screen.dart';
 import 'package:pos_inventory/Productscreen/scanncheck/price_checker_screen.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/delivery/delivery_orders_screen.dart';
@@ -15,18 +17,25 @@ class DashboardHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 🌙 NEW: follow the app theme (light / dark)
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      // 🌙 CHANGED: was const Color(0xFFF4F6F9)
+      backgroundColor: isDark
+          ? const Color(0xFF0B1120)
+          : const Color(0xFFF4F6F9),
       appBar: const AppBarScreen(),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
             TranslateConstants.transaction_history.tr,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              // 🌙 CHANGED: was Color(0xFF1E293B)
+              color: isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B),
             ),
           ),
           const SizedBox(height: 12),
@@ -123,6 +132,41 @@ class DashboardHistoryScreen extends StatelessWidget {
               );
             },
           ),
+
+          const SizedBox(height: 12),
+          _buildHistoryMenuCard(
+            context,
+            title: TranslateConstants.promotion.tr,
+            subtitle:TranslateConstants.manage_promotion.tr,
+            icon: Icons.discount_rounded,
+            iconColor: const Color(0xFF6366F1),
+            backgroundColor: const Color(0xFF6366F1).withOpacity(0.1),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PromotionScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildHistoryMenuCard(
+            context,
+            title: "Expire Product",
+            subtitle: "Manage expire product",
+            icon: Icons.warning_amber_rounded,
+            iconColor: Colors.amber.shade700,
+            backgroundColor: Colors.amber.shade700.withOpacity(0.1),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ExpiredProductScreen(),
+                ),
+              );
+            },
+          ),
         ],
       ),
       floatingActionButton: _buildPOSFloatingActionButton(context),
@@ -132,26 +176,36 @@ class DashboardHistoryScreen extends StatelessWidget {
   }
 
   Widget _buildHistoryMenuCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-    required Color backgroundColor,
-    required VoidCallback onTap,
-  }) {
+      BuildContext context, {
+        required String title,
+        required String subtitle,
+        required IconData icon,
+        required Color
+        iconColor,
+        required Color backgroundColor,
+        required VoidCallback onTap,
+      }) {
+    // 🌙 NEW: follow the app theme (light / dark)
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        // 🌙 CHANGED: was Colors.white
+        color: isDark ? const Color(0xFF151C2E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.30 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
-        border: Border.all(color: Colors.grey.shade100),
+        // 🌙 CHANGED: was Colors.grey.shade100
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withOpacity(0.07)
+              : Colors.grey.shade100,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -167,7 +221,8 @@ class DashboardHistoryScreen extends StatelessWidget {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: backgroundColor,
+                    // 🌙 CHANGED: pastel background → soft tint of the icon color
+                    color: isDark ? iconColor.withOpacity(0.18) : backgroundColor,
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: iconColor, size: 24),
@@ -179,17 +234,23 @@ class DashboardHistoryScreen extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          color: Color(0xFF1E293B),
+                          // 🌙 CHANGED: was Color(0xFF1E293B)
+                          color: isDark
+                              ? const Color(0xFFF1F5F9)
+                              : const Color(0xFF1E293B),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: Colors.grey.shade600,
+                          // 🌙 CHANGED: was Colors.grey.shade600
+                          color: isDark
+                              ? const Color(0xFF94A3B8)
+                              : Colors.grey.shade600,
                           fontSize: 12,
                         ),
                       ),

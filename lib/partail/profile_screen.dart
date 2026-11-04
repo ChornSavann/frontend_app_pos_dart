@@ -357,9 +357,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 onPressed: () {
+                  final BuildContext parentContext = context;
+
                   showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
+                    context: parentContext,
+                    builder: (BuildContext dialogContext) {
                       return AlertDialog(
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
@@ -378,7 +380,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         actions: [
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(context);
+                              Navigator.pop(dialogContext);
                             },
                             child: const Text(
                               'No',
@@ -398,15 +400,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                             ),
                             onPressed: () async {
-                              Navigator.of(context, rootNavigator: true).pop();
+                              Navigator.of(dialogContext).pop();
+
                               await apiAuth.logout();
-                              if (context.mounted) {
+                              if (parentContext.mounted) {
                                 AppSnackBar.showSuccess(
-                                  context,
+                                  parentContext,
                                   'Logged out successfully',
                                 );
                                 Navigator.pushReplacement(
-                                  context,
+                                  parentContext,
                                   MaterialPageRoute(
                                     builder: (context) => const LoginScreen(),
                                   ),
