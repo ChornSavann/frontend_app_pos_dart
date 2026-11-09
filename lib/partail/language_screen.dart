@@ -12,6 +12,8 @@ class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: () {
         setState(() {
@@ -23,10 +25,14 @@ class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isKhmer ? Colors.blue.shade50 : Colors.indigo.shade50,
+          color: isDark
+              ? (isKhmer ? Colors.blue : Colors.indigo).withOpacity(0.20)
+              : (isKhmer ? Colors.blue.shade50 : Colors.indigo.shade50),
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isKhmer ? Colors.blue.shade200 : Colors.indigo.shade200,
+            color: isDark
+                ? (isKhmer ? Colors.blue : Colors.indigo).withOpacity(0.45)
+                : (isKhmer ? Colors.blue.shade200 : Colors.indigo.shade200),
             width: 1,
           ),
           boxShadow: [
@@ -40,19 +46,19 @@ class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // ទង់ជាតិមានទំហំសមល្មម
             Text(
               isKhmer ? "🇰🇭" : "🇬🇧",
               style: const TextStyle(fontSize: 15),
             ),
             const SizedBox(width: 5),
-            // អក្សរកាត់ KH / EN ធ្វើឱ្យ AppBar មើលទៅមិនសូវណែន
             Text(
               isKhmer ? "KH" : "EN",
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w800,
-                color: isKhmer ? Colors.blue.shade800 : Colors.indigo.shade800,
+                color: isDark
+                    ? (isKhmer ? Colors.blue.shade200 : Colors.indigo.shade200)
+                    : (isKhmer ? Colors.blue.shade800 : Colors.indigo.shade800),
                 letterSpacing: 0.5,
               ),
             ),

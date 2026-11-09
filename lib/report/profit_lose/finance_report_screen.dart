@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import '../../api/report/api_report.dart';
 
 class FinancialReportScreen extends StatefulWidget {
@@ -515,7 +515,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> {
     required Color bgColor,
     String? imageUrl,
   }) {
-    const String baseServerUrl = BaseImageUrl.BaseimageUrl;
+    final String baseServerUrl = BaseUrlApi.baseimageUrl;
 
     String? finalImageUrl;
     if (imageUrl != null && imageUrl.trim().isNotEmpty) {

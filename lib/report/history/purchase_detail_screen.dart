@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../constants/baseurl/base_image_url.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
+
 
 class PurchaseDetailScreen extends StatelessWidget {
   final Map<String, dynamic> purchase;
@@ -544,7 +545,7 @@ class PurchaseDetailScreen extends StatelessWidget {
                               ? rawImage.substring(1)
                               : rawImage;
 
-                          String baseUrlFormatted = BaseImageUrl.BaseimageUrl;
+                          String baseUrlFormatted = BaseUrlApi.baseimageUrl;
                           if (!baseUrlFormatted.startsWith('http://') &&
                               !baseUrlFormatted.startsWith('https://')) {
                             baseUrlFormatted = 'http://$baseUrlFormatted';

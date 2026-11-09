@@ -42,7 +42,38 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     }
   }
 
-  // 🎨 ពណ៌សម្រាប់ Status
+  String _formatDateTime(String? rawDate) {
+    if (rawDate == null || rawDate.isEmpty) return 'N/A';
+    final parsed = DateTime.tryParse(rawDate);
+    if (parsed == null) return rawDate;
+
+    final localTime = parsed.toLocal();
+    String two(int n) => n.toString().padLeft(2, '0');
+
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    final day = two(localTime.day);
+    final month = months[localTime.month - 1];
+    final year = localTime.year;
+    final hour = two(localTime.hour);
+    final minute = two(localTime.minute);
+
+    return '$day $month $year, $hour:$minute';
+  }
+
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'completed':
@@ -63,7 +94,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
     final customer = _orderData?['customer'] as Map<String, dynamic>?;
     final payment = _orderData?['payment'] as Map<String, dynamic>?;
 
-    // 🚚 ទាញយកទិន្នន័យ Delivery (អាស្រ័យលើការរចនាតារាង Backend របស់អ្នក អាចជា 'delivery' ឬកប់ក្នុង Order ផ្ទាល់)
     final delivery =
         _orderData?['delivery'] as Map<String, dynamic>? ?? _orderData;
     final String orderType =
@@ -97,7 +127,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 🧾 1. Order Info Card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -155,9 +184,10 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                         ),
                         _buildInfoRow('Order Type:', orderType.toUpperCase()),
                         const SizedBox(height: 6),
+
                         _buildInfoRow(
                           'Date:',
-                          _orderData!['created_at'] ?? 'N/A',
+                          _formatDateTime(_orderData!['created_at']),
                         ),
                         const SizedBox(height: 6),
                         _buildInfoRow(
@@ -189,7 +219,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 🚚 2. Delivery Information Card (បង្ហាញเฉพาะពេល Order ជាប្រភេទ delivery)
+                  // 🚚 Delivery Information Card
                   if (orderType == 'delivery') ...[
                     const Text(
                       'Delivery Information',
@@ -241,7 +271,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 👤 3. Customer Info Card
+                  // 👤 Customer Info Card
                   if (customer != null) ...[
                     const Text(
                       'Customer Information',
@@ -281,7 +311,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 💳 4. Payment Info Card
+                  // 💳 Payment Info Card
                   if (payment != null) ...[
                     const Text(
                       'Payment Information',
@@ -327,7 +357,7 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                     const SizedBox(height: 16),
                   ],
 
-                  // 📦 5. Items / Details List with Image
+                  // 📦 Items / Details List with Image
                   const Text(
                     'Products Ordered',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -361,7 +391,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                         ),
                         child: Row(
                           children: [
-                            // 🖼️ ផ្នែកបង្ហាញរូបភាពផលិតផល
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: Container(
@@ -390,8 +419,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                               ),
                             ),
                             const SizedBox(width: 12),
-
-                            // 📝 ឈ្មោះផលិតផល, តម្លៃ និងចំនួន
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -415,8 +442,6 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
                                 ],
                               ),
                             ),
-
-                            // 💰 តម្លៃសរុបប្រចាំផលិតផល
                             Text(
                               '\$${item['total_price']}',
                               style: const TextStyle(
@@ -437,22 +462,20 @@ class _ViewOrderScreenState extends State<ViewOrderScreen> {
   }
 
   Widget _buildInfoRow(
-      String label,
-      String value, {
-        bool isBold = false,
-        Color? color,
-      }) {
+    String label,
+    String value, {
+    bool isBold = false,
+    Color? color,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // 🔹 ป้ายຊື່ (Label) នៅខាងឆ្វេង
         Text(
           label,
           style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
         ),
         const SizedBox(width: 12),
-        // 🔹 តម្លៃ (Value) នៅខាងស្តាំ ដាក់ក្នុង Expanded ដើម្បីការពារការ Overflow និងអាចចុះបន្ទាត់បាន
         Expanded(
           child: Text(
             value,

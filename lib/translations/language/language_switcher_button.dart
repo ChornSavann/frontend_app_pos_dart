@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
@@ -26,6 +25,9 @@ class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
   Widget build(BuildContext context) {
     bool isKhmer = Get.locale?.languageCode != TranslateConstants.en;
 
+    // 🌙 NEW: follow the app theme (light / dark)
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return SizedBox(
       height: 40,
       child: InkWell(
@@ -34,9 +36,18 @@ class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            // 🌙 CHANGED: was Colors.grey.shade50
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.06)
+                : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.grey.shade200, width: 1),
+            // 🌙 CHANGED: was Colors.grey.shade200
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.10)
+                  : Colors.grey.shade200,
+              width: 1,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.02),
@@ -55,10 +66,13 @@ class _LanguageSwitcherButtonState extends State<LanguageSwitcherButton> {
               const SizedBox(width: 6),
               Text(
                 isKhmer ? "KH" : "EN",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w800,
-                  color: Color(0xFF334155),
+                  // 🌙 CHANGED: was Color(0xFF334155)
+                  color: isDark
+                      ? const Color(0xFFCBD5E1)
+                      : const Color(0xFF334155),
                 ),
               ),
             ],

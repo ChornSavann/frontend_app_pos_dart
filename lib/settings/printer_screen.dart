@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
-
+import 'package:permission_handler/permission_handler.dart';
 import '../msg/appSnackBar.dart';
 
 class PrinterScreen extends StatefulWidget {
@@ -18,7 +18,31 @@ class _PrinterScreenState extends State<PrinterScreen> {
   @override
   void initState() {
     super.initState();
-    _startScan();
+    _checkPermissionsAndScan();
+  }
+
+  Future<void> _checkPermissionsAndScan() async {
+    Map<Permission, PermissionStatus> statuses = await [
+      Permission.bluetoothScan,
+      Permission.bluetoothConnect,
+      Permission.location,
+    ].request();
+
+    if (statuses[Permission.bluetoothScan] == PermissionStatus.granted ||
+        statuses[Permission.bluetoothConnect] == PermissionStatus.granted ||
+        statuses[Permission.location] == PermissionStatus.granted) {
+      _startScan();
+    } else {
+      if (mounted) {
+        AppSnackBar.showError(
+          context,
+          'សូមបើកសិទ្ធិ Bluetooth និង Location ក្នុង Settings ទើបអាចរកឃើញម៉ាស៊ីនព្រីន!',
+        );
+      }
+      setState(() {
+        isScanning = false;
+      });
+    }
   }
 
   void _startScan() async {
@@ -31,6 +55,10 @@ class _PrinterScreenState extends State<PrinterScreen> {
       final bool? bluetoothEnabled = await PrintBluetoothThermal.bluetoothEnabled;
       if (bluetoothEnabled == true) {
         results = await PrintBluetoothThermal.pairedBluetooths;
+      } else {
+        if (mounted) {
+          AppSnackBar.showError(context, 'សូមបើក Bluetooth ក្នុងទូរស័ព្ទរបស់អ្នកជាមុនសិន!');
+        }
       }
     } catch (e) {
       debugPrint("Error scanning printers: $e");
@@ -51,22 +79,33 @@ class _PrinterScreenState extends State<PrinterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🌙 NEW: follow the app theme (light / dark)
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color titleColor = isDark
+        ? const Color(0xFFF1F5F9)
+        : const Color(0xFF1E293B);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9),
+      // 🌙 CHANGED: was const Color(0xFFF4F6F9)
+      backgroundColor: isDark
+          ? const Color(0xFF0B1120)
+          : const Color(0xFFF4F6F9),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Bluetooth Printer',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
-            color: Color(0xFF1E293B),
+            color: titleColor,
             fontFamily: 'KantumruyPro',
           ),
         ),
         elevation: 0,
-        backgroundColor: Colors.white,
+        // 🌙 CHANGED: was Colors.white
+        backgroundColor: isDark ? const Color(0xFF151C2E) : Colors.white,
+        surfaceTintColor: Colors.transparent,
         centerTitle: true,
-        iconTheme: const IconThemeData(color: Color(0xFF1E293B)),
+        iconTheme: IconThemeData(color: titleColor),
         actions: [
           IconButton(
             icon: isScanning
@@ -79,7 +118,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
               ),
             )
                 : const Icon(Icons.refresh_rounded, color: Color(0xFF10B981)),
-            onPressed: isScanning ? null : _startScan,
+            onPressed: isScanning ? null : _checkPermissionsAndScan,
           ),
         ],
       ),
@@ -88,11 +127,10 @@ class _PrinterScreenState extends State<PrinterScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🌟 Status Banner Card
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withValues(alpha: 0.08),
+                color: const Color(0xFF10B981).withValues(alpha: isDark ? 0.14 : 0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: const Color(0xFF10B981).withValues(alpha: 0.2),
@@ -107,10 +145,11 @@ class _PrinterScreenState extends State<PrinterScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'សូមបើក Bluetooth និង Pair ជាមួយម៉ាស៊ីនព្រីន (80mm / 58mm) ជាមុនសិន ទើបវារកឃើញទីនេះ។',
+                      'សូម Pair ម៉ាស៊ីនព្រីន (80mm / 58mm) ជាមួយទូរស័ព្ទក្នុង Bluetooth Settings ជាមុនសិន ទើបវារកឃើញទីនេះ។',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1E293B).withValues(alpha: 0.8),
+                        // 🌙 CHANGED: was 0xFF1E293B @ 0.8
+                        color: titleColor.withValues(alpha: 0.8),
                         fontFamily: 'KantumruyPro',
                       ),
                     ),
@@ -119,19 +158,16 @@ class _PrinterScreenState extends State<PrinterScreen> {
               ),
             ),
             const SizedBox(height: 24),
-
-            const Text(
-              'ឧបករណ៍ដែលបានរកឃើញ (Available Devices)',
+            Text(
+              'ឧបករណ៍ដែលបាន Pair រួច (Paired Devices)',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: titleColor,
                 fontFamily: 'KantumruyPro',
               ),
             ),
             const SizedBox(height: 12),
-
-            // 📋 Devices List Card
             devices.isEmpty
                 ? Center(
               child: Padding(
@@ -139,7 +175,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
                 child: Text(
                   isScanning
                       ? 'កំពុងស្វែងរកម៉ាស៊ីនព្រីន...'
-                      : 'រកមិនឃើញម៉ាស៊ីនព្រីន Bluetooth ទេ។\nសូមពិនិត្យការតភ្ជាប់ក្នុងទូរស័ព្ទរបស់អ្នក។',
+                      : 'រកមិនឃើញម៉ាស៊ីនព្រីន Bluetooth ទេ។\nសូមធានាថាបាន Pair ក្នុង Setting ទូរស័ព្ទរួចរាល់។',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.grey.shade500,
@@ -150,11 +186,17 @@ class _PrinterScreenState extends State<PrinterScreen> {
             )
                 : Container(
               decoration: BoxDecoration(
-                color: Colors.white,
+                // 🌙 CHANGED: was Colors.white
+                color: isDark ? const Color(0xFF151C2E) : Colors.white,
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.07)
+                      : Colors.transparent,
+                ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -169,7 +211,10 @@ class _PrinterScreenState extends State<PrinterScreen> {
                   separatorBuilder: (context, index) => Divider(
                     height: 1,
                     indent: 68,
-                    color: Colors.grey.shade100,
+                    // 🌙 CHANGED: was Colors.grey.shade100
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.06)
+                        : Colors.grey.shade100,
                   ),
                   itemBuilder: (context, index) {
                     final device = devices[index];
@@ -182,8 +227,6 @@ class _PrinterScreenState extends State<PrinterScreen> {
                       onTap: () async {
                         try {
                           String macAddress = device['address'];
-
-                          // 🟢 ប្រើប្រាស់ macPrinterAddress ឱ្យត្រូវតាម package
                           bool connected = await PrintBluetoothThermal.connect(
                             macPrinterAddress: macAddress,
                           );
@@ -229,13 +272,15 @@ class _PrinterScreenState extends State<PrinterScreen> {
     );
   }
 
-  // Widget សម្រាប់បង្ហាញជួរម៉ាស៊ីនព្រីននីមួយៗ
   Widget _buildPrinterTile({
     required String name,
     required String address,
     required bool isConnected,
     required VoidCallback onTap,
   }) {
+    // 🌙 NEW: follow the app theme (light / dark)
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -249,14 +294,12 @@ class _PrinterScreenState extends State<PrinterScreen> {
                 decoration: BoxDecoration(
                   color: isConnected
                       ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                      : const Color(0xFF10B981).withValues(alpha: 0.08),
+                      : const Color(0xFF10B981).withValues(alpha: isDark ? 0.16 : 0.08),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.print_rounded,
-                  color: isConnected
-                      ? const Color(0xFF10B981)
-                      : const Color(0xFF10B981),
+                  color: Color(0xFF10B981),
                   size: 22,
                 ),
               ),
@@ -267,10 +310,13 @@ class _PrinterScreenState extends State<PrinterScreen> {
                   children: [
                     Text(
                       name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
+                        // 🌙 CHANGED: was Color(0xFF1E293B)
+                        color: isDark
+                            ? const Color(0xFFF1F5F9)
+                            : const Color(0xFF1E293B),
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -278,7 +324,9 @@ class _PrinterScreenState extends State<PrinterScreen> {
                       address,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey.shade400,
+                        color: isDark
+                            ? const Color(0xFF64748B)
+                            : Colors.grey.shade400,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -293,7 +341,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
                 decoration: BoxDecoration(
                   color: isConnected
                       ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                      : Colors.grey.withValues(alpha: 0.1),
+                      : Colors.grey.withValues(alpha: isDark ? 0.18 : 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -303,7 +351,9 @@ class _PrinterScreenState extends State<PrinterScreen> {
                     fontWeight: FontWeight.bold,
                     color: isConnected
                         ? const Color(0xFF10B981)
-                        : Colors.grey.shade600,
+                        : (isDark
+                        ? const Color(0xFF94A3B8)
+                        : Colors.grey.shade600),
                   ),
                 ),
               ),

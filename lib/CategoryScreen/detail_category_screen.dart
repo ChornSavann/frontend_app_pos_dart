@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pos_inventory/CategoryScreen/update_categpry_screen.dart';
 import 'package:pos_inventory/api/api_category.dart';
-import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 
 import '../models/category.dart';
 
@@ -19,8 +19,8 @@ class _DetailCategoryScreenState extends State<DetailCategoryScreen> {
 
   CategoryModel? _category;
   bool _isLoading = true;
-  final String baseUrl = BaseImageUrl.BaseimageUrl;
-
+  // final String baseUrl = BaseImageUrl.BaseimageUrl;
+  final String baseUrl=BaseUrlApi.baseimageUrl;
   @override
   void initState() {
     super.initState();

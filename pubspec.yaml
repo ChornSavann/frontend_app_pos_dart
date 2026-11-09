@@ -5,7 +5,7 @@ description: "A new Flutter project."
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 
-version: 1.0.0+3
+version: 1.0.0+4
 # ឧទាហរណ៍កំណែចាស់៖ version: 1.0.0+1
 #version: 1.0.1+2
 
@@ -25,8 +25,7 @@ dependencies:
   file_picker: ^11.0.2
   cached_network_image: ^3.4.1
   shared_preferences: ^2.5.5
-  firebase_core: ^3.15.2
-  firebase_auth: ^5.7.0
+
   google_sign_in: ^6.2.1
   google_fonts: ^6.1.0
   carousel_slider: ^5.0.0
@@ -45,12 +44,18 @@ dependencies:
   google_maps_flutter: ^2.5.3
   geocoding: ^3.0.0           
   geolocator: ^10.1.0
+  permission_handler: ^11.3.1
   sqflite: ^2.3.0
   intl: ^0.19.0
   barcode_widget: ^2.0.4
 #  blue_thermal_printer: ^1.2.3
   print_bluetooth_thermal: ^1.1.5
-
+  web: ^1.0.0
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
+  cloud_firestore: ^5.6.5
+  firebase_storage: ^12.4.4
+  firebase_remote_config: ^5.5.0
 
 dev_dependencies:
   flutter_test:

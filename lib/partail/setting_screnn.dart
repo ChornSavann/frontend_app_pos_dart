@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:pos_inventory/api/api_auth.dart';
-import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
+import 'package:pos_inventory/partail/language_screen.dart';
 import 'package:pos_inventory/partail/profile_screen.dart';
+import 'package:pos_inventory/profile/change_laung_screen.dart';
 import 'package:pos_inventory/profile/edit_profile_screen.dart';
 import 'package:pos_inventory/report/history/order_history_screen.dart';
 import 'package:pos_inventory/settings/about_screen.dart';
@@ -25,8 +27,7 @@ class _Pal {
   Color get bg => dark ? const Color(0xFF0B1120) : const Color(0xFFF4F6FB);
   Color get card => dark ? const Color(0xFF151C2E) : Colors.white;
   Color get text => dark ? const Color(0xFFF1F5F9) : const Color(0xFF0F172A);
-  Color get subtext =>
-      dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+  Color get subtext => dark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
   Color get label => dark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
   Color get divider =>
       dark ? Colors.white.withValues(alpha: 0.06) : const Color(0xFFEEF1F6);
@@ -50,8 +51,8 @@ class SettingScreen extends StatefulWidget {
 
 class _SettingScreenState extends State<SettingScreen> {
   final ApiAuth _apiAuth = ApiAuth();
-  final baseImageUrl = BaseImageUrl.BaseimageUrl;
-
+  // final baseImageUrl = BaseImageUrl.BaseimageUrl;
+  final baseImageUrl=BaseUrlApi.baseimageUrl;
   // 👇 CHANGED: dark mode now comes from the app theme (global), not local state
   bool get _isDarkMode => Theme.of(context).brightness == Brightness.dark;
 
@@ -83,8 +84,8 @@ class _SettingScreenState extends State<SettingScreen> {
         if (profileData['role'] is Map) {
           role =
               profileData['role']['name'] ??
-                  profileData['role']['title'] ??
-                  "Cashier";
+              profileData['role']['title'] ??
+              "Cashier";
         } else if (profileData['role'] is String) {
           role = profileData['role'];
         } else if (profileData['role_name'] != null) {
@@ -233,7 +234,6 @@ class _SettingScreenState extends State<SettingScreen> {
                   title: "Dark Mode",
                   subtitle: "Switch to dark theme appearance",
                   value: _isDarkMode,
-                  // 👇 CHANGED: toggles the global theme + saves it
                   onChanged: (val) {
                     Get.find<ThemeController>().setDark(val);
                   },
@@ -244,7 +244,14 @@ class _SettingScreenState extends State<SettingScreen> {
                   iconColor: const Color(0xFF0EA5E9),
                   title: "Language / ភាសា",
                   subtitle: "Khmer / English",
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChangeLaungScreen(),
+                      ),
+                    );
+                  },
                 ),
                 _buildDivider(p),
                 _buildSwitchTile(
@@ -268,9 +275,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => CurrencyScreen(),
-                      ),
+                      MaterialPageRoute(builder: (context) => CurrencyScreen()),
                     );
                   },
                 ),
@@ -288,9 +293,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => DataSyncScreen(),
-                      ),
+                      MaterialPageRoute(builder: (context) => DataSyncScreen()),
                     );
                   },
                 ),
@@ -330,8 +333,7 @@ class _SettingScreenState extends State<SettingScreen> {
             child: const Icon(Icons.point_of_sale_rounded, size: 26),
           ),
         ),
-        floatingActionButtonLocation:
-        FloatingActionButtonLocation.centerDocked,
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
     );
   }
@@ -651,10 +653,7 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          subtitle,
-          style: TextStyle(fontSize: 12, color: p.subtext),
-        ),
+        child: Text(subtitle, style: TextStyle(fontSize: 12, color: p.subtext)),
       ),
       trailing: Container(
         padding: const EdgeInsets.all(7),
@@ -691,17 +690,12 @@ class _SettingScreenState extends State<SettingScreen> {
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
-        child: Text(
-          subtitle,
-          style: TextStyle(fontSize: 12, color: p.subtext),
-        ),
+        child: Text(subtitle, style: TextStyle(fontSize: 12, color: p.subtext)),
       ),
       value: value,
       activeThumbColor: Colors.white,
       activeTrackColor: Colors.blueAccent,
-      inactiveThumbColor: _isDarkMode
-          ? const Color(0xFF94A3B8)
-          : Colors.white,
+      inactiveThumbColor: _isDarkMode ? const Color(0xFF94A3B8) : Colors.white,
       inactiveTrackColor: _isDarkMode
           ? const Color(0xFF2A3350)
           : const Color(0xFFCBD5E1),

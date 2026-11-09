@@ -15,7 +15,7 @@ class ChangeLaungScreen extends StatefulWidget {
 
 class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
   bool isKhmer = true;
-  // មុខងារសម្រាប់ប្តូរភាសាជាមួយ GetX
+
   void onChangeLanguage() {
     print(Get.locale?.languageCode??"");
     setState(() {
@@ -39,7 +39,7 @@ class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
     _loadSelectedLanguage();
   }
 
-  // ទាញយកភាសាដែលបានរក្សាទុកក្នុង SharedPreferences
+
   Future<void> _loadSelectedLanguage() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
@@ -48,7 +48,6 @@ class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
     });
   }
 
-  // រក្សាទុកភាសាថ្មីចូល SharedPreferences និងប្តូរភាសា GetX
   Future<void> _saveLanguage(String languageCode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('app_language', languageCode);
@@ -64,7 +63,6 @@ class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
       newLocale = const Locale(TranslateConstants.en, TranslateConstants.us);
     }
 
-    // ធ្វើបច្ចុប្បន្នភាពភាសាជាសកលក្នុងកម្មវិធី
     Get.updateLocale(newLocale);
   }
 
@@ -99,7 +97,7 @@ class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 🇰🇭 ភាសាខ្មែរ (Khmer)
+
             _buildLanguageOption(
               title: 'ភាសាខ្មែរ (Khmer)',
               subtitle: 'Khmer',
@@ -108,7 +106,7 @@ class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
             ),
             const SizedBox(height: 12),
 
-            // 🇬🇧 ភាសាអង់គ្លេស (English)
+
             _buildLanguageOption(
               title: 'English',
               subtitle: 'English',
@@ -121,7 +119,6 @@ class _ChangeLaungScreenState extends State<ChangeLaungScreen> {
     );
   }
 
-  // 🛠️ Widget ជំនួយសម្រាប់បង្ហាញជម្រើសភាសានីមួយៗ
   Widget _buildLanguageOption({
     required String title,
     required String subtitle,

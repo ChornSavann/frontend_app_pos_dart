@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "825512106346",
+    "project_id": "app-khmer-2aa0c",
+    "storage_bucket": "app-khmer-2aa0c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:825512106346:android:b01e6b29b175ea1feb2d13",
+        "android_client_info": {
+          "package_name": "com.example.pos_inventory"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOJDRb8N-_9WzIN73JbJMN8tNtRoXbX3w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

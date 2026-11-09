@@ -15,19 +15,6 @@ class CartManager {
 
   static final ValueNotifier<int> cartItemCount = ValueNotifier<int>(0);
 
-  // static void addProduct(Product product, {int quantity = 1}) {
-  //   final existingIndex = cartItems.indexWhere((item) => item.product.id == product.id);
-  //
-  //   if (existingIndex >= 0) {
-  //     cartItems[existingIndex].quantity += quantity;
-  //   } else {
-  //
-  //     cartItems.add(CartItem(product: product, quantity: quantity));
-  //   }
-  //
-  //   _updateCount();
-  // }
-
   static void addProduct(
     BuildContext context,
     Product product, {

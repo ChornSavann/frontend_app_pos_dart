@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_core/src/get_main.dart';
 import 'package:get/get_instance/src/extension_instance.dart';
@@ -5,9 +6,10 @@ import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import 'package:pos_inventory/constants/translate_constants.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
-import 'package:pos_inventory/homesccreeen/darkmode/them_controller.dart'; // 👈 NEW
+import 'package:pos_inventory/homesccreeen/darkmode/them_controller.dart';
 import 'package:pos_inventory/login/plash_screnn.dart';
 import 'package:pos_inventory/translations/message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,17 +22,24 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 👉 ភ្ជាប់ Firebase មុនគេ
+  await Firebase.initializeApp();
+  print("Config firebase Successfully.....");
+  // 👉 បន្ថែមបន្ទាត់នេះ ដើម្បីទាញយក IP ពី Firebase Remote Config មុនពេល App បើកដំណើរការ
+  await BaseUrlApi.init();
+
   final prefs = await SharedPreferences.getInstance();
   final String? token = prefs.getString('token');
   Get.put(FavoriteController());
 
-  // 👇 NEW: register + load saved dark mode BEFORE runApp
   final themeController = Get.put(ThemeController());
   await themeController.load();
 
   Widget initialScreen = (token != null && token.isNotEmpty)
       ? const DashboardScreen()
       : const SplashScreen();
+
   await NotificationService.initialize();
   await Hive.initFlutter();
   await Hive.openBox('offline_products');
@@ -41,6 +50,7 @@ void main() async {
   await Hive.openBox('offline_brands');
   await Hive.openBox('offline_units');
   ProductSyncService.instance.initializeSyncListener();
+
   runApp(MyApp(initialScreen: initialScreen));
 }
 
@@ -59,20 +69,12 @@ class MyApp extends StatelessWidget {
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
 
-      // ☀️ light theme (same as before)
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        // textTheme: GoogleFonts.kantumruyProTextTheme(
-        //   Theme.of(context).textTheme,
-        // ),
-      ),
+      theme: ThemeData(primarySwatch: Colors.blue),
 
-      // 🌙 NEW: dark theme + saved mode
       darkTheme: ThemeController.darkTheme,
       themeMode: Get.find<ThemeController>().themeMode,
 
       home: initialScreen,
-      // home: const GenerateStickerScreen(products: []),
     );
   }
 }

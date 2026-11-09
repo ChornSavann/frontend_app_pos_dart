@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import '../../api/report/api_report.dart';
 
 class FinancialChartScreen extends StatefulWidget {
@@ -317,8 +317,8 @@ class _FinancialChartScreenState extends State<FinancialChartScreen> {
                             name = item['category_name'] ?? '';
                           }
 
-                          const String baseServerUrl =
-                              BaseImageUrl.BaseimageUrl;
+                          final String baseServerUrl =
+                              BaseUrlApi.baseimageUrl;
                           String? finalImageUrl;
                           if (imageUrl != null && imageUrl.trim().isNotEmpty) {
                             if (imageUrl.startsWith('http://') ||

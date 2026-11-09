@@ -3,7 +3,7 @@ import 'package:pos_inventory/CategoryScreen/create_categrory_screen.dart';
 import 'package:pos_inventory/CategoryScreen/update_categpry_screen.dart';
 import 'package:pos_inventory/CategoryScreen/detail_category_screen.dart';
 import 'package:pos_inventory/api/api_category.dart';
-import 'package:pos_inventory/constants/baseurl/base_image_url.dart';
+import 'package:pos_inventory/constants/baseurl/base_url_api.dart';
 import 'package:pos_inventory/homesccreeen/dashboard_screen.dart';
 import 'package:pos_inventory/order/cart_screen.dart';
 import 'package:pos_inventory/models/category.dart';
@@ -19,7 +19,8 @@ class CategoryIndexScreen extends StatefulWidget {
 
 class _CategoryIndexScreenState extends State<CategoryIndexScreen> {
   final ApiCategory apiCategory = ApiCategory();
-  final urlImage = BaseImageUrl.BaseimageUrl;
+  // final urlImage = Base_u.BaseimageUrl;
+  final urlImage=BaseUrlApi.baseimageUrl;
 
   late Future<List<CategoryModel>> _categoryFuture;
 
